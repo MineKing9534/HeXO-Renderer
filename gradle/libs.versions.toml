@@ -1,0 +1,24 @@
+[versions]
+kotlin = "2.3.20"
+shadow = "9.2.2"
+
+jda = "6.4.1"
+
+dtk-core = "1.5.2"
+dtk-localization = "1.2.0"
+
+logging = "7.0.3"
+logback = "1.5.19"
+
+[libraries]
+build-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+
+jda = { module = "net.dv8tion:JDA", version.ref = "jda" }
+dtk = { module = "de.mineking:DiscordToolKit", version.ref = "dtk-core" }
+
+logging = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "logging" }
+logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+
+[plugins]
+dtk-localization = { id = "de.mineking.discord.localization", version.ref = "dtk-localization" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }

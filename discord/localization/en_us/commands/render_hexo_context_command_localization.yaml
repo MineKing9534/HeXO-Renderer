@@ -1,0 +1,8 @@
+command.renderMessage.description: Render HeXO notation in message
+
+response.error: |-
+  ## Failed to parse the given input
+  
+  No valid HeXO notations found in target message!
+  
+  **NOTE:** Put HeXO notation parts of you message in code blocks!

@@ -1,0 +1,23 @@
+import org.gradle.kotlin.dsl.kotlin
+
+plugins {
+    kotlin("jvm")
+}
+
+group = rootProject.group
+version = rootProject.version
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+    maven("https://maven.mineking.dev/releases")
+    maven("https://maven.mineking.dev/snapshots")
+}
+
+kotlin {
+    jvmToolchain(21)
+    compilerOptions.freeCompilerArgs.addAll(
+        "-Xexplicit-backing-fields",
+        "-Xcontext-parameters",
+    )
+}
