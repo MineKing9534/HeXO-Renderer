@@ -9,7 +9,12 @@ dependencies {
     implementation(projects.core)
     implementation(projects.render)
 
+    implementation(projects.history)
+
+    implementation(libs.kotlin.coroutines.core)
+
     implementation(libs.jda)
+    implementation(libs.jda.emoji)
     implementation(libs.dtk)
 
     implementation(libs.logging)

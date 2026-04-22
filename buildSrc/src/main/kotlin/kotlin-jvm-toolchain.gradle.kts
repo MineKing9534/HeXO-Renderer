@@ -1,5 +1,3 @@
-import org.gradle.kotlin.dsl.kotlin
-
 plugins {
     kotlin("jvm")
 }
@@ -17,6 +15,7 @@ repositories {
 kotlin {
     jvmToolchain(21)
     compilerOptions.freeCompilerArgs.addAll(
+        "-opt-in=kotlin.uuid.ExperimentalUuidApi",
         "-Xexplicit-backing-fields",
         "-Xcontext-parameters",
     )

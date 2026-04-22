@@ -1,1 +1,8 @@
-response.command.error.unknown: ':warning:  An unexpected error occurred whilst executing this command. The developer has been informed about this issue.'
+response.error:
+  command: ':warning:  An unexpected error occurred whilst executing this command. The developer has been informed about this issue.'
+  menu:
+    message:
+      component: ':warning:  An unexpected error occurred whilst handling this component. The developer has been informed about this issue.'
+      render: ':warning:  An unexpected error occurred whilst rendering this menu. The developer has been informed about this issue.'
+    modal:
+      handler: ':warning:  An unexpected error occurred whilst handling this modal. The developer has been informed about this issue.'

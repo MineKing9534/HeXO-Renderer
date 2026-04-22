@@ -1,0 +1,18 @@
+label.moves: Moves
+error:
+  match.not.found: |-
+    ## Game not found
+    The queried game with id **$id** was not found!
+
+menu.game:
+  title.content: !<id:kotlin.uuid.Uuid> |-
+    # Game Review
+    -# https://hexo.did.science/games/$id
+
+  move:
+    title: Enter the move to inspect
+    inputs:
+      move:
+        label: Move number
+        description: !<match:de.mineking.hexo.history.Match> The move to inspect [1-${match.moveCount}]
+        placeholder: 42

@@ -1,0 +1,7 @@
+command.game:
+  description: Renders a finished game from hexo.did.science
+  options:
+    id.description: The game id or url to view
+
+response:
+  error.invalid.id: ":x: The given game id **$id** is not valid!"

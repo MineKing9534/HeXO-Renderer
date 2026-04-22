@@ -17,4 +17,6 @@ rootProject.name = "HeXO"
 include(":core")
 include(":render")
 
+include(":history")
+
 include(":discord")
