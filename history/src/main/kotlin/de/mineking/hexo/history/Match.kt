@@ -54,10 +54,13 @@ data class Match(
     )
     val playerMappings = playerIdMappings.entries.associate { (id, player) -> player to players.first { it.playerId == id } }
 
-    fun asBoard(move: Int) = Board().apply {
-        repeat(move) {
+    fun asBoard(lastMove: Int) = Board().apply {
+        repeat(lastMove) {
             val move = moves[it]
-            this[move.q, move.r].owner = playerIdMappings[move.playerId]
+
+            val cell = this[move.q, move.r]
+            cell.owner = playerIdMappings[move.playerId]
+            if (it == lastMove - 1) cell.focussed = true
         }
     }
 }

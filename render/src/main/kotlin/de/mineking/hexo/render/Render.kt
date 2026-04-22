@@ -22,7 +22,8 @@ import kotlin.math.sqrt
 data class ColorScheme(
     val background: Color,
     val cellBorder: Color,
-    val markedCellBorder: Color,
+    val highlightedCellBorder: Color,
+    val focussedCellBorder: Color,
     val emptyCell: Color,
     val playerX: Color,
     val playerO: Color,
@@ -31,7 +32,8 @@ data class ColorScheme(
         val Default = ColorScheme(
             background = Color(0x0f172a),
             cellBorder = Color(0x202a3d),
-            markedCellBorder = Color(0xec6fb1),
+            highlightedCellBorder = Color(0xec6fb1),
+            focussedCellBorder = Color.WHITE,
             emptyCell = Color(0, true),
             playerX = Color(0xfbbf24),
             playerO = Color(0x38bdf8)
@@ -161,17 +163,25 @@ private class BoardRenderer(
         }
         graphics.fill(hex)
 
-        if (cell.marked) {
-            graphics.color = colorScheme.markedCellBorder.withAlpha(64)
-            graphics.fill(hex)
+        fun drawHighlight(color: Color) {
+            graphics.stroke = BasicStroke(borderThickness * 4)
+            graphics.color = color
+            graphics.draw(createHex(x - boundingBox.minX, y - boundingBox.minY, inset = borderThickness * 2))
+        }
 
-            graphics.stroke = BasicStroke(borderThickness * 2)
-            graphics.color = colorScheme.markedCellBorder
-            graphics.draw(createHex(x - boundingBox.minX, y - boundingBox.minY, inset = borderThickness))
-        } else {
-            graphics.stroke = BasicStroke(borderThickness)
-            graphics.color = colorScheme.cellBorder
-            graphics.draw(hex)
+        when {
+            cell.highlighted -> {
+                graphics.color = colorScheme.highlightedCellBorder.withAlpha(64)
+                graphics.fill(hex)
+
+                drawHighlight(colorScheme.highlightedCellBorder)
+            }
+            cell.focussed -> drawHighlight(colorScheme.focussedCellBorder)
+            else -> {
+                graphics.stroke = BasicStroke(borderThickness)
+                graphics.color = colorScheme.cellBorder
+                graphics.draw(hex)
+            }
         }
     }
 

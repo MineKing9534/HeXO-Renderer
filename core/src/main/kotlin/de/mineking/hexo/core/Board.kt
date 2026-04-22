@@ -24,11 +24,11 @@ class Board {
                     ' ' -> return@forEachIndexed
                     '/', '\n' -> { cursor.newRow(); return@forEachIndexed }
                     'x' -> cursor.set(Player.X)
-                    'X' -> { cursor.set(Player.X); cursor.mark() }
+                    'X' -> { cursor.set(Player.X); cursor.highlight() }
                     'o' -> cursor.set(Player.O)
-                    'O' -> { cursor.set(Player.O); cursor.mark() }
+                    'O' -> { cursor.set(Player.O); cursor.highlight() }
                     '.' -> {}
-                    '!' -> cursor.mark()
+                    '!' -> cursor.highlight()
                     else -> throw IllegalArgumentException("Unexpected character '$ch' at offset $offset")
                 }
 
@@ -48,8 +48,8 @@ private class Cursor(private val board: Board) {
         board[q, r].owner = owner
     }
 
-    fun mark() {
-        board[q, r].mark()
+    fun highlight() {
+        board[q, r].highlighted = true
     }
 
     fun step() {
