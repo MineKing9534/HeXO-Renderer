@@ -11,9 +11,9 @@ import java.awt.RenderingHints
 import java.awt.Shape
 import java.awt.geom.Path2D
 import java.awt.image.BufferedImage
-import kotlin.math.absoluteValue
 import kotlin.math.ceil
 import kotlin.math.cos
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
@@ -51,26 +51,18 @@ fun Board.render(
     require(cells.isNotEmpty())
 
     val size = RenderSize(layoutRadius, gap)
+    val boundingBox = cells.keys.findBoundingBox(size)
     val renderer = BoardRenderer(
-        cells.keys.findBoundingBox(size),
+        boundingBox,
         size,
         colorScheme,
         borderThickness,
         padding,
     )
 
-    val minQ = cells.keys.minOf { it.q }.let { it - it.absoluteValue }
-    val maxQ = cells.keys.maxOf { it.q }.let { it + it.absoluteValue }
-    val minR = cells.keys.minOf { it.r } - 1
-    val maxR = cells.keys.maxOf { it.r } + 1
-
-    for (q in minQ..maxQ) {
-        for (r in minR..maxR) {
-            val pos = CellCoordinate(q, r)
-            val cell = cells[pos] ?: Cell()
-
-            renderer.drawCell(pos, cell)
-        }
+    for (position in boundingBox.findVisibleCoordinates(size)) {
+        val cell = cells[position] ?: Cell()
+        renderer.drawCell(position, cell)
     }
 
     return renderer.image
@@ -82,6 +74,25 @@ private data class BoundingBox(
     val minY: Double,
     val maxY: Double,
 )
+
+private fun BoundingBox.findVisibleCoordinates(size: RenderSize) = sequence {
+    val horizontalStep = size.layoutRadius * RenderSize.sqrt3
+    val verticalStep = size.layoutRadius * 1.5
+    val margin = size.hexSize
+
+    val minR = floor((minY - margin) / verticalStep).toInt() - 1
+    val maxR = ceil((maxY + margin) / verticalStep).toInt() + 1
+
+    for (r in minR..maxR) {
+        val rOffset = r / 2.0
+        val minQ = floor((minX - margin) / horizontalStep - rOffset).toInt() - 1
+        val maxQ = ceil((maxX + margin) / horizontalStep - rOffset).toInt() + 1
+
+        for (q in minQ..maxQ) {
+            yield(CellCoordinate(q, r))
+        }
+    }
+}
 
 private fun Collection<CellCoordinate>.findBoundingBox(size: RenderSize): BoundingBox {
     var minX = Double.POSITIVE_INFINITY
@@ -113,11 +124,11 @@ private fun Collection<CellCoordinate>.findBoundingBox(size: RenderSize): Boundi
 }
 
 private class RenderSize(
-    private val layoutRadius: Double,
+    val layoutRadius: Double,
     private val gap: Double,
 ) {
     companion object {
-        private val sqrt3 = sqrt(3.0)
+        val sqrt3 = sqrt(3.0)
     }
 
     val hexSize get() = layoutRadius - gap
