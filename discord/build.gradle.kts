@@ -1,3 +1,5 @@
+import de.mineking.discord.localization.gradle.import
+
 plugins {
     alias(libs.plugins.dtk.localization)
     alias(libs.plugins.shadow)
@@ -31,6 +33,10 @@ discordLocalization {
     locationFormat = "%locale%/%name%.yaml"
 
     botPackage = "de.mineking.hexo.discord"
+
+    import("de.mineking.hexo.history.Match")
+    import("de.mineking.hexo.history.TimeControl")
+    import("de.mineking.hexo.history.GameFinishReason")
 }
 
 application {

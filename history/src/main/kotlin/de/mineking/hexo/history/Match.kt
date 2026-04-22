@@ -2,6 +2,7 @@ package de.mineking.hexo.history
 
 import de.mineking.hexo.core.Board
 import de.mineking.hexo.core.Player
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -9,10 +10,12 @@ import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonClassDiscriminator
 import java.awt.Color
 import kotlin.math.roundToInt
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlin.uuid.Uuid
 
 @JvmInline
 @Serializable
@@ -29,23 +32,68 @@ data class Move(
 data class PlayerInfo(
     val playerId: PlayerId,
     val displayName: String,
+    val elo: Int,
+    val profileId: String,
 )
+
+fun PlayerInfo.isGuest() = playerId.value == profileId
+
+@Serializable
+enum class GameFinishReason {
+    @SerialName("six-in-a-row") SixInARow,
+    @SerialName("timeout") Timeout,
+    @SerialName("surrender") Surrender,
+    @SerialName("disconnect") Disconnect,
+    @SerialName("draw-agreement") DrawAgreement,
+    @SerialName("terminated") Terminated,
+}
 
 @Serializable
 data class GameResult(
-    val winningPlayerId: PlayerId,
+    val winningPlayerId: PlayerId?,
     @SerialName("durationMs") val duration: @Serializable(with = DurationAsMillisecondsSerializer::class) Duration,
+    val reason: GameFinishReason,
 )
 
 @Serializable
 data class PlayerTile(val color: @Serializable(with = ColorSerializer::class) Color)
 
+@OptIn(ExperimentalSerializationApi::class)
+@Serializable
+@JsonClassDiscriminator("mode")
+sealed interface TimeControl {
+    @Serializable
+    @SerialName("unlimited")
+    object Unlimited : TimeControl
+
+    @Serializable
+    @SerialName("turn")
+    data class Turn(
+        @SerialName("turnTimeMs") val turnTime: @Serializable(with = DurationAsMillisecondsSerializer::class) Duration,
+    ) : TimeControl
+
+    @Serializable
+    @SerialName("match")
+    data class Match(
+        @SerialName("mainTimeMs") val mainTime: @Serializable(with = DurationAsMillisecondsSerializer::class) Duration,
+        @SerialName("incrementMs") val increment: @Serializable(with = DurationAsMillisecondsSerializer::class) Duration,
+    ) : TimeControl
+}
+
+@Serializable
+data class GameOptions(
+    val rated: Boolean,
+    val timeControl: TimeControl,
+)
+
 @Serializable
 data class Match(
+    val id: Uuid,
     val players: List<PlayerInfo>,
     val playerTiles: Map<PlayerId, PlayerTile>,
     val moveCount: Int,
     val gameResult: GameResult,
+    val gameOptions: GameOptions,
     val moves: List<Move>,
 ) {
     val playerIdMappings = mapOf(

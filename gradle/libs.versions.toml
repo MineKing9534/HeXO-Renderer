@@ -12,7 +12,7 @@ jda = "6.4.1"
 jda-emoji = "4.1.0"
 
 dtk-core = "1.5.2"
-dtk-localization = "1.2.0"
+dtk-localization = "1.2.1"
 
 logging = "7.0.3"
 logback = "1.5.19"

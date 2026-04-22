@@ -42,7 +42,10 @@ import de.mineking.hexo.discord.effectiveLocale
 import de.mineking.hexo.discord.main
 import de.mineking.hexo.discord.render
 import de.mineking.hexo.discord.respond
+import de.mineking.hexo.history.GameFinishReason
 import de.mineking.hexo.history.MatchRepository
+import de.mineking.hexo.history.TimeControl
+import de.mineking.hexo.history.isGuest
 import dev.freya02.jda.emojis.unicode.Emojis
 import net.dv8tion.jda.api.EmbedBuilder.ZERO_WIDTH_SPACE
 import net.dv8tion.jda.api.components.actionrow.ActionRow
@@ -76,7 +79,6 @@ fun UIManager.gameMenu(matchRepository: MatchRepository) = registerLocalizedMenu
             }
 
             localize(event.effectiveLocale) {
-                bindParameter("id", id)
                 bindParameter("match", match)
             }
 
@@ -84,23 +86,31 @@ fun UIManager.gameMenu(matchRepository: MatchRepository) = registerLocalizedMenu
             val board = match.asBoard(move)
 
             +localizedTextDisplay("title")
-            +separator(invisible = true, spacing = Separator.Spacing.LARGE)
+            +separator(invisible = true)
 
             +buildTextDisplay {
                 fun playerLine(emoji: EmojiType, player: Player) = line {
+                    val playerInfo = match.playerMappings[player]!!
+
                     append(main.emojiManager[emoji].formatted)
                     append(" ")
-                    append(match.playerMappings[player]!!.displayName)
+                    append(playerInfo.displayName)
+
+                    if (!playerInfo.isGuest()) append(" (`${playerInfo.elo} ELO`)")
+                    if (match.gameResult.winningPlayerId == playerInfo.playerId) append(" :first_place:")
                 }
 
-                +playerLine(EmojiType.PlayerX, Player.X)
-                +playerLine(EmojiType.PlayerO, Player.O)
+                listOf(EmojiType.PlayerX to Player.X, EmojiType.PlayerO to Player.O)
+                    .sortedBy { (_, player) -> match.moves.indexOfFirst { match.playerIdMappings[it.playerId] == player } }
+                    .forEach { (emoji, player) -> +playerLine(emoji, player) }
 
                 +line()
                 +line {
-                    +code("${match.moveCount} ${localization.labelMoves(event.effectiveLocale)}")
-                    append(" ")
                     +code(match.gameResult.duration.toString())
+                    append("\u2002")
+                    +code("${Emojis.TIMER_CLOCK.formatted} ${localization.timeControl(event.effectiveLocale, match.gameOptions.timeControl)}")
+                    append("\u2002")
+                    +code(match.gameResult.reason.localize(event.effectiveLocale, localization))
                 }
             }
 
@@ -115,6 +125,18 @@ fun UIManager.gameMenu(matchRepository: MatchRepository) = registerLocalizedMenu
     }
 }
 
+private fun GameFinishReason.localize(locale: DiscordLocale, localization: GameMenuLocalization): String {
+    val emoji = when (this) {
+        GameFinishReason.SixInARow -> Emojis.TRIANGULAR_RULER
+        GameFinishReason.Timeout -> Emojis.ALARM_CLOCK
+        GameFinishReason.Surrender -> Emojis.FLAG_WHITE
+        GameFinishReason.Disconnect -> Emojis.SATELLITE
+        GameFinishReason.DrawAgreement -> Emojis.HANDSHAKE
+        GameFinishReason.Terminated -> Emojis.NO_ENTRY
+    }
+
+    return "${emoji.formatted} ${localization.finishReason(locale, this)}"
+}
 
 private fun MessageMenuConfig<*, *>.moveSelector(
     name: String,
@@ -136,7 +158,8 @@ private fun MessageMenuConfig<*, *>.moveSelector(
 
         +modalButton(
             name,
-            label = "$move",
+            label = "$move / $max",
+            emoji = Emojis.PUZZLE_PIECE,
             component = localizedLabel(
                 intInput(
                     "move",
@@ -158,11 +181,13 @@ private fun MessageMenuConfig<*, *>.moveSelector(
     }
 }
 
-
 interface GameMenuLocalization : LocalizationFile {
     @Localize
     fun errorMatchNotFound(@Locale locale: DiscordLocale, @LocalizationParameter id: Uuid): String
 
     @Localize
-    fun labelMoves(@Locale locale: DiscordLocale): String
+    fun timeControl(@Locale locale: DiscordLocale, @LocalizationParameter control: TimeControl): String
+
+    @Localize
+    fun finishReason(@Locale locale: DiscordLocale, @LocalizationParameter reason: GameFinishReason): String
 }

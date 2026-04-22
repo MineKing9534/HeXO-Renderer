@@ -35,7 +35,7 @@ data class ColorScheme(
             highlightedCellBorder = Color(0xec6fb1),
             focussedCellBorder = Color.WHITE,
             emptyCell = Color(0, true),
-            playerX = Color(0xfbbf24),
+            playerX = Color(0xfbc139),
             playerO = Color(0x38bdf8)
         )
     }
