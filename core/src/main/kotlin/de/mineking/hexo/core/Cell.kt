@@ -5,7 +5,7 @@ enum class Player {
     O,
 }
 
-class Cell(
+data class Cell(
     var owner: Player? = null,
     var highlighted: Boolean = false,
     var focussed: Boolean = false,

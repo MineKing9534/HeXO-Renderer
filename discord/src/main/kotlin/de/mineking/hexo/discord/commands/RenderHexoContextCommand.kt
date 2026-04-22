@@ -5,6 +5,7 @@ import de.mineking.discord.localization.Locale
 import de.mineking.discord.localization.LocalizationFile
 import de.mineking.discord.localization.Localize
 import de.mineking.hexo.core.Board
+import de.mineking.hexo.core.fromRectilinearNotation
 import de.mineking.hexo.discord.finalErrorResponse
 import net.dv8tion.jda.api.interactions.DiscordLocale
 import net.dv8tion.jda.api.interactions.IntegrationType

@@ -46,6 +46,7 @@ fun Board.render(
     gap: Double,
     borderThickness: Float,
     padding: Int,
+    focusWinningRows: Boolean = true,
     colorScheme: ColorScheme = ColorScheme.Default,
 ): BufferedImage {
     require(cells.isNotEmpty())
@@ -60,8 +61,12 @@ fun Board.render(
         padding,
     )
 
+    val winningCells =
+        if (focusWinningRows) findWinningRows().flatten().map { it.first }.toSet()
+        else emptyList()
+
     for (position in boundingBox.findVisibleCoordinates(size)) {
-        val cell = cells[position] ?: Cell()
+        val cell = cells[position]?.let { it.copy(focussed = it.focussed || position in winningCells) } ?: Cell()
         renderer.drawCell(position, cell)
     }
 

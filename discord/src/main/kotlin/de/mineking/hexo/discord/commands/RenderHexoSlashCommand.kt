@@ -12,6 +12,7 @@ import de.mineking.discord.ui.builder.components.message.container
 import de.mineking.discord.ui.builder.components.message.mediaGallery
 import de.mineking.discord.ui.builder.components.message.separator
 import de.mineking.hexo.core.Board
+import de.mineking.hexo.core.fromRectilinearNotation
 import de.mineking.hexo.discord.finalErrorResponse
 import de.mineking.hexo.discord.render
 import net.dv8tion.jda.api.components.mediagallery.MediaGalleryItem
