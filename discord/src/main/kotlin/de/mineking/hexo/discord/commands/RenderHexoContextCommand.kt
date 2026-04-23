@@ -25,7 +25,7 @@ fun renderHexoContextCommand() = localizedMessageCommand<RenderHexoContextComman
     }
 }
 
-private val regex = "(?s)`(?:``)?.*?\\n(.*?)`(?:``)?".toRegex()
+private val regex = "(?s)```.*?\\n(.*?)```".toRegex()
 
 context(main: HeXODiscordBot)
 private suspend fun String.findHexoNotations() = try {
