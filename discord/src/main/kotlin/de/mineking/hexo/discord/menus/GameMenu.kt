@@ -186,6 +186,7 @@ private fun MessageMenuConfig<*, *>.moveSelector(
 
     return actionRow {
         +button("$name-first", label = ZERO_WIDTH_SPACE, emoji = Emojis.REWIND) {
+            deferEdit().queue()
             move = 1
         }.disabledIf(move == 1)
 
@@ -193,7 +194,10 @@ private fun MessageMenuConfig<*, *>.moveSelector(
             "$name-back",
             label = ZERO_WIDTH_SPACE,
             emoji = Emojis.ARROW_LEFT,
-        ) { move-- }.disabledIf(move <= 1)
+        ) {
+            deferEdit().queue()
+            move--
+        }.disabledIf(move <= 1)
 
         +modalButton(
             name,
@@ -206,15 +210,22 @@ private fun MessageMenuConfig<*, *>.moveSelector(
                     placeholder = "$move",
                 ).unbox().map { it ?: terminateRender() },
             ),
-        ) { move = it.coerceIn(1, max) }
+        ) {
+            deferEdit().queue()
+            move = it.coerceIn(1, max)
+        }
 
         +button(
             "$name-next",
             label = ZERO_WIDTH_SPACE,
             emoji = Emojis.ARROW_RIGHT,
-        ) { move++ }.disabledIf(move >= max)
+        ) {
+            deferEdit().queue()
+            move++
+        }.disabledIf(move >= max)
 
         +button("$name-last", label = ZERO_WIDTH_SPACE, emoji = Emojis.FAST_FORWARD) {
+            deferEdit().queue()
             move = parameter()
         }.disabledIf(move == max).withParameter(max)
     }
