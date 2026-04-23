@@ -41,7 +41,7 @@ data class ColorScheme(
     }
 }
 
-fun Board.render(
+fun Board.renderAsImage(
     layoutRadius: Double,
     gap: Double,
     borderThickness: Float,

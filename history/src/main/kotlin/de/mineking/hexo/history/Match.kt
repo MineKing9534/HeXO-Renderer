@@ -102,8 +102,8 @@ data class Match(
     )
     val playerMappings = playerIdMappings.entries.associate { (id, player) -> player to players.first { it.playerId == id } }
 
-    fun asBoard(lastMove: Int) = Board().apply {
-        repeat(lastMove) {
+    fun asBoard(lastMove: Int = moveCount) = Board().apply {
+        repeat(lastMove.coerceIn(0, moveCount)) {
             val move = moves[it]
 
             val cell = this[move.q, move.r]
