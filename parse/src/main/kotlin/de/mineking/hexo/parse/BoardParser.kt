@@ -35,6 +35,7 @@ object RectilinearNotationParser : BoardParser {
             cursor.step()
         }
 
+        require(board.cells.values.any { it.owner != null })
         return board
     }
 
