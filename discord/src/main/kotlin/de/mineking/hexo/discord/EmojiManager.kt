@@ -31,10 +31,14 @@ class EmojiManager(val jda: JDA) {
                 val currentImage = emoji?.image?.downloadAsIcon()?.await()
                 val expectedImage = loadIcon(type)
 
-                if (currentImage?.encoding == expectedImage.encoding) emoji
-                else {
-                    if (emoji == null) logger.info { "Creating missing emoji: ${type.discordName}" }
-                    else logger.info { "Overwriting existing emoji: ${type.discordName}" }
+                if (currentImage?.encoding == expectedImage.encoding) {
+                    emoji
+                } else {
+                    if (emoji == null) {
+                        logger.info { "Creating missing emoji: ${type.discordName}" }
+                    } else {
+                        logger.info { "Overwriting existing emoji: ${type.discordName}" }
+                    }
 
                     val createAction = jda.createApplicationEmoji(type.discordName, expectedImage)
                     val action = emoji?.delete()?.flatMap { createAction } ?: createAction

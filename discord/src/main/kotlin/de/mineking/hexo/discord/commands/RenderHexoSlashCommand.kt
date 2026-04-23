@@ -53,7 +53,7 @@ fun createHexoRenderResponse(boards: List<Pair<String, Board>>) = MessageCreateB
                     +separator(spacing = Separator.Spacing.LARGE)
                 }
             }
-        }.render()
+        }.render(),
     )
     .build()
 

@@ -1,3 +1,5 @@
+@file:Suppress("MatchingDeclarationName")
+
 package de.mineking.hexo.render
 
 import de.mineking.hexo.core.Board
@@ -36,7 +38,7 @@ data class ColorScheme(
             focussedCellBorder = Color.WHITE,
             emptyCell = Color(0, true),
             playerX = Color(0xfbc139),
-            playerO = Color(0x38bdf8)
+            playerO = Color(0x38bdf8),
         )
     }
 }
@@ -62,8 +64,11 @@ fun Board.renderAsImage(
     )
 
     val winningCells =
-        if (focusWinningRows) findWinningRows().flatten().map { it.first }.toSet()
-        else emptyList()
+        if (focusWinningRows) {
+            findWinningRows().flatten().map { it.first }.toSet()
+        } else {
+            emptyList()
+        }
 
     for (position in boundingBox.findVisibleCoordinates(size)) {
         val cell = cells[position]?.let { it.copy(focussed = it.focussed || position in winningCells) } ?: Cell()

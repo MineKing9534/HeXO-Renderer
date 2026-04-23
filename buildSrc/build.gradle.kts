@@ -8,4 +8,5 @@ repositories {
 
 dependencies {
     implementation(libs.build.gradle.plugin)
+    implementation(libs.detekt.gradle.plugin)
 }

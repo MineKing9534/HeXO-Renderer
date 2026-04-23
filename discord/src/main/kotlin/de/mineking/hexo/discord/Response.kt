@@ -46,8 +46,11 @@ enum class MessageColor(val color: Color) {
 
 val Interaction.effectiveLocale get() = if (isFromGuild) guildLocale else userLocale
 
-fun ICommandContext<*>.finalErrorResponse(content: String, component: SectionAccessoryComponent? = null): Nothing = finalResponse(MessageColor.Error, content, component)
-fun ICommandContext<*>.finalSuccessResponse(content: String, component: SectionAccessoryComponent? = null): Nothing = finalResponse(MessageColor.Success, content, component)
+fun ICommandContext<*>.finalErrorResponse(content: String, component: SectionAccessoryComponent? = null): Nothing =
+    finalResponse(MessageColor.Error, content, component)
+
+fun ICommandContext<*>.finalSuccessResponse(content: String, component: SectionAccessoryComponent? = null): Nothing =
+    finalResponse(MessageColor.Success, content, component)
 fun ICommandContext<*>.finalResponse(color: MessageColor, content: String, component: SectionAccessoryComponent? = null): Nothing {
     respond(color, content, component)
     terminateCommand()
@@ -56,10 +59,14 @@ fun ICommandContext<*>.finalResponse(color: MessageColor, content: String, compo
 fun IReplyCallback.respond(color: MessageColor, content: String, component: SectionAccessoryComponent? = null) {
     val rendered = render(color, content, component)
 
-    if (isAcknowledged) hook.editOriginalComponents(rendered).setReplace(true).queue()
-    else {
-        if (this is IMessageEditCallback) editComponents(rendered).setReplace(true).queue()
-        else replyComponents(rendered).setEphemeral(true).queue()
+    if (isAcknowledged) {
+        hook.editOriginalComponents(rendered).setReplace(true).queue()
+    } else {
+        if (this is IMessageEditCallback) {
+            editComponents(rendered).setReplace(true).queue()
+        } else {
+            replyComponents(rendered).setEphemeral(true).queue()
+        }
     }
 }
 
@@ -86,7 +93,7 @@ interface ErrorHandlingLocalization : LocalizationFile {
 
 fun CommandManager.installErrorHandling() {
     execute(CommandExecutor.DEFAULT.handleException<Exception> { _, e ->
-        //This can happen if the initial render of a menu terminates the render process
+        // This can happen if the initial render of a menu terminates the render process
         if (e is RenderTermination) return@handleException
 
         logger.error(e) { "Unexpected error during command execution" }
@@ -113,12 +120,12 @@ fun UIManager.installErrorHandling() {
                 .setComponents(
                     render(
                         MessageColor.Error,
-                        main.errorHandlingLocalization.responseErrorMenuMessageRender(locale)
-                    )
+                        main.errorHandlingLocalization.responseErrorMenuMessageRender(locale),
+                    ),
                 )
                 .useComponentsV2()
                 .build()
-        }
+        },
     ))
 
     handleModalMenu(DefaultModalHandler.handleException<Exception>(
@@ -130,6 +137,6 @@ fun UIManager.installErrorHandling() {
             logger.error(e) { "Unexpected error in modal handler" }
             respond(MessageColor.Error, main.errorHandlingLocalization.responseErrorMenuModalHandler(locale))
         },
-        { _, e -> throw e }
+        { _, e -> throw e },
     ))
 }

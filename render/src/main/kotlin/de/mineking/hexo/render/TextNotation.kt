@@ -1,3 +1,5 @@
+@file:Suppress("MatchingDeclarationName")
+
 package de.mineking.hexo.render
 
 import de.mineking.hexo.core.Board
@@ -7,9 +9,9 @@ import kotlin.math.max
 import kotlin.math.min
 
 enum class RectilinearNotationType(
-   val columnSeparator: String,
-   val rowSeparator: String,
-   val emptyCellChar: String,
+    val columnSeparator: String,
+    val rowSeparator: String,
+    val emptyCellChar: String,
 ) {
     Compact("", "/", "."),
     Multiline(" ", "\n", " "),
@@ -18,15 +20,22 @@ enum class RectilinearNotationType(
 fun Board.renderAsText(type: RectilinearNotationType) = buildString {
     val lines = cells.entries
         .filter { (_, cell) -> cell.owner != null }
-        .groupBy { (coordinate, _ ) -> coordinate.r }
-        .mapValues { (_, cells) -> cells.associate { (coordinate, cell) -> coordinate.q to cell } to cells.boardSize { (coordinate, _) -> coordinate } }
+        .groupBy { (coordinate, _) -> coordinate.r }
+        .mapValues { (_, cells) ->
+            val line = cells.associate { (coordinate, cell) -> coordinate.q to cell }
+            val size = cells.boardSize { (coordinate, _) -> coordinate }
+            line to size
+        }
 
     val minQ = lines.values.minOf { (_, size) -> size.minQ }
     val minR = lines.keys.min()
     val maxR = lines.keys.max()
 
     (minR..maxR).forEachIndexed { i, r ->
-        val (line, size) = lines[r] ?: run { append(type.rowSeparator); return@forEachIndexed }
+        val (line, size) = lines[r] ?: run {
+            append(type.rowSeparator)
+            return@forEachIndexed
+        }
 
         append(type.columnSeparator.repeat(i))
         for (q in min(minQ, size.minQ)..size.maxQ) {

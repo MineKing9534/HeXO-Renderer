@@ -203,8 +203,8 @@ private fun MessageMenuConfig<*, *>.moveSelector(
                 intInput(
                     "move",
                     value = move,
-                    placeholder = "$move"
-                ).unbox().map { it ?: terminateRender() }
+                    placeholder = "$move",
+                ).unbox().map { it ?: terminateRender() },
             ),
         ) { move = it.coerceIn(1, max) }
 

@@ -1,0 +1,91 @@
+style:
+  active: true
+
+  MaxLineLength:
+    active: false
+  MagicNumber:
+    active: false
+  DestructuringDeclarationWithTooManyEntries:
+    active: false
+  LoopWithTooManyJumpStatements:
+    maxJumpCount: 2
+  ReturnCount:
+    max: 5
+
+naming:
+  FunctionNaming:
+    active: true
+    ignoreAnnotated: [ "Composable" ]
+
+complexity:
+  LongParameterList:
+    active: false
+  TooManyFunctions:
+    active: false
+  CyclomaticComplexMethod:
+    allowedComplexity: 16
+    active: true
+
+potential-bugs:
+  active: true
+
+comments:
+  active: true
+
+  EndOfSentenceFormat:
+    active: true
+  OutdatedDocumentation:
+    active: true
+
+performance:
+  active: true
+
+ktlint:
+  active: true
+  autoCorrect: true
+
+  MaximumLineLength:
+    active: true
+    maxLineLength: 150
+  Wrapping:
+    active: false
+  PropertyWrapping:
+    maxLineLength: 140
+  ParameterListWrapping:
+    active: true
+    maxLineLength: 140
+  ParameterWrapping:
+    active: true
+    maxLineLength: 140
+  ArgumentListWrapping:
+    active: false
+  TrailingCommaOnDeclarationSite:
+    active: true
+  NoBlankLinesInChainedMethodCalls:
+    active: false
+
+  NoWildcardImports:
+    active: true
+    packagesToUseImportOnDemandProperty: ''
+  ImportOrdering:
+    active: true
+  NoUnusedImports:
+    active: true
+
+  BlankLineBetweenWhenConditions:
+    active: false
+  FunctionSignature:
+    active: false
+  ClassSignature:
+    active: false
+  BinaryExpressionWrapping:
+    active: false
+  FunctionExpressionBody:
+    active: false
+  FunctionLiteral:
+    active: false
+
+  AnnotationOnSeparateLine:
+    active: false
+  SpacingBetweenDeclarationsWithAnnotations:
+    active: false

@@ -65,15 +65,19 @@ fun Board.Companion.fromRectilinearNotation(input: String): Board {
     input.forEachIndexed { offset, ch ->
         when (ch) {
             ' ' -> return@forEachIndexed
-            '/', '\n' -> { cursor.newRow(); return@forEachIndexed }
-            'x' -> cursor.set(Player.X)
-            'X' -> { cursor.set(Player.X); cursor.highlight() }
-            'o' -> cursor.set(Player.O)
-            'O' -> { cursor.set(Player.O); cursor.highlight() }
-            '.' -> {}
+            '/', '\n' -> {
+                cursor.newRow()
+                return@forEachIndexed
+            }
+            'x', 'X' -> cursor.set(Player.X)
+            'o', 'O' -> cursor.set(Player.O)
+            '.', '!' -> {}
             '-' -> cursor.step()
-            '!' -> cursor.highlight()
             else -> throw IllegalArgumentException("Unexpected character '$ch' at offset $offset")
+        }
+
+        if (ch.isUpperCase() || ch == '!') {
+            cursor.highlight()
         }
 
         cursor.step()
