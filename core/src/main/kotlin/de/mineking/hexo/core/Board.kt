@@ -71,6 +71,7 @@ fun Board.Companion.fromRectilinearNotation(input: String): Board {
             'o' -> cursor.set(Player.O)
             'O' -> { cursor.set(Player.O); cursor.highlight() }
             '.' -> {}
+            '-' -> cursor.step()
             '!' -> cursor.highlight()
             else -> throw IllegalArgumentException("Unexpected character '$ch' at offset $offset")
         }
