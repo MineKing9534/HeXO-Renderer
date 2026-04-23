@@ -26,6 +26,9 @@ class Board {
         cells[coordinate] = cell
     }
 
+    override fun hashCode() = cells.hashCode()
+    override fun equals(other: Any?) = other is Board && cells == other.cells
+
     fun findWinningRows(): List<List<Pair<CellCoordinate, Cell>>> {
         val rows = mutableListOf<List<Pair<CellCoordinate, Cell>>>()
 
@@ -55,55 +58,5 @@ class Board {
         }
 
         return rows
-    }
-}
-
-fun Board.Companion.fromRectilinearNotation(input: String): Board {
-    val board = Board()
-    val cursor = Cursor(board)
-
-    input.forEachIndexed { offset, ch ->
-        when (ch) {
-            ' ' -> return@forEachIndexed
-            '/', '\n' -> {
-                cursor.newRow()
-                return@forEachIndexed
-            }
-            'x', 'X' -> cursor.set(Player.X)
-            'o', 'O' -> cursor.set(Player.O)
-            '.', '!' -> {}
-            '-' -> cursor.step()
-            else -> throw IllegalArgumentException("Unexpected character '$ch' at offset $offset")
-        }
-
-        if (ch.isUpperCase() || ch == '!') {
-            cursor.highlight()
-        }
-
-        cursor.step()
-    }
-
-    return board
-}
-
-private class Cursor(private val board: Board) {
-    private var q = 0
-    private var r = 0
-
-    fun set(owner: Player) {
-        board[q, r].owner = owner
-    }
-
-    fun highlight() {
-        board[q, r].highlighted = true
-    }
-
-    fun step() {
-        q++
-    }
-
-    fun newRow() {
-        r++
-        q = 0
     }
 }

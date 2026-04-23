@@ -12,7 +12,7 @@ import de.mineking.discord.ui.builder.components.message.container
 import de.mineking.discord.ui.builder.components.message.mediaGallery
 import de.mineking.discord.ui.builder.components.message.separator
 import de.mineking.hexo.core.Board
-import de.mineking.hexo.core.fromRectilinearNotation
+import de.mineking.hexo.discord.HeXODiscordBot
 import de.mineking.hexo.discord.finalErrorResponse
 import de.mineking.hexo.discord.render
 import net.dv8tion.jda.api.components.mediagallery.MediaGalleryItem
@@ -22,6 +22,7 @@ import net.dv8tion.jda.api.interactions.IntegrationType
 import net.dv8tion.jda.api.interactions.InteractionContextType
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder
 
+context(main: HeXODiscordBot)
 fun renderHexoSlashCommand() = localizedSlashCommand<RenderHexoSlashCommandLocalization>("render") { localization ->
     integrationTypes(IntegrationType.ALL)
     interactionContextTypes(InteractionContextType.ALL)
@@ -31,7 +32,7 @@ fun renderHexoSlashCommand() = localizedSlashCommand<RenderHexoSlashCommandLocal
     execute {
         val input = input()
         val board = try {
-            Board.fromRectilinearNotation(input)
+            main.rectilinearParser.parse(input)
         } catch (e: IllegalArgumentException) {
             finalErrorResponse(localization.responseError(userLocale, input, e.message))
         }
@@ -40,14 +41,15 @@ fun renderHexoSlashCommand() = localizedSlashCommand<RenderHexoSlashCommandLocal
     }
 }
 
-fun createHexoRenderResponse(boards: List<Pair<String, Board>>) = MessageCreateBuilder()
+context(main: HeXODiscordBot)
+suspend fun createHexoRenderResponse(boards: List<Pair<String, Board>>) = MessageCreateBuilder()
     .setComponents(
         container {
             boards.forEachIndexed { index, (input, board) ->
                 +buildTextDisplay {
                     +codeBlock("hexo", input)
                 }
-                +mediaGallery(MediaGalleryItem.fromFile(board.render(index)))
+                +mediaGallery(MediaGalleryItem.fromFile(main.boardRenderer.run { board.render(index) }))
 
                 if (index < boards.lastIndex) {
                     +separator(spacing = Separator.Spacing.LARGE)

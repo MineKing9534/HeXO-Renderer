@@ -17,7 +17,11 @@ enum class RectilinearNotationType(
     Multiline(" ", "\n", " "),
 }
 
-fun Board.renderAsText(type: RectilinearNotationType) = buildString {
+class RectilinearNotationBoardRenderer(val type: RectilinearNotationType) : BoardRenderer<String> {
+    override suspend fun Board.render() = renderRectilinearNotation(type)
+}
+
+fun Board.renderRectilinearNotation(type: RectilinearNotationType) = buildString {
     val lines = cells.entries
         .filter { (_, cell) -> cell.owner != null }
         .groupBy { (coordinate, _) -> coordinate.r }
@@ -40,10 +44,10 @@ fun Board.renderAsText(type: RectilinearNotationType) = buildString {
         append(type.columnSeparator.repeat(i))
         for (q in min(minQ, size.minQ)..size.maxQ) {
             append(when (line[q]?.owner) {
-                Player.X -> "x"
-                Player.O -> "o"
-                null -> type.emptyCellChar
-            })
+                       Player.X -> "x"
+                       Player.O -> "o"
+                       null -> type.emptyCellChar
+                   })
             if (q < size.maxQ) append(type.columnSeparator)
         }
 

@@ -52,7 +52,7 @@ import de.mineking.hexo.history.MatchRepository
 import de.mineking.hexo.history.TimeControl
 import de.mineking.hexo.history.isGuest
 import de.mineking.hexo.render.RectilinearNotationType
-import de.mineking.hexo.render.renderAsText
+import de.mineking.hexo.render.renderRectilinearNotation
 import dev.freya02.jda.emojis.unicode.Emojis
 import net.dv8tion.jda.api.EmbedBuilder.ZERO_WIDTH_SPACE
 import net.dv8tion.jda.api.components.actionrow.ActionRow
@@ -135,7 +135,7 @@ fun UIManager.gameMenu(matchRepository: MatchRepository) = registerLocalizedMenu
             }
 
             +separator(spacing = Separator.Spacing.LARGE)
-            +mediaGallery(MediaGalleryItem.fromFile(board.render(0)))
+            +mediaGallery(MediaGalleryItem.fromFile(main.run { board.render() }))
             +separator(spacing = Separator.Spacing.LARGE)
 
             match to board
@@ -156,7 +156,7 @@ private fun additionalActions(matchData: Lazy<MatchData?>): MessageComponent<Act
             hook.editOriginalComponents(container {
                 RectilinearNotationType.entries.forEach {
                     +buildTextDisplay {
-                        +codeBlock("hexo", board.renderAsText(it))
+                        +codeBlock("hexo", board.renderRectilinearNotation(it))
                     }
                 }
             }.render()).useComponentsV2().queue()

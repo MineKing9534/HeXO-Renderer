@@ -9,6 +9,8 @@ plugins {
 
 dependencies {
     implementation(projects.core)
+
+    implementation(projects.parse)
     implementation(projects.render)
 
     implementation(projects.history)

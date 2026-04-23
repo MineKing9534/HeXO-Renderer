@@ -13,6 +13,10 @@ import de.mineking.hexo.discord.menus.GameMenuParameter
 import de.mineking.hexo.discord.menus.gameMenu
 import de.mineking.hexo.history.MatchRepository
 import de.mineking.hexo.history.cached
+import de.mineking.hexo.parse.RectilinearNotationParser
+import de.mineking.hexo.parse.cached
+import de.mineking.hexo.render.ImageBoardRenderer
+import de.mineking.hexo.render.cached
 import io.github.oshai.kotlinlogging.KotlinLogging
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.OnlineStatus
@@ -40,6 +44,9 @@ class HeXODiscordBot(token: String) {
         .build()
 
     val emojiManager = EmojiManager(jda)
+
+    val rectilinearParser = RectilinearNotationParser.cached()
+    val boardRenderer = ImageBoardRenderer.cached()
 
     lateinit var errorHandlingLocalization: ErrorHandlingLocalization private set
     lateinit var gameMenu: MessageMenu<GameMenuParameter, *> private set

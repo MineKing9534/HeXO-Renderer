@@ -1,6 +1,7 @@
 package de.mineking.hexo.history
 
-import com.mayakapps.kache.InMemoryKache
+import com.github.benmanes.caffeine.cache.Caffeine
+import com.sksamuel.aedile.core.asCache
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.HttpClientEngine
@@ -19,9 +20,9 @@ interface MatchRepository {
     suspend fun getGame(id: Uuid): Match?
 }
 
-fun MatchRepository.cached(size: Long = 16): MatchRepository = when (this) {
+fun MatchRepository.cached(cacheSize: Long = 16): MatchRepository = when (this) {
     is CachingMatchRepository -> this
-    else -> CachingMatchRepository(this, size)
+    else -> CachingMatchRepository(this, cacheSize)
 }
 
 fun MatchRepository(): MatchRepository = MatchRepositoryImpl(CIO.create(), "https://hexo.did.science/api")
@@ -47,8 +48,8 @@ private class MatchRepositoryImpl(engine: HttpClientEngine, private val host: St
     }
 }
 
-private class CachingMatchRepository(val delegate: MatchRepository, size: Long) : MatchRepository {
-    private val kache = InMemoryKache<Uuid, Match>(size)
+private class CachingMatchRepository(val delegate: MatchRepository, cacheSize: Long) : MatchRepository {
+    private val cache = Caffeine.newBuilder().maximumSize(cacheSize).asCache<Uuid, Match>()
 
-    override suspend fun getGame(id: Uuid) = kache.getOrPut(id) { delegate.getGame(it) }
+    override suspend fun getGame(id: Uuid) = cache.getOrNull(id) { delegate.getGame(it) }
 }

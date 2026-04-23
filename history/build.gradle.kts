@@ -8,5 +8,5 @@ dependencies {
     implementation(libs.kotlin.serialization.json)
 
     implementation(libs.bundles.ktor.client)
-    implementation(libs.kache)
+    implementation(libs.cache)
 }
