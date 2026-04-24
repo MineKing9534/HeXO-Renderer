@@ -3,8 +3,9 @@ kotlin = "2.3.20"
 kotlin-serialization = "1.11.0"
 kotlin-coroutines = "1.10.2"
 
-detekt = "2.0.0-alpha.2"
 shadow = "9.2.2"
+detekt = "2.0.0-alpha.2"
+testlogger = "4.0.0"
 
 cache = "3.0.3"
 
@@ -22,6 +23,7 @@ logback = "1.5.19"
 [libraries]
 build-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 detekt-gradle-plugin = { module = "dev.detekt:dev.detekt.gradle.plugin", version.ref = "detekt" }
+testlogger-gradle-plugin = { module = "com.adarshr.test-logger:com.adarshr.test-logger.gradle.plugin", version.ref = "testlogger" }
 
 kotlin-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlin-serialization" }
 kotlin-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlin-coroutines" }
