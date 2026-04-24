@@ -9,6 +9,7 @@ import de.mineking.discord.ui.builder.components.buildTextDisplay
 import de.mineking.discord.ui.builder.components.message.separator
 import de.mineking.discord.ui.builder.components.textDisplay
 import de.mineking.hexo.discord.HeXODiscordBot
+import de.mineking.hexo.discord.createHexoRenderResponse
 import de.mineking.hexo.discord.finalErrorResponse
 import de.mineking.hexo.discord.renderAsComponent
 import net.dv8tion.jda.api.components.separator.Separator
