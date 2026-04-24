@@ -1,4 +1,4 @@
-command.render:
+command.hexo:
   description: Renders the given Rectilinear HeXO notation
   options:
     input.description: The Rectilinear HeXO notation to render

@@ -17,7 +17,7 @@ import net.dv8tion.jda.api.interactions.InteractionContextType
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder
 
 context(main: HeXODiscordBot)
-fun renderHexoSlashCommand() = localizedSlashCommand<RenderHexoSlashCommandLocalization>("render") { localization ->
+fun renderHexoSlashCommand() = localizedSlashCommand<RenderHexoSlashCommandLocalization>("hexo") { localization ->
     integrationTypes(IntegrationType.ALL)
     interactionContextTypes(InteractionContextType.ALL)
 
