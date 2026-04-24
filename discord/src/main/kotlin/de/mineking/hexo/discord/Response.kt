@@ -37,7 +37,7 @@ private object DummyConfig : MenuConfig<Nothing, Nothing> {
     override val phase get() = error("")
 }
 
-fun <C : Component> IComponent<C>.render() = render(DummyConfig, IdGeneratorImpl(""))
+fun <C : Component> IComponent<C>.renderAsComponent() = render(DummyConfig, IdGeneratorImpl(""))
 
 enum class MessageColor(val color: Color) {
     Success(Color(0x14C90E)),
@@ -57,7 +57,7 @@ fun ICommandContext<*>.finalResponse(color: MessageColor, content: String, compo
 }
 
 fun IReplyCallback.respond(color: MessageColor, content: String, component: SectionAccessoryComponent? = null) {
-    val rendered = render(color, content, component)
+    val rendered = renderAsComponent(color, content, component)
 
     if (isAcknowledged) {
         hook.editOriginalComponents(rendered).setReplace(true).queue()
@@ -70,7 +70,7 @@ fun IReplyCallback.respond(color: MessageColor, content: String, component: Sect
     }
 }
 
-fun render(color: MessageColor, content: String, component: SectionAccessoryComponent? = null): Container {
+fun renderAsComponent(color: MessageColor, content: String, component: SectionAccessoryComponent? = null): Container {
     val text = TextDisplay.of(content)
     val content = if (component != null) Section.of(component, text) else text
 
@@ -118,7 +118,7 @@ fun UIManager.installErrorHandling() {
             MessageEditBuilder()
                 .setReplace(true)
                 .setComponents(
-                    render(
+                    renderAsComponent(
                         MessageColor.Error,
                         main.errorHandlingLocalization.responseErrorMenuMessageRender(locale),
                     ),

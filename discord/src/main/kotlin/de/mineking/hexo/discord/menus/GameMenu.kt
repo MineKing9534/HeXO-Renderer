@@ -15,7 +15,6 @@ import de.mineking.discord.ui.builder.components.localizedTextDisplay
 import de.mineking.discord.ui.builder.components.message.actionRow
 import de.mineking.discord.ui.builder.components.message.button
 import de.mineking.discord.ui.builder.components.message.container
-import de.mineking.discord.ui.builder.components.message.mediaGallery
 import de.mineking.discord.ui.builder.components.message.modalButton
 import de.mineking.discord.ui.builder.components.message.separator
 import de.mineking.discord.ui.builder.components.modal.intInput
@@ -44,7 +43,7 @@ import de.mineking.hexo.discord.EmojiType
 import de.mineking.hexo.discord.MessageColor
 import de.mineking.hexo.discord.effectiveLocale
 import de.mineking.hexo.discord.main
-import de.mineking.hexo.discord.render
+import de.mineking.hexo.discord.renderAsComponent
 import de.mineking.hexo.discord.respond
 import de.mineking.hexo.history.GameFinishReason
 import de.mineking.hexo.history.Match
@@ -56,7 +55,6 @@ import de.mineking.hexo.render.renderRectilinearNotation
 import dev.freya02.jda.emojis.unicode.Emojis
 import net.dv8tion.jda.api.EmbedBuilder.ZERO_WIDTH_SPACE
 import net.dv8tion.jda.api.components.actionrow.ActionRow
-import net.dv8tion.jda.api.components.mediagallery.MediaGalleryItem
 import net.dv8tion.jda.api.components.separator.Separator
 import net.dv8tion.jda.api.interactions.DiscordLocale
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback
@@ -135,7 +133,7 @@ fun UIManager.gameMenu(matchRepository: MatchRepository) = registerLocalizedMenu
             }
 
             +separator(spacing = Separator.Spacing.LARGE)
-            +mediaGallery(MediaGalleryItem.fromFile(main.run { board.render() }))
+            +main.run { board.renderAsComponent() }
             +separator(spacing = Separator.Spacing.LARGE)
 
             match to board
@@ -159,7 +157,7 @@ private fun additionalActions(matchData: Lazy<MatchData?>): MessageComponent<Act
                         +codeBlock("hexo", board.renderRectilinearNotation(it))
                     }
                 }
-            }.render()).useComponentsV2().queue()
+            }.renderAsComponent()).useComponentsV2().queue()
         }
     }
 }

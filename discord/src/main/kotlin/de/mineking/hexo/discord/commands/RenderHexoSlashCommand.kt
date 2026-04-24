@@ -6,17 +6,11 @@ import de.mineking.discord.localization.Locale
 import de.mineking.discord.localization.LocalizationFile
 import de.mineking.discord.localization.LocalizationParameter
 import de.mineking.discord.localization.Localize
-import de.mineking.discord.ui.builder.codeBlock
-import de.mineking.discord.ui.builder.components.buildTextDisplay
+import de.mineking.discord.ui.builder.components.message.ContainerBuilder
 import de.mineking.discord.ui.builder.components.message.container
-import de.mineking.discord.ui.builder.components.message.mediaGallery
-import de.mineking.discord.ui.builder.components.message.separator
-import de.mineking.hexo.core.Board
 import de.mineking.hexo.discord.HeXODiscordBot
 import de.mineking.hexo.discord.finalErrorResponse
-import de.mineking.hexo.discord.render
-import net.dv8tion.jda.api.components.mediagallery.MediaGalleryItem
-import net.dv8tion.jda.api.components.separator.Separator
+import de.mineking.hexo.discord.renderAsComponent
 import net.dv8tion.jda.api.interactions.DiscordLocale
 import net.dv8tion.jda.api.interactions.IntegrationType
 import net.dv8tion.jda.api.interactions.InteractionContextType
@@ -37,25 +31,22 @@ fun renderHexoSlashCommand() = localizedSlashCommand<RenderHexoSlashCommandLocal
             finalErrorResponse(localization.responseError(userLocale, input, e.message))
         }
 
-        reply(createHexoRenderResponse(listOf(input to board))).queue()
+        reply(createHexoRenderResponse(listOf(board)) { _, board ->
+            +main.boardRenderer.run { board.renderAsComponent() }
+        }).queue()
     }
 }
 
-context(main: HeXODiscordBot)
-suspend fun createHexoRenderResponse(boards: List<Pair<String, Board>>) = MessageCreateBuilder()
+inline fun <T> createHexoRenderResponse(
+    boards: List<T>,
+    render: ContainerBuilder.(Int, T) -> Unit,
+) = MessageCreateBuilder()
     .setComponents(
         container {
-            boards.forEachIndexed { index, (input, board) ->
-                +buildTextDisplay {
-                    +codeBlock("hexo", input)
-                }
-                +mediaGallery(MediaGalleryItem.fromFile(main.boardRenderer.run { board.render(index) }))
-
-                if (index < boards.lastIndex) {
-                    +separator(spacing = Separator.Spacing.LARGE)
-                }
+            boards.forEachIndexed { index, item ->
+                render(index, item)
             }
-        }.render(),
+        }.renderAsComponent(),
     )
     .build()
 
