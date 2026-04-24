@@ -3,4 +3,7 @@ dependencies {
 
     implementation(libs.kotlin.coroutines.core)
     implementation(libs.cache)
+
+    testImplementation(projects.parse)
+    testImplementation(libs.kotlin.coroutines.test)
 }

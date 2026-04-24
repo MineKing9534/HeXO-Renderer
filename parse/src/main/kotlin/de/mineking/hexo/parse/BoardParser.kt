@@ -14,25 +14,36 @@ object RectilinearNotationParser : BoardParser {
         val board = Board()
         val cursor = Cursor(board)
 
+        val buffer = StringBuilder()
         notation.forEachIndexed { offset, ch ->
-            when (ch) {
-                ' ' -> return@forEachIndexed
-                '/', '\n' -> {
-                    cursor.newRow()
-                    return@forEachIndexed
+            if (ch.isDigit()) {
+                buffer.append(ch)
+            } else {
+                if (buffer.isNotEmpty()) {
+                    cursor.step(buffer.toString().toInt())
+                    buffer.clear()
                 }
-                'x', 'X' -> cursor.set(Player.X)
-                'o', 'O' -> cursor.set(Player.O)
-                '.', '!' -> {}
-                '-' -> cursor.step()
-                else -> throw IllegalArgumentException("Unexpected character '$ch' at offset $offset")
-            }
 
-            if (ch.isUpperCase() || ch == '!') {
-                cursor.highlight()
-            }
+                when (ch) {
+                    ' ' -> return@forEachIndexed
+                    '/', '\n' -> {
+                        cursor.newRow()
+                        return@forEachIndexed
+                    }
 
-            cursor.step()
+                    'x', 'X' -> cursor.set(Player.X)
+                    'o', 'O' -> cursor.set(Player.O)
+                    '.', '!' -> {}
+                    '-' -> cursor.step()
+                    else -> throw IllegalArgumentException("Unexpected character '$ch' at offset $offset")
+                }
+
+                if (ch.isUpperCase() || ch == '!') {
+                    cursor.highlight()
+                }
+
+                cursor.step()
+            }
         }
 
         require(board.cells.values.any { it.owner != null })
@@ -51,8 +62,8 @@ object RectilinearNotationParser : BoardParser {
             board[q, r].highlighted = true
         }
 
-        fun step() {
-            q++
+        fun step(n: Int = 1) {
+            q += n
         }
 
         fun newRow() {

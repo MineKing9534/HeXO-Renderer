@@ -25,6 +25,7 @@ detekt-gradle-plugin = { module = "dev.detekt:dev.detekt.gradle.plugin", version
 
 kotlin-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlin-serialization" }
 kotlin-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlin-coroutines" }
+kotlin-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlin-coroutines" }
 
 cache = { module = "com.sksamuel.aedile:aedile-core", version.ref = "cache" }
 

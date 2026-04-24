@@ -84,6 +84,8 @@ ktlint:
     active: false
   FunctionLiteral:
     active: false
+  MemberNameEqualsClassName:
+    active: false
 
   AnnotationOnSeparateLine:
     active: false
