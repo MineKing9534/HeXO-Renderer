@@ -40,8 +40,9 @@ class RectilinearNotationBoardRenderer(val type: RectilinearNotationType) : Boar
 }
 
 fun Board.renderRectilinearNotation(type: RectilinearNotationType) = buildString {
+    val winningCells = findWinningRows().flatten().map { it.first }.toSet()
     val lines = cells.entries
-        .filter { (_, cell) -> cell.owner != null || cell.highlighted || cell.focussed }
+        .filter { (_, cell) -> cell.owner != null || cell.highlighted }
         .groupBy { (coordinate, _) -> coordinate.r }
         .mapValues { (_, cells) ->
             val line = cells.associate { (coordinate, cell) -> coordinate.q to cell }
@@ -61,7 +62,7 @@ fun Board.renderRectilinearNotation(type: RectilinearNotationType) = buildString
 
         append(type.columnSeparator.repeat(i))
         for (q in min(minQ, size.minQ)..size.maxQ) {
-            appendCell(line[q])
+            appendCell(line[q]?.let { it.copy(focussed = it.focussed || CellCoordinate(q, r) in winningCells) })
             if (q < size.maxQ) append(type.columnSeparator)
         }
 
@@ -70,7 +71,7 @@ fun Board.renderRectilinearNotation(type: RectilinearNotationType) = buildString
 }.let { type.run { it.postprocess() } }
 
 private fun StringBuilder.appendCell(cell: Cell?) {
-    val highlight = cell != null && (cell.focussed || cell.highlighted)
+    val highlight = cell != null && cell.highlighted
 
     append(when (cell?.owner) {
         Player.X -> if (highlight) "X" else "x"
