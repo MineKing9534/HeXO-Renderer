@@ -3,19 +3,18 @@
 package de.mineking.hexo.render
 
 import de.mineking.hexo.core.Board
+import de.mineking.hexo.core.Cell
 import de.mineking.hexo.core.CellCoordinate
 import de.mineking.hexo.core.Player
-import java.util.regex.Pattern
 import kotlin.math.max
 import kotlin.math.min
 
 enum class RectilinearNotationType(
     val columnSeparator: String,
     val rowSeparator: String,
-    val emptyCellChar: String,
 ) {
-    Compact("", "/", ".") {
-        private val regex = "${Pattern.quote(emptyCellChar)}{2,}".toPattern()
+    Compact("", "/") {
+        private val regex = "\\.{2,}".toPattern()
 
         override fun String.postprocess(): String {
             val result = StringBuilder()
@@ -30,7 +29,7 @@ enum class RectilinearNotationType(
             return result.toString()
         }
     },
-    Multiline(" ", "\n", "."),
+    Multiline(" ", "\n"),
     ;
 
     open fun String.postprocess() = this
@@ -42,7 +41,7 @@ class RectilinearNotationBoardRenderer(val type: RectilinearNotationType) : Boar
 
 fun Board.renderRectilinearNotation(type: RectilinearNotationType) = buildString {
     val lines = cells.entries
-        .filter { (_, cell) -> cell.owner != null }
+        .filter { (_, cell) -> cell.owner != null || cell.highlighted || cell.focussed }
         .groupBy { (coordinate, _) -> coordinate.r }
         .mapValues { (_, cells) ->
             val line = cells.associate { (coordinate, cell) -> coordinate.q to cell }
@@ -62,17 +61,23 @@ fun Board.renderRectilinearNotation(type: RectilinearNotationType) = buildString
 
         append(type.columnSeparator.repeat(i))
         for (q in min(minQ, size.minQ)..size.maxQ) {
-            append(when (line[q]?.owner) {
-                Player.X -> "x"
-                Player.O -> "o"
-                null -> type.emptyCellChar
-            })
+            appendCell(line[q])
             if (q < size.maxQ) append(type.columnSeparator)
         }
 
         if (r < maxR) append(type.rowSeparator)
     }
 }.let { type.run { it.postprocess() } }
+
+private fun StringBuilder.appendCell(cell: Cell?) {
+    val highlight = cell != null && (cell.focussed || cell.highlighted)
+
+    append(when (cell?.owner) {
+        Player.X -> if (highlight) "X" else "x"
+        Player.O -> if (highlight) "O" else "o"
+        null -> if (highlight) "!" else "."
+    })
+}
 
 private data class BoardSize(val minQ: Int, val maxQ: Int)
 

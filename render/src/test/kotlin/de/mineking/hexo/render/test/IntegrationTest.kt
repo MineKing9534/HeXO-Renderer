@@ -33,4 +33,23 @@ class IntegrationTest {
     fun `multiline integration test`() = runTest {
         integrationTest(RectilinearNotationType.Multiline)
     }
+
+    @Test
+    fun `compact with highlight`() = runTest {
+        val board = Board()
+        board[0, 0].apply {
+            owner = Player.X
+            highlighted = true
+        }
+        board[1, 0].highlighted = true
+        board[3, 0].owner = Player.X
+        board[0, 1].owner = Player.O
+        board[2, 1].owner = Player.O
+        board[0, 3].owner = Player.X
+
+        val rendered = board.renderRectilinearNotation(RectilinearNotationType.Compact)
+        val parsed = RectilinearNotationParser.parse(rendered)
+
+        assertEquals(board, parsed)
+    }
 }
