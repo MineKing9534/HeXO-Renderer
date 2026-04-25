@@ -80,7 +80,9 @@ private data class Turn(
 
 private fun String.parseBKETurns(): List<Turn> {
     val parts = trim().split(Regex("\\s+"))
-    require(parts.isNotEmpty() && parts.size % 3 == 0)
+    require(parts.isNotEmpty() && parts.size % 3 == 0) {
+        "BKE turns have to be in space separated blocks like this '[x|o] [A-B]<offset move 1> [A-B]<offset move 2>'"
+    }
 
     return parts.indices.step(3).map { offset ->
         val (playerChar, first, second) = parts.subList(offset, offset + 3)
@@ -100,7 +102,7 @@ private fun String.parsePlayer() = when (this) {
 }
 
 private fun String.parseRingOffset(): RingOffset {
-    require(length >= 2)
+    require(length >= 2) { "Invalid bke move '$this', has to be in format [A-B]<offset>" }
     val ring = first().also { require(it in 'A'..'Z') } - 'A' + 1
 
     val offset = drop(1).let {
@@ -108,12 +110,12 @@ private fun String.parseRingOffset(): RingOffset {
         if (parts.size == 1) {
             it.toInt()
         } else {
-            require(parts.size == 2)
+            require(parts.size == 2) { "Invalid bke move '$this', has to be in format [A-B]<offset>" }
             val (sector, offset) = parts
             sector.toInt() * ring + offset.toInt()
         }
     }
-    require(offset >= 0 && offset < 6 * ring)
+    require(offset >= 0 && offset < 6 * ring) { "Invalid offset $offset for ring $ring. Offset has to be be in 0..<${6 * ring}" }
 
     return RingOffset(ring, offset)
 }

@@ -43,7 +43,7 @@ fun String.parseRectilinearNotation(): Board {
         }
     }
 
-    require(board.cells.values.any { it.owner != null })
+    require(board.cells.values.any { it.owner != null }) { "Cannot parse an empty board" }
     return board
 }
 

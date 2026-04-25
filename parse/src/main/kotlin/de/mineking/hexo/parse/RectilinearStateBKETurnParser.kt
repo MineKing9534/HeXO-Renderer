@@ -14,24 +14,20 @@ fun String.parseRectilinearStateBKETurnNotation(): Board {
     val parts = split(",\\s*".toRegex(), limit = 2)
 
     return if (parts.size == 1) {
-        try {
-            parseDirectionalBKENotation(pure = true)
-        } catch (_: IllegalArgumentException) {
-            parseRectilinearNotation()
-        }
+        parseDirectionalBKENotation(pure = true) ?: parseRectilinearNotation()
     } else {
         val (rectilinear, bke) = parts
 
         val originalState = rectilinear.parseRectilinearNotation()
         val additionalMoves = bke.parseDirectionalBKENotation(pure = false)
+            ?: throw IllegalArgumentException("Invalid BKE notation format, use [->|\\>|</|<-|<\\|/>][CW|CCW]?@(q,r): ...")
 
         originalState.merge(additionalMoves)
     }
 }
 
-private fun String.parseDirectionalBKENotation(pure: Boolean): Board {
-    val match = BKE_FORMAT.matchEntire(this)
-    require(match != null) { "Invalid BKE notation format, use [->|\\>|</|<-|<\\|/>][CW|CCW]?@(q,r): ..." }
+private fun String.parseDirectionalBKENotation(pure: Boolean): Board? {
+    val match = BKE_FORMAT.matchEntire(this) ?: return null
 
     val (_, zeroOffsetLineSymbol, chiralitySymbol, originQ, originR, content) = match.groupValues
     val zeroOffsetLine = ZeroOffsetLine.fromSymbol(zeroOffsetLineSymbol)
