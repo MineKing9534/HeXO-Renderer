@@ -6,8 +6,6 @@ import de.mineking.hexo.core.Board
 import de.mineking.hexo.core.Cell
 import de.mineking.hexo.core.CellCoordinate
 import de.mineking.hexo.core.Player
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Font
@@ -48,57 +46,61 @@ data class ColorScheme(
     }
 }
 
-context(renderer: BoardRenderer<BufferedImage>)
-suspend fun Board.renderToByteArray(): ByteArray {
+private fun BufferedImage.toByteArray(): ByteArray {
     val output = ByteArrayOutputStream()
-    withContext(Dispatchers.IO) {
-        ImageIO.write(renderer.run { render() }, "png", output)
-    }
+    ImageIO.write(this, "png", output)
     return output.toByteArray()
 }
 
+context(renderer: BoardRenderer<BufferedImage>)
+suspend fun Board.renderToByteArray() = renderer.run { render().toByteArray() }
+
+fun Board.renderImageToByteArray() = renderToImage().toByteArray()
+
 object ImageBoardRenderer : BoardRenderer<BufferedImage> {
-    override suspend fun Board.render() = render(
-        layoutRadius = 64.0,
-        gap = 6.0,
-        borderThickness = 2f,
-        padding = 32,
+    override suspend fun Board.render() = renderToImage()
+}
+
+fun Board.renderToImage() = renderToImage(
+    layoutRadius = 64.0,
+    gap = 6.0,
+    borderThickness = 2f,
+    padding = 32,
+)
+
+fun Board.renderToImage(
+    layoutRadius: Double,
+    gap: Double,
+    borderThickness: Float,
+    padding: Int,
+    focusWinningRows: Boolean = true,
+    colorScheme: ColorScheme = ColorScheme.Default,
+): BufferedImage {
+    require(cells.isNotEmpty())
+
+    val size = RenderSize(layoutRadius, gap)
+    val boundingBox = cells.keys.findBoundingBox(size)
+    val renderer = InternalBoardRenderer(
+        boundingBox,
+        size,
+        colorScheme,
+        borderThickness,
+        padding,
     )
 
-    fun Board.render(
-        layoutRadius: Double,
-        gap: Double,
-        borderThickness: Float,
-        padding: Int,
-        focusWinningRows: Boolean = true,
-        colorScheme: ColorScheme = ColorScheme.Default,
-    ): BufferedImage {
-        require(cells.isNotEmpty())
-
-        val size = RenderSize(layoutRadius, gap)
-        val boundingBox = cells.keys.findBoundingBox(size)
-        val renderer = InternalBoardRenderer(
-            boundingBox,
-            size,
-            colorScheme,
-            borderThickness,
-            padding,
-        )
-
-        val winningCells =
-            if (focusWinningRows) {
-                findWinningRows().flatten().map { it.first }.toSet()
-            } else {
-                emptyList()
-            }
-
-        for (position in boundingBox.findVisibleCoordinates(size)) {
-            val cell = cells[position]?.let { it.copy(focussed = it.focussed || position in winningCells) } ?: Cell()
-            renderer.drawCell(position, cell)
+    val winningCells =
+        if (focusWinningRows) {
+            findWinningRows().flatten().map { it.first }.toSet()
+        } else {
+            emptyList()
         }
 
-        return renderer.image
+    for (position in boundingBox.findVisibleCoordinates(size)) {
+        val cell = cells[position]?.let { it.copy(focussed = it.focussed || position in winningCells) } ?: Cell()
+        renderer.drawCell(position, cell)
     }
+
+    return renderer.image
 }
 
 private data class BoundingBox(
@@ -212,9 +214,9 @@ private class InternalBoardRenderer(
         graphics.fill(hex)
 
         fun drawHighlight(color: Color) {
-            graphics.stroke = BasicStroke(borderThickness * 4)
+            graphics.stroke = BasicStroke(borderThickness * 3)
             graphics.color = color
-            graphics.draw(createHex(x, y, inset = borderThickness * 2))
+            graphics.draw(hex)
         }
 
         when {

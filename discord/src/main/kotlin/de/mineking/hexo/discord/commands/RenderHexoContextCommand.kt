@@ -49,7 +49,7 @@ private suspend fun List<Segment>.render(): MessageCreateData {
                 +textDisplay(segment.content)
             }
             is Segment.Code -> try {
-                +main.rectilinearParser.parse(segment.content).renderAsComponent(index)
+                +main.notationParser.parse(segment.content).renderAsComponent(index)
                 renderedSegments += index
             } catch (_: IllegalArgumentException) {
                 appendSpacerIfNecessary()

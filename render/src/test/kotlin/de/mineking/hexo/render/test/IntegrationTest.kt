@@ -2,15 +2,14 @@ package de.mineking.hexo.render.test
 
 import de.mineking.hexo.core.Board
 import de.mineking.hexo.core.Player
-import de.mineking.hexo.parse.RectilinearNotationParser
+import de.mineking.hexo.parse.parseRectilinearNotation
 import de.mineking.hexo.render.RectilinearNotationType
 import de.mineking.hexo.render.renderRectilinearNotation
-import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class IntegrationTest {
-    private suspend fun integrationTest(type: RectilinearNotationType) {
+    private fun integrationTest(type: RectilinearNotationType) {
         val board = Board()
         board[0, 0].owner = Player.X
         board[3, 0].owner = Player.X
@@ -19,23 +18,23 @@ class IntegrationTest {
         board[0, 3].owner = Player.X
 
         val rendered = board.renderRectilinearNotation(type)
-        val parsed = RectilinearNotationParser.parse(rendered)
+        val parsed = rendered.parseRectilinearNotation()
 
         assertEquals(board, parsed)
     }
 
     @Test
-    fun `compact integration test`() = runTest {
+    fun `compact integration test`() {
         integrationTest(RectilinearNotationType.Compact)
     }
 
     @Test
-    fun `multiline integration test`() = runTest {
+    fun `multiline integration test`() {
         integrationTest(RectilinearNotationType.Multiline)
     }
 
     @Test
-    fun `compact with highlight`() = runTest {
+    fun `compact with highlight`() {
         val board = Board()
         board[0, 0].apply {
             owner = Player.X
@@ -48,7 +47,7 @@ class IntegrationTest {
         board[0, 3].owner = Player.X
 
         val rendered = board.renderRectilinearNotation(RectilinearNotationType.Compact)
-        val parsed = RectilinearNotationParser.parse(rendered)
+        val parsed = rendered.parseRectilinearNotation()
 
         assertEquals(board, parsed)
     }

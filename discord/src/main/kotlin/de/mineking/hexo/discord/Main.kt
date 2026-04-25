@@ -13,7 +13,7 @@ import de.mineking.hexo.discord.menus.GameMenuParameter
 import de.mineking.hexo.discord.menus.gameMenu
 import de.mineking.hexo.history.MatchRepository
 import de.mineking.hexo.history.cached
-import de.mineking.hexo.parse.RectilinearNotationParser
+import de.mineking.hexo.parse.RectilinearStateBKETurnNotationParser
 import de.mineking.hexo.parse.cached
 import de.mineking.hexo.render.ImageBoardRenderer
 import de.mineking.hexo.render.cached
@@ -45,7 +45,7 @@ class HeXODiscordBot(token: String) {
 
     val emojiManager = EmojiManager(jda)
 
-    val rectilinearParser = RectilinearNotationParser.cached()
+    val notationParser = RectilinearStateBKETurnNotationParser.cached()
     val boardRenderer = ImageBoardRenderer.cached()
 
     lateinit var errorHandlingLocalization: ErrorHandlingLocalization private set

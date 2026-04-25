@@ -24,7 +24,7 @@ fun renderHexoSlashCommand() = localizedSlashCommand<RenderHexoSlashCommandLocal
     execute {
         val input = input()
         val board = try {
-            main.rectilinearParser.parse(input)
+            main.notationParser.parse(input)
         } catch (e: IllegalArgumentException) {
             finalErrorResponse(localization.responseError(userLocale, input, e.message))
         }
