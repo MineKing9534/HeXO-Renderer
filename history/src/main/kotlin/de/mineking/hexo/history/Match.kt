@@ -108,6 +108,8 @@ data class Match(
 
             val cell = this[move.q, move.r]
             cell.owner = playerIdMappings[move.playerId]
+            cell.turn = (it + 1) / 2
+
             if (it == lastMove - 1) cell.focussed = true
         }
     }

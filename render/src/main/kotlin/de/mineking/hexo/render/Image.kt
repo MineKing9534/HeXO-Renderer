@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.awt.BasicStroke
 import java.awt.Color
+import java.awt.Font
 import java.awt.Graphics2D
 import java.awt.RenderingHints
 import java.awt.Shape
@@ -195,21 +196,25 @@ private class InternalBoardRenderer(
         }
     }
 
-    fun drawCell(position: CellCoordinate, cell: Cell) {
-        val (x, y) = size.run { position.toPixel() }
-        val hex = createHex(x - boundingBox.minX, y - boundingBox.minY)
+    private val Player?.color get() = when (this) {
+        Player.X -> colorScheme.playerX
+        Player.O -> colorScheme.playerO
+        null -> colorScheme.emptyCell
+    }
 
-        graphics.color = when (cell.owner) {
-            Player.X -> colorScheme.playerX
-            Player.O -> colorScheme.playerO
-            null -> colorScheme.emptyCell
+    fun drawCell(position: CellCoordinate, cell: Cell) {
+        val (x, y) = size.run { position.toPixel() }.let { (x, y) ->
+            x - boundingBox.minX + padding to y - boundingBox.minY + padding
         }
+        val hex = createHex(x, y)
+
+        graphics.color = cell.owner.color
         graphics.fill(hex)
 
         fun drawHighlight(color: Color) {
             graphics.stroke = BasicStroke(borderThickness * 4)
             graphics.color = color
-            graphics.draw(createHex(x - boundingBox.minX, y - boundingBox.minY, inset = borderThickness * 2))
+            graphics.draw(createHex(x, y, inset = borderThickness * 2))
         }
 
         when {
@@ -226,6 +231,23 @@ private class InternalBoardRenderer(
                 graphics.draw(hex)
             }
         }
+
+        drawTurnNumber(cell, x, y)
+    }
+
+    private fun drawTurnNumber(cell: Cell, x: Double, y: Double) {
+        val text = cell.turn?.toString() ?: return
+
+        val font = graphics.font
+        graphics.font = font.deriveFont(Font.BOLD, size.hexSize.toFloat() * 0.6f)
+        graphics.color = cell.owner.color.darker()
+
+        val fm = graphics.fontMetrics
+        val textX = x - fm.stringWidth(text) / 2.0
+        val textY = y + (fm.ascent - fm.descent) / 2.0
+
+        graphics.drawString(text, textX.toFloat(), textY.toFloat())
+        graphics.font = font
     }
 
     fun createHex(x: Double, y: Double, inset: Float = 0f): Shape {
@@ -235,8 +257,8 @@ private class InternalBoardRenderer(
             val angle = Math.toRadians(60.0 * i - 30)
 
             val radius = size.hexSize - inset
-            val x = x + padding + radius * cos(angle)
-            val y = y + padding + radius * sin(angle)
+            val x = x + radius * cos(angle)
+            val y = y + radius * sin(angle)
 
             if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
         }
