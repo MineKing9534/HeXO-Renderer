@@ -182,6 +182,10 @@ private class InternalBoardRenderer(
     private val borderThickness: Float,
     private val padding: Int,
 ) : AutoCloseable {
+    companion object {
+        private val BOLD_FONT = Font.createFont(Font.TRUETYPE_FONT, javaClass.getResourceAsStream("/fonts/open-sans.extrabold.ttf"))
+    }
+
     val image: BufferedImage
     private val graphics: Graphics2D
 
@@ -240,8 +244,8 @@ private class InternalBoardRenderer(
     private fun drawTurnNumber(cell: Cell, x: Double, y: Double) {
         val text = cell.turn?.toString() ?: return
 
-        val font = graphics.font
-        graphics.font = font.deriveFont(Font.BOLD, size.hexSize.toFloat() * 0.6f)
+        val oldFont = graphics.font
+        graphics.font = BOLD_FONT.deriveFont(Font.BOLD, size.hexSize.toFloat() * 0.7f)
         graphics.color = cell.owner.color.darker()
 
         val fm = graphics.fontMetrics
@@ -249,7 +253,7 @@ private class InternalBoardRenderer(
         val textY = y + (fm.ascent - fm.descent) / 2.0
 
         graphics.drawString(text, textX.toFloat(), textY.toFloat())
-        graphics.font = font
+        graphics.font = oldFont
     }
 
     fun createHex(x: Double, y: Double, inset: Float = 0f): Shape {
