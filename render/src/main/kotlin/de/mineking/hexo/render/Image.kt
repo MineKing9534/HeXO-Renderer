@@ -6,10 +6,9 @@ import de.mineking.hexo.core.Board
 import de.mineking.hexo.core.Cell
 import de.mineking.hexo.core.CellCoordinate
 import de.mineking.hexo.core.Player
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.awt.BasicStroke
 import java.awt.Color
+import java.awt.Font
 import java.awt.Graphics2D
 import java.awt.RenderingHints
 import java.awt.Shape
@@ -47,57 +46,61 @@ data class ColorScheme(
     }
 }
 
-context(renderer: BoardRenderer<BufferedImage>)
-suspend fun Board.renderToByteArray(): ByteArray {
+private fun BufferedImage.toByteArray(): ByteArray {
     val output = ByteArrayOutputStream()
-    withContext(Dispatchers.IO) {
-        ImageIO.write(renderer.run { render() }, "png", output)
-    }
+    ImageIO.write(this, "png", output)
     return output.toByteArray()
 }
 
+context(renderer: BoardRenderer<BufferedImage>)
+suspend fun Board.renderToByteArray() = renderer.run { render().toByteArray() }
+
+fun Board.renderImageToByteArray() = renderToImage().toByteArray()
+
 object ImageBoardRenderer : BoardRenderer<BufferedImage> {
-    override suspend fun Board.render() = render(
-        layoutRadius = 64.0,
-        gap = 6.0,
-        borderThickness = 2f,
-        padding = 32,
+    override suspend fun Board.render() = renderToImage()
+}
+
+fun Board.renderToImage() = renderToImage(
+    layoutRadius = 64.0,
+    gap = 6.0,
+    borderThickness = 2f,
+    padding = 32,
+)
+
+fun Board.renderToImage(
+    layoutRadius: Double,
+    gap: Double,
+    borderThickness: Float,
+    padding: Int,
+    focusWinningRows: Boolean = true,
+    colorScheme: ColorScheme = ColorScheme.Default,
+): BufferedImage {
+    require(cells.isNotEmpty())
+
+    val size = RenderSize(layoutRadius, gap)
+    val boundingBox = cells.keys.findBoundingBox(size)
+    val renderer = InternalBoardRenderer(
+        boundingBox,
+        size,
+        colorScheme,
+        borderThickness,
+        padding,
     )
 
-    fun Board.render(
-        layoutRadius: Double,
-        gap: Double,
-        borderThickness: Float,
-        padding: Int,
-        focusWinningRows: Boolean = true,
-        colorScheme: ColorScheme = ColorScheme.Default,
-    ): BufferedImage {
-        require(cells.isNotEmpty())
-
-        val size = RenderSize(layoutRadius, gap)
-        val boundingBox = cells.keys.findBoundingBox(size)
-        val renderer = InternalBoardRenderer(
-            boundingBox,
-            size,
-            colorScheme,
-            borderThickness,
-            padding,
-        )
-
-        val winningCells =
-            if (focusWinningRows) {
-                findWinningRows().flatten().map { it.first }.toSet()
-            } else {
-                emptyList()
-            }
-
-        for (position in boundingBox.findVisibleCoordinates(size)) {
-            val cell = cells[position]?.let { it.copy(focussed = it.focussed || position in winningCells) } ?: Cell()
-            renderer.drawCell(position, cell)
+    val winningCells =
+        if (focusWinningRows) {
+            findWinningRows().flatten().map { it.first }.toSet()
+        } else {
+            emptyList()
         }
 
-        return renderer.image
+    for (position in boundingBox.findVisibleCoordinates(size)) {
+        val cell = cells[position]?.let { it.copy(focussed = it.focussed || position in winningCells) } ?: Cell()
+        renderer.drawCell(position, cell)
     }
+
+    return renderer.image
 }
 
 private data class BoundingBox(
@@ -179,6 +182,10 @@ private class InternalBoardRenderer(
     private val borderThickness: Float,
     private val padding: Int,
 ) : AutoCloseable {
+    companion object {
+        private val BOLD_FONT = Font.createFont(Font.TRUETYPE_FONT, javaClass.getResourceAsStream("/fonts/open-sans.extrabold.ttf"))
+    }
+
     val image: BufferedImage
     private val graphics: Graphics2D
 
@@ -195,21 +202,25 @@ private class InternalBoardRenderer(
         }
     }
 
-    fun drawCell(position: CellCoordinate, cell: Cell) {
-        val (x, y) = size.run { position.toPixel() }
-        val hex = createHex(x - boundingBox.minX, y - boundingBox.minY)
+    private val Player?.color get() = when (this) {
+        Player.X -> colorScheme.playerX
+        Player.O -> colorScheme.playerO
+        null -> colorScheme.emptyCell
+    }
 
-        graphics.color = when (cell.owner) {
-            Player.X -> colorScheme.playerX
-            Player.O -> colorScheme.playerO
-            null -> colorScheme.emptyCell
+    fun drawCell(position: CellCoordinate, cell: Cell) {
+        val (x, y) = size.run { position.toPixel() }.let { (x, y) ->
+            x - boundingBox.minX + padding to y - boundingBox.minY + padding
         }
+        val hex = createHex(x, y)
+
+        graphics.color = cell.owner.color
         graphics.fill(hex)
 
         fun drawHighlight(color: Color) {
-            graphics.stroke = BasicStroke(borderThickness * 4)
+            graphics.stroke = BasicStroke(borderThickness * 3)
             graphics.color = color
-            graphics.draw(createHex(x - boundingBox.minX, y - boundingBox.minY, inset = borderThickness * 2))
+            graphics.draw(hex)
         }
 
         when {
@@ -226,6 +237,23 @@ private class InternalBoardRenderer(
                 graphics.draw(hex)
             }
         }
+
+        drawTurnNumber(cell, x, y)
+    }
+
+    private fun drawTurnNumber(cell: Cell, x: Double, y: Double) {
+        val text = cell.turn?.toString() ?: return
+
+        val oldFont = graphics.font
+        graphics.font = BOLD_FONT.deriveFont(Font.BOLD, size.hexSize.toFloat() * 0.7f)
+        graphics.color = cell.owner.color.darker()
+
+        val fm = graphics.fontMetrics
+        val textX = x - fm.stringWidth(text) / 2.0
+        val textY = y + (fm.ascent - fm.descent) / 2.0
+
+        graphics.drawString(text, textX.toFloat(), textY.toFloat())
+        graphics.font = oldFont
     }
 
     fun createHex(x: Double, y: Double, inset: Float = 0f): Shape {
@@ -235,8 +263,8 @@ private class InternalBoardRenderer(
             val angle = Math.toRadians(60.0 * i - 30)
 
             val radius = size.hexSize - inset
-            val x = x + padding + radius * cos(angle)
-            val y = y + padding + radius * sin(angle)
+            val x = x + radius * cos(angle)
+            val y = y + radius * sin(angle)
 
             if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
         }

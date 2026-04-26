@@ -17,6 +17,7 @@ import de.mineking.discord.ui.builder.components.message.button
 import de.mineking.discord.ui.builder.components.message.container
 import de.mineking.discord.ui.builder.components.message.modalButton
 import de.mineking.discord.ui.builder.components.message.separator
+import de.mineking.discord.ui.builder.components.message.toggleButton
 import de.mineking.discord.ui.builder.components.modal.intInput
 import de.mineking.discord.ui.builder.components.modal.localizedLabel
 import de.mineking.discord.ui.builder.components.modal.unbox
@@ -39,7 +40,8 @@ import de.mineking.discord.ui.state
 import de.mineking.discord.ui.terminateRender
 import de.mineking.hexo.core.Board
 import de.mineking.hexo.core.Player
-import de.mineking.hexo.discord.EmojiType
+import de.mineking.hexo.discord.CustomEmoji
+import de.mineking.hexo.discord.HeXODiscordBot
 import de.mineking.hexo.discord.MessageColor
 import de.mineking.hexo.discord.effectiveLocale
 import de.mineking.hexo.discord.main
@@ -66,6 +68,8 @@ private data class MatchData(val match: Match, val board: Board)
 fun UIManager.gameMenu(matchRepository: MatchRepository) = registerLocalizedMenu<GameMenuParameter, GameMenuLocalization>("game") { localization ->
     var id by state(Uuid.NIL)
     val moveState = state(0)
+    val showTurnNumber = state(false)
+
     var move by moveState
 
     initialize {
@@ -78,7 +82,7 @@ fun UIManager.gameMenu(matchRepository: MatchRepository) = registerLocalizedMenu
 
     val lazyMatchData = lazy(default = null) {
         val match = matchRepository.getGame(id) ?: return@lazy null
-        val board = match.asBoard(move)
+        val board = match.asBoard(move, showTurnNumber.value)
 
         MatchData(match, board)
     }
@@ -107,7 +111,7 @@ fun UIManager.gameMenu(matchRepository: MatchRepository) = registerLocalizedMenu
             +separator(invisible = true)
 
             +buildTextDisplay {
-                fun playerLine(emoji: EmojiType, player: Player) = line {
+                fun playerLine(emoji: CustomEmoji, player: Player) = line {
                     val playerInfo = match.playerMappings[player]!!
 
                     append(main.emojiManager[emoji].formatted)
@@ -118,7 +122,7 @@ fun UIManager.gameMenu(matchRepository: MatchRepository) = registerLocalizedMenu
                     if (match.gameResult.winningPlayerId == playerInfo.playerId) append(" :first_place:")
                 }
 
-                listOf(EmojiType.PlayerX to Player.X, EmojiType.PlayerO to Player.O)
+                listOf(CustomEmoji.PlayerX to Player.X, CustomEmoji.PlayerO to Player.O)
                     .sortedBy { (_, player) -> match.moves.indexOfFirst { match.playerIdMappings[it.playerId] == player } }
                     .forEach { (emoji, player) -> +playerLine(emoji, player) }
 
@@ -140,11 +144,15 @@ fun UIManager.gameMenu(matchRepository: MatchRepository) = registerLocalizedMenu
         }
 
         +moveSelector("move", matchData?.match?.moveCount ?: Int.MAX_VALUE, moveState)
-        +additionalActions(lazyMatchData)
+        +additionalActions(main, lazyMatchData, showTurnNumber)
     }
 }
 
-private fun additionalActions(matchData: Lazy<MatchData?>): MessageComponent<ActionRow> {
+private fun additionalActions(
+    main: HeXODiscordBot,
+    matchData: Lazy<MatchData?>,
+    showTurnNumber: MutableState<Boolean>,
+): MessageComponent<ActionRow> {
     val matchData by matchData
     return actionRow {
         +button("format", emoji = Emojis.PRINTER) {
@@ -159,6 +167,11 @@ private fun additionalActions(matchData: Lazy<MatchData?>): MessageComponent<Act
                 }
             }.renderAsComponent()).useComponentsV2().queue()
         }
+        +toggleButton(
+            "turn",
+            emoji = main.emojiManager[if (showTurnNumber.value) CustomEmoji.SwitchOn else CustomEmoji.SwitchOff],
+            ref = showTurnNumber,
+        ) { deferEdit().queue() }
     }
 }
 

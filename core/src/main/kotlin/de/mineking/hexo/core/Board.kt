@@ -1,11 +1,16 @@
 package de.mineking.hexo.core
 
-data class CellCoordinate(val q: Int, val r: Int)
+data class CellCoordinate(val q: Int, val r: Int) {
+    companion object {
+        val Zero = CellCoordinate(0, 0)
+    }
+}
 
 operator fun CellCoordinate.plus(other: CellCoordinate) = CellCoordinate(q + other.q, r + other.r)
 operator fun CellCoordinate.minus(other: CellCoordinate) = CellCoordinate(q - other.q, r - other.r)
+operator fun CellCoordinate.times(scalar: Int) = CellCoordinate(q * scalar, r * scalar)
 
-class Board {
+class Board(initial: MutableMap<CellCoordinate, Cell> = mutableMapOf()) {
     companion object {
         private const val WIN_MIN_LENGTH = 6
         private val directions = listOf(
@@ -16,7 +21,7 @@ class Board {
     }
 
     val cells: Map<CellCoordinate, Cell>
-        field = mutableMapOf<CellCoordinate, Cell>()
+        field = initial
 
     operator fun get(q: Int, r: Int) = get(CellCoordinate(q, r))
     operator fun get(coordinate: CellCoordinate) = cells.getOrPut(coordinate) { Cell(null, false) }
@@ -59,4 +64,22 @@ class Board {
 
         return rows
     }
+}
+
+fun Board.merge(other: Board, overrideOwner: Boolean = false): Board {
+    val cells = cells.toMutableMap()
+    other.cells.forEach { (coordinate, cell) ->
+        cells.merge(coordinate, cell) { old, new ->
+            require(overrideOwner || old.owner == null || new.owner == null) {
+                "At $coordinate: Owner override is disabled but both cells have an owner defined"
+            }
+            Cell(
+                new.owner ?: old.owner,
+                highlighted = old.highlighted || new.highlighted,
+                focussed = old.focussed || new.focussed,
+                turn = new.turn ?: old.turn,
+            )
+        }
+    }
+    return Board(cells)
 }

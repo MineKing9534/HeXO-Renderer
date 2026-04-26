@@ -3,15 +3,14 @@ package de.mineking.hexo.parse.test
 import de.mineking.hexo.core.Cell
 import de.mineking.hexo.core.CellCoordinate
 import de.mineking.hexo.core.Player
-import de.mineking.hexo.parse.RectilinearNotationParser
-import kotlinx.coroutines.test.runTest
+import de.mineking.hexo.parse.parseRectilinearNotation
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class BoardParserTest {
+class RectilinearNotationParserTest {
     @Test
-    fun `parse compact simple`() = runTest {
-        val board = RectilinearNotationParser.parse("x-x/o.o//x")
+    fun `parse compact simple`() {
+        val board = "x-x/o.o//x".parseRectilinearNotation()
         assertEquals(
             mapOf(
                 CellCoordinate(0, 0) to Cell(Player.X),
@@ -25,8 +24,8 @@ class BoardParserTest {
     }
 
     @Test
-    fun `parse compact with single digit`() = runTest {
-        val board = RectilinearNotationParser.parse("x2x/o1o//x")
+    fun `parse compact with single digit`() {
+        val board = "x2x/o1o//x".parseRectilinearNotation()
         assertEquals(
             mapOf(
                 CellCoordinate(0, 0) to Cell(Player.X),
@@ -40,8 +39,8 @@ class BoardParserTest {
     }
 
     @Test
-    fun `parse compact with long number`() = runTest {
-        val board = RectilinearNotationParser.parse("x10x")
+    fun `parse compact with long number`() {
+        val board = "x10x".parseRectilinearNotation()
         assertEquals(
             mapOf(
                 CellCoordinate(0, 0) to Cell(Player.X),
@@ -52,15 +51,14 @@ class BoardParserTest {
     }
 
     @Test
-    fun `parse multiline`() = runTest {
-        val board = RectilinearNotationParser.parse(
-            """
-                x . .  x
-                 o . o
-                
-                   x
-            """.trimIndent(),
-        )
+    fun `parse multiline`() {
+        val board = """
+            x . .  x
+             o . o
+            
+               x
+        """.trimIndent().parseRectilinearNotation()
+
         assertEquals(
             mapOf(
                 CellCoordinate(0, 0) to Cell(Player.X),

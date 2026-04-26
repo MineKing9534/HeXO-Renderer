@@ -5,5 +5,4 @@ dependencies {
     implementation(libs.cache)
 
     testImplementation(projects.parse)
-    testImplementation(libs.kotlin.coroutines.test)
 }

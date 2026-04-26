@@ -16,6 +16,7 @@ menu.game:
         description: !<match:Match> The move to inspect [1-${match.moveCount}]
         placeholder: 42
   format.label: Print Notation
+  turn.label: Show Turn Numbers
 
 finish.reason: >-
   ${
