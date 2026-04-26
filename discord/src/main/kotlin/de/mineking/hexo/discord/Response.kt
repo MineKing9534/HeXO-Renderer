@@ -97,7 +97,7 @@ fun CommandManager.installErrorHandling() {
         if (e is RenderTermination) return@handleException
 
         logger.error(e) { "Unexpected error during command execution" }
-        finalErrorResponse(main.errorHandlingLocalization.responseErrorCommand(userLocale))
+        finalErrorResponse(main.localization<ErrorHandlingLocalization>().responseErrorCommand(userLocale))
     })
 }
 
@@ -107,7 +107,7 @@ fun UIManager.installErrorHandling() {
             val locale = finder.currentLocalizationConfig?.locale ?: userLocale
 
             logger.error(e) { "Unexpected error during message component handling" }
-            respond(MessageColor.Error, main.errorHandlingLocalization.responseErrorMenuMessageComponent(locale))
+            respond(MessageColor.Error, main.localization<ErrorHandlingLocalization>().responseErrorMenuMessageComponent(locale))
         },
         { renderer, e ->
             if (e is RenderTermination) throw e
@@ -120,7 +120,7 @@ fun UIManager.installErrorHandling() {
                 .setComponents(
                     renderAsComponent(
                         MessageColor.Error,
-                        main.errorHandlingLocalization.responseErrorMenuMessageRender(locale),
+                        main.localization<ErrorHandlingLocalization>().responseErrorMenuMessageRender(locale),
                     ),
                 )
                 .useComponentsV2()
@@ -135,7 +135,7 @@ fun UIManager.installErrorHandling() {
             val locale = handler.currentLocalizationConfig?.locale ?: userLocale
 
             logger.error(e) { "Unexpected error in modal handler" }
-            respond(MessageColor.Error, main.errorHandlingLocalization.responseErrorMenuModalHandler(locale))
+            respond(MessageColor.Error, main.localization<ErrorHandlingLocalization>().responseErrorMenuModalHandler(locale))
         },
         { _, e -> throw e },
     ))

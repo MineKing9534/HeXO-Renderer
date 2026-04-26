@@ -11,3 +11,17 @@ response.error: |-
   $input
   ```
   ${message ?: ""}
+
+menu.hexo:
+  title: Render HeXO Notation
+  inputs:
+    input:
+      label: Message
+      description: The message to render. Use code blocks to indicate HeXO notation.
+      placeholder: |-
+        Sword Opening:
+        ```
+        . . . . o
+         o . x x x o
+          . . . o
+        ```
