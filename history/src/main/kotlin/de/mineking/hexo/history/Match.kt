@@ -102,18 +102,17 @@ data class Match(
     )
     val playerMappings = playerIdMappings.entries.associate { (id, player) -> player to players.first { it.playerId == id } }
 
-    fun asBoard(lastMove: Int = moveCount, showTurnNumber: Boolean = false) = Board().apply {
-        repeat(lastMove.coerceIn(0, moveCount)) {
+    fun asBoard(maxMoves: Int = moveCount, showTurnNumber: Boolean = false) = Board().apply {
+        repeat(maxMoves.coerceIn(0, moveCount)) {
             val move = moves[it]
 
             val cell = this[move.q, move.r]
             cell.owner = playerIdMappings[move.playerId]
 
-            if (showTurnNumber) {
-                cell.turn = (it + 1) / 2
-            }
+            val turn = (it + 1) / 2
+            if (showTurnNumber) cell.turn = turn
 
-            if (it == lastMove - 1) cell.focussed = true
+            if (turn == maxMoves / 2) cell.focussed = true
         }
     }
 }
