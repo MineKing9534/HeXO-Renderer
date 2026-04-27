@@ -232,18 +232,16 @@ private class InternalBoardRenderer(
         graphics.fill(hex)
 
         fun drawHighlight(color: Color) {
+            graphics.color = color.withAlpha(48)
+            graphics.fill(hex)
+
             graphics.stroke = BasicStroke(borderThickness * 3)
             graphics.color = color
             graphics.draw(hex)
         }
 
         when {
-            cell.highlighted -> {
-                graphics.color = colorScheme.highlightedCellBorder.withAlpha(64)
-                graphics.fill(hex)
-
-                drawHighlight(colorScheme.highlightedCellBorder)
-            }
+            cell.highlighted -> drawHighlight(colorScheme.highlightedCellBorder)
             cell.focussed -> drawHighlight(colorScheme.focussedCellBorder)
             else -> {
                 graphics.stroke = BasicStroke(borderThickness)
