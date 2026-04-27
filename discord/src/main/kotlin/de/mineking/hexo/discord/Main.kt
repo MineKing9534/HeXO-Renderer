@@ -3,6 +3,7 @@ package de.mineking.hexo.discord
 import de.mineking.discord.Manager
 import de.mineking.discord.discordToolKit
 import de.mineking.discord.localization.DefaultLocalizationManager
+import de.mineking.discord.localization.LocalizationFile
 import de.mineking.discord.localization.read
 import de.mineking.discord.ui.message.MessageMenu
 import de.mineking.discord.withLocalization
@@ -48,13 +49,10 @@ class HeXODiscordBot(token: String) {
     val notationParser = RectilinearStateBKETurnNotationParser.cached()
     val boardRenderer = ImageBoardRenderer.cached()
 
-    lateinit var errorHandlingLocalization: ErrorHandlingLocalization private set
     lateinit var gameMenu: MessageMenu<GameMenuParameter, *> private set
 
     val dtk = discordToolKit(jda, this)
-        .withLocalization<_, DefaultLocalizationManager> {
-            errorHandlingLocalization = read()
-        }
+        .withLocalization<_, DefaultLocalizationManager>()
         .withUIManager {
             localize()
             installErrorHandling()
@@ -74,3 +72,5 @@ class HeXODiscordBot(token: String) {
         }
         .build()
 }
+
+inline fun <reified L : LocalizationFile> HeXODiscordBot.localization() = dtk.localizationManager.read<L>()
