@@ -232,9 +232,9 @@ private class InternalBoardRenderer(
         graphics.fill(hex)
 
         fun drawHighlight(color: Color) {
-            graphics.stroke = BasicStroke(borderThickness * 4)
+            graphics.stroke = BasicStroke(borderThickness * 3)
             graphics.color = color
-            graphics.draw(createHex(x, y, inset = borderThickness * 2))
+            graphics.draw(hex)
         }
 
         when {
