@@ -2,7 +2,9 @@ package de.mineking.hexo.render.test
 
 import de.mineking.hexo.core.Board
 import de.mineking.hexo.core.Player
-import de.mineking.hexo.render.renderImageToByteArray
+import de.mineking.hexo.render.renderToImage
+import java.io.ByteArrayOutputStream
+import javax.imageio.ImageIO
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -22,9 +24,18 @@ class ImageRenderTest {
         board[2, 1].owner = Player.O
         board[0, 3].owner = Player.X
 
-        val rendered = board.renderImageToByteArray()
+        val renderedImage = board.renderToImage(
+            layoutRadius = 64.0,
+            gap = 6.0,
+            borderThickness = 2f,
+            padding = 32,
+        )
+
+        val renderedBytes = ByteArrayOutputStream()
+        ImageIO.write(renderedImage, "png", renderedBytes)
+
         val expected = javaClass.getResourceAsStream("/grid.png")?.readAllBytes()
 
-        assertTrue(expected.contentEquals(rendered))
+        assertTrue(expected.contentEquals(renderedBytes.toByteArray()))
     }
 }

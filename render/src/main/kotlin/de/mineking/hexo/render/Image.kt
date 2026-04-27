@@ -55,18 +55,32 @@ private fun BufferedImage.toByteArray(): ByteArray {
 context(renderer: BoardRenderer<BufferedImage>)
 suspend fun Board.renderToByteArray() = renderer.run { render().toByteArray() }
 
-fun Board.renderImageToByteArray() = renderToImage().toByteArray()
+class ImageBoardRenderer(
+    private val layoutRadius: Double,
+    private val gap: Double,
+    private val borderThickness: Float,
+    private val padding: Int,
+    private val focusWinningRows: Boolean = true,
+    private val colorScheme: ColorScheme = ColorScheme.Default,
+) : BoardRenderer<BufferedImage> {
+    companion object {
+        val Default = ImageBoardRenderer(
+            layoutRadius = 64.0,
+            gap = 6.0,
+            borderThickness = 2f,
+            padding = 32,
+        )
+    }
 
-object ImageBoardRenderer : BoardRenderer<BufferedImage> {
-    override suspend fun Board.render() = renderToImage()
+    override suspend fun Board.render() = renderToImage(
+        layoutRadius = layoutRadius,
+        gap = gap,
+        borderThickness = borderThickness,
+        padding = padding,
+        focusWinningRows = focusWinningRows,
+        colorScheme = colorScheme,
+    )
 }
-
-fun Board.renderToImage() = renderToImage(
-    layoutRadius = 64.0,
-    gap = 6.0,
-    borderThickness = 2f,
-    padding = 32,
-)
 
 fun Board.renderToImage(
     layoutRadius: Double,

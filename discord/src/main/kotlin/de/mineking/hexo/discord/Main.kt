@@ -47,7 +47,7 @@ class HeXODiscordBot(token: String) {
     val emojiManager = EmojiManager(jda)
 
     val notationParser = RectilinearStateBKETurnNotationParser.cached()
-    val boardRenderer = ImageBoardRenderer.cached()
+    val boardRenderer = ImageBoardRenderer.Default.cached()
 
     lateinit var gameMenu: MessageMenu<GameMenuParameter, *> private set
 
