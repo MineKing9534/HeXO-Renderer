@@ -116,7 +116,8 @@ data class Match(
     val playerMappings = playerIdMappings.entries.associate { (id, player) -> player to players.first { it.id == id } }
 
     fun asBoard(maxMoves: Int = moveCount, showTurnNumber: Boolean = false) = Board().apply {
-        repeat(maxMoves.coerceIn(0, moveCount)) {
+        val maxMoves = maxMoves.coerceIn(0, moveCount)
+        repeat(maxMoves) {
             val move = moves[it]
 
             val cell = this[move.q, move.r]
