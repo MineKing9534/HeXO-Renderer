@@ -2,9 +2,9 @@
 
 package de.mineking.hexo.render
 
-import de.mineking.hexo.core.Board
-import de.mineking.hexo.core.Cell
-import de.mineking.hexo.core.CellCoordinate
+import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.Cell
+import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.core.Player
 import kotlin.math.max
 import kotlin.math.min

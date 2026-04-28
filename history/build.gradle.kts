@@ -1,12 +1,22 @@
 plugins {
+    id("kotlin-multiplatform")
     alias(libs.plugins.kotlin.serialization)
 }
 
-dependencies {
-    implementation(projects.core)
+kotlin {
+    sourceSets.commonMain {
+        dependencies {
+            implementation(projects.core)
 
-    implementation(libs.kotlin.serialization.json)
+            implementation(libs.kotlin.serialization.json)
+            implementation(libs.bundles.ktor.client)
+        }
+    }
 
-    implementation(libs.bundles.ktor.client)
-    implementation(libs.cache)
+    sourceSets.jvmMain {
+        dependencies {
+            implementation(projects.board)
+            implementation(libs.cache)
+        }
+    }
 }

@@ -9,7 +9,7 @@ import de.mineking.discord.ui.builder.components.message.mediaGallery
 import de.mineking.discord.ui.builder.components.message.separator
 import de.mineking.discord.ui.builder.components.textDisplay
 import de.mineking.discord.ui.message.MessageComponent
-import de.mineking.hexo.core.Board
+import de.mineking.hexo.board.Board
 import de.mineking.hexo.render.renderToByteArray
 import net.dv8tion.jda.api.components.MessageTopLevelComponent
 import net.dv8tion.jda.api.components.mediagallery.MediaGalleryItem

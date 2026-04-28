@@ -1,6 +1,6 @@
 package de.mineking.hexo.render.test
 
-import de.mineking.hexo.core.Board
+import de.mineking.hexo.board.Board
 import de.mineking.hexo.core.Player
 import de.mineking.hexo.render.RectilinearNotationType
 import de.mineking.hexo.render.renderRectilinearNotation

@@ -1,14 +1,16 @@
 import de.mineking.discord.localization.gradle.import
 
 plugins {
+    id("kotlin-jvm-toolchain")
     alias(libs.plugins.dtk.localization)
-    alias(libs.plugins.shadow)
 
     id("application")
+    alias(libs.plugins.shadow)
 }
 
 dependencies {
     implementation(projects.core)
+    implementation(projects.board)
 
     implementation(projects.parse)
     implementation(projects.render)

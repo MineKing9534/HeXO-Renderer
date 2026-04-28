@@ -1,8 +1,8 @@
 package de.mineking.hexo.render.test
 
-import de.mineking.hexo.core.Board
-import de.mineking.hexo.core.CellCoordinate
-import de.mineking.hexo.core.Direction
+import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.Direction
 import de.mineking.hexo.core.Player
 import de.mineking.hexo.render.renderToImage
 import java.io.ByteArrayOutputStream

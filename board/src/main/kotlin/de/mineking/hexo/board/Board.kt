@@ -1,8 +1,7 @@
-package de.mineking.hexo.core
+package de.mineking.hexo.board
 
+import de.mineking.hexo.core.Player
 import java.util.Objects
-import kotlin.collections.getOrPut
-import kotlin.collections.toMutableMap
 
 class Board(initial: MutableMap<CellCoordinate, Cell> = mutableMapOf()) {
     companion object {

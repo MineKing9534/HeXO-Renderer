@@ -40,7 +40,7 @@ import de.mineking.discord.ui.render
 import de.mineking.discord.ui.setValue
 import de.mineking.discord.ui.state
 import de.mineking.discord.ui.terminateRender
-import de.mineking.hexo.core.Board
+import de.mineking.hexo.board.Board
 import de.mineking.hexo.core.Player
 import de.mineking.hexo.discord.CustomEmoji
 import de.mineking.hexo.discord.HeXODiscordBot
@@ -53,6 +53,7 @@ import de.mineking.hexo.history.GameFinishReason
 import de.mineking.hexo.history.Match
 import de.mineking.hexo.history.MatchRepository
 import de.mineking.hexo.history.TimeControl
+import de.mineking.hexo.history.asBoard
 import de.mineking.hexo.history.isGuest
 import de.mineking.hexo.render.RectilinearNotationType
 import de.mineking.hexo.render.renderRectilinearNotation

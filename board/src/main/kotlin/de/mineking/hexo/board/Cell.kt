@@ -1,16 +1,6 @@
-package de.mineking.hexo.core
+package de.mineking.hexo.board
 
-enum class Player {
-    X {
-        override val other get() = O
-    },
-    O {
-        override val other get() = X
-    },
-    ;
-
-    abstract val other: Player
-}
+import de.mineking.hexo.core.Player
 
 data class Cell(
     var owner: Player? = null,

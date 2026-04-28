@@ -2,12 +2,12 @@
 
 package de.mineking.hexo.render
 
-import de.mineking.hexo.core.Board
-import de.mineking.hexo.core.Cell
-import de.mineking.hexo.core.CellCoordinate
-import de.mineking.hexo.core.HighlightLine
+import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.Cell
+import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.HighlightLine
+import de.mineking.hexo.board.end
 import de.mineking.hexo.core.Player
-import de.mineking.hexo.core.end
 import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Font

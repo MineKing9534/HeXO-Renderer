@@ -15,6 +15,7 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 rootProject.name = "HeXO"
 
 include(":core")
+include(":board")
 
 include(":render")
 include(":parse")

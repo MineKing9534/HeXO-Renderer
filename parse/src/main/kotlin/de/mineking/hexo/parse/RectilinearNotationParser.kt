@@ -1,13 +1,13 @@
 package de.mineking.hexo.parse
 
-import de.mineking.hexo.core.Board
-import de.mineking.hexo.core.Cell
-import de.mineking.hexo.core.CellCoordinate
-import de.mineking.hexo.core.Direction
+import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.Cell
+import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.Direction
+import de.mineking.hexo.board.minus
+import de.mineking.hexo.board.plus
+import de.mineking.hexo.board.times
 import de.mineking.hexo.core.Player
-import de.mineking.hexo.core.minus
-import de.mineking.hexo.core.plus
-import de.mineking.hexo.core.times
 
 object RectilinearNotationParser : BoardParser {
     override suspend fun parse(notation: String) = notation.parseRectilinearNotation()

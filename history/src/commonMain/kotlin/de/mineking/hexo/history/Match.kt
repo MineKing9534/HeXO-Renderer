@@ -1,6 +1,5 @@
 package de.mineking.hexo.history
 
-import de.mineking.hexo.core.Board
 import de.mineking.hexo.core.Player
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
@@ -11,11 +10,35 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonClassDiscriminator
-import java.awt.Color
+import kotlin.jvm.JvmInline
 import kotlin.math.roundToInt
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
+
+typealias Duration = @Serializable(with = DurationAsMillisecondsSerializer::class) kotlin.time.Duration
+
+@Serializable(with = ColorSerializer::class)
+data class Color(val red: Int, val green: Int, val blue: Int) {
+    init {
+        require(red in 0..255 && green in 0..255 && blue in 0..255)
+    }
+
+    private val Int.hex get() = toString(16).uppercase().padStart(2, '0')
+    fun format() = "#${red.hex}${green.hex}${blue.hex}"
+
+    companion object {
+        fun decode(input: String): Color {
+            val s = input.removePrefix("#")
+            require(s.length == 6)
+
+            return Color(
+                red = s.substring(0, 2).toInt(16),
+                green = s.substring(2, 4).toInt(16),
+                blue = s.substring(4, 6).toInt(16),
+            )
+        }
+    }
+}
 
 @JvmInline
 @Serializable
@@ -52,7 +75,7 @@ enum class GameFinishReason {
 @Serializable
 data class GameResult(
     val winningPlayerId: PlayerId?,
-    @SerialName("durationMs") val duration: @Serializable(with = DurationAsMillisecondsSerializer::class) Duration,
+    @SerialName("durationMs") val duration: Duration,
     val reason: GameFinishReason,
 )
 
@@ -70,14 +93,14 @@ sealed interface TimeControl {
     @Serializable
     @SerialName("turn")
     data class Turn(
-        @SerialName("turnTimeMs") val turnTime: @Serializable(with = DurationAsMillisecondsSerializer::class) Duration,
+        @SerialName("turnTimeMs") val turnTime: Duration,
     ) : TimeControl
 
     @Serializable
     @SerialName("match")
     data class Match(
-        @SerialName("mainTimeMs") val mainTime: @Serializable(with = DurationAsMillisecondsSerializer::class) Duration,
-        @SerialName("incrementMs") val increment: @Serializable(with = DurationAsMillisecondsSerializer::class) Duration,
+        @SerialName("mainTimeMs") val mainTime: Duration,
+        @SerialName("incrementMs") val increment: Duration,
     ) : TimeControl
 }
 
@@ -117,21 +140,6 @@ data class Match(
         playerTiles.entries.first { (_, tile) -> tile.color.blue > 200 }.key to Player.O,
     )
     val playerMappings = playerIdMappings.entries.associate { (id, player) -> player to players.first { it.id == id } }
-
-    fun asBoard(maxMoves: Int = moveCount, showTurnNumber: Boolean = false) = Board().apply {
-        val maxMoves = maxMoves.coerceIn(0, moveCount)
-        repeat(maxMoves) {
-            val move = moves[it]
-
-            val cell = this[move.q, move.r]
-            cell.owner = playerIdMappings[move.id]
-
-            val turn = (it + 1) / 2
-            if (showTurnNumber) cell.turn = turn
-
-            if (turn == maxMoves / 2) cell.focussed = true
-        }
-    }
 }
 
 private object DurationAsMillisecondsSerializer : KSerializer<Duration> {
@@ -141,9 +149,9 @@ private object DurationAsMillisecondsSerializer : KSerializer<Duration> {
     override fun deserialize(decoder: Decoder) = (decoder.decodeLong() / 1000.0).roundToInt().seconds
 }
 
-private object ColorSerializer : KSerializer<Color> {
+internal object ColorSerializer : KSerializer<Color> {
     override val descriptor = PrimitiveSerialDescriptor("Color", PrimitiveKind.STRING)
 
-    override fun serialize(encoder: Encoder, value: Color) = encoder.encodeString("#${"%06x".format(value.rgb and 0x00ffffff)}")
+    override fun serialize(encoder: Encoder, value: Color) = encoder.encodeString(value.format())
     override fun deserialize(decoder: Decoder): Color = Color.decode(decoder.decodeString())
 }

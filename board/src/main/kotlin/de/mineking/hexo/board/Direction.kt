@@ -1,4 +1,4 @@
-package de.mineking.hexo.core
+package de.mineking.hexo.board
 
 enum class Direction(val symbol: String, val direction: CellCoordinate) {
     Right(">", CellCoordinate(1, 0)),

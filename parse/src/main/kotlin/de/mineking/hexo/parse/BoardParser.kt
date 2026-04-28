@@ -2,7 +2,7 @@ package de.mineking.hexo.parse
 
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.sksamuel.aedile.core.asCache
-import de.mineking.hexo.core.Board
+import de.mineking.hexo.board.Board
 
 interface BoardParser {
     suspend fun parse(notation: String): Board

@@ -1,7 +1,7 @@
 package de.mineking.hexo.parse.test
 
-import de.mineking.hexo.core.Cell
-import de.mineking.hexo.core.CellCoordinate
+import de.mineking.hexo.board.Cell
+import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.core.Player
 import de.mineking.hexo.parse.parseRectilinearStateBKETurnNotation
 import org.junit.jupiter.api.Test
