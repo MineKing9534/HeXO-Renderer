@@ -58,6 +58,8 @@ fun String.parseBKENotation(
         fun CellCoordinate.applyMove() = board[this].apply {
             owner = player
             turn = index + 1
+
+            focussed = index == turns.lastIndex
         }
 
         first.toCellCoordinate(origin, zeroOffsetLine, chirality).applyMove()
