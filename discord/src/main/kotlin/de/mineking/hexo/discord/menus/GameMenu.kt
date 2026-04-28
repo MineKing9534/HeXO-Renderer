@@ -15,7 +15,9 @@ import de.mineking.discord.ui.builder.components.localizedTextDisplay
 import de.mineking.discord.ui.builder.components.message.actionRow
 import de.mineking.discord.ui.builder.components.message.button
 import de.mineking.discord.ui.builder.components.message.container
+import de.mineking.discord.ui.builder.components.message.link
 import de.mineking.discord.ui.builder.components.message.modalButton
+import de.mineking.discord.ui.builder.components.message.section
 import de.mineking.discord.ui.builder.components.message.separator
 import de.mineking.discord.ui.builder.components.message.toggleButton
 import de.mineking.discord.ui.builder.components.modal.intInput
@@ -107,7 +109,10 @@ fun UIManager.gameMenu(matchRepository: MatchRepository) = registerLocalizedMenu
         render {
             val (match, board) = matchData ?: return@render
 
-            +localizedTextDisplay("title")
+            +section(
+                accessory = link("view", emoji = Emojis.GLOBE_WITH_MERIDIANS, url = match.url),
+                localizedTextDisplay("title"),
+            )
             +separator(invisible = true)
 
             +buildTextDisplay {

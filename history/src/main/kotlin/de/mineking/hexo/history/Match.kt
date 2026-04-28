@@ -109,6 +109,8 @@ data class Match(
     val tournament: Tournament?,
     val moves: List<Move>,
 ) {
+    val url get() = "$HEXO_WEBSITE/games/$id"
+
     val playerIdMappings = mapOf(
         playerTiles.entries.first { (_, tile) -> tile.color.red > 200 }.key to Player.X,
         playerTiles.entries.first { (_, tile) -> tile.color.blue > 200 }.key to Player.O,
@@ -116,7 +118,8 @@ data class Match(
     val playerMappings = playerIdMappings.entries.associate { (id, player) -> player to players.first { it.id == id } }
 
     fun asBoard(maxMoves: Int = moveCount, showTurnNumber: Boolean = false) = Board().apply {
-        repeat(maxMoves.coerceIn(0, moveCount)) {
+        val maxMoves = maxMoves.coerceIn(0, moveCount)
+        repeat(maxMoves) {
             val move = moves[it]
 
             val cell = this[move.q, move.r]
