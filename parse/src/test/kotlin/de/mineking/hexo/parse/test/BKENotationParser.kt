@@ -23,8 +23,8 @@ class BKENotationParser {
                 CellCoordinate(1, 0) to Cell(Player.X, turn = 2),
                 CellCoordinate(-1, 0) to Cell(Player.X, turn = 2),
 
-                CellCoordinate(2, 0) to Cell(Player.O, turn = 3),
-                CellCoordinate(-4, 0) to Cell(Player.O, turn = 3),
+                CellCoordinate(2, 0) to Cell(Player.O, turn = 3, focussed = true),
+                CellCoordinate(-4, 0) to Cell(Player.O, turn = 3, focussed = true),
             ),
             board.cells,
         )
@@ -43,8 +43,8 @@ class BKENotationParser {
                 CellCoordinate(0, -1) to Cell(Player.O, turn = 2),
                 CellCoordinate(1, -1) to Cell(Player.O, turn = 2),
 
-                CellCoordinate(-2, 2) to Cell(Player.X, turn = 3),
-                CellCoordinate(-1, 2) to Cell(Player.X, turn = 3),
+                CellCoordinate(-2, 2) to Cell(Player.X, turn = 3, focussed = true),
+                CellCoordinate(-1, 2) to Cell(Player.X, turn = 3, focussed = true),
             ),
             board.cells,
         )

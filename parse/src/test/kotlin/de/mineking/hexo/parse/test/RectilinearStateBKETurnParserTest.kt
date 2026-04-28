@@ -20,8 +20,8 @@ class RectilinearStateBKETurnParserTest {
                 CellCoordinate(1, -1) to Cell(Player.O, turn = 1),
                 CellCoordinate(2, -1) to Cell(Player.O, turn = 1),
 
-                CellCoordinate(-1, 2) to Cell(Player.X, turn = 2),
-                CellCoordinate(0, 2) to Cell(Player.X, turn = 2),
+                CellCoordinate(-1, 2) to Cell(Player.X, turn = 2, focussed = true),
+                CellCoordinate(0, 2) to Cell(Player.X, turn = 2, focussed = true),
             ),
             board.cells,
         )
