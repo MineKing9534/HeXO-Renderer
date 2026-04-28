@@ -108,7 +108,9 @@ It is also possible to render notation in existing messages. To do so, right-cli
 ![example message command](assets/example_message_command.png)
 
 ### Command `game`
-Another feature is reviewing games from https://hexo.did.science in Discord. Simply use the `game` slash command and provide a game id (or link) to the game you want to review.
+Another feature is reviewing games from https://hexo.did.science in Discord. Simply use the `game` slash command and provide a game id (or link) to the game you want to review:
+
+![example review](assets/example_review.png)
 
 ## Contributing
 Contributions are very welcome.
