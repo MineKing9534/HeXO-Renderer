@@ -23,20 +23,20 @@ value class PlayerId(val value: String)
 
 @Serializable
 data class Move(
-    val playerId: PlayerId,
+    @SerialName("playerId") val id: PlayerId,
     @SerialName("x") val q: Int,
     @SerialName("y") val r: Int,
 )
 
 @Serializable
 data class PlayerInfo(
-    val playerId: PlayerId,
+    @SerialName("playerId") val id: PlayerId,
     val displayName: String,
     val elo: Int,
     val profileId: String,
 )
 
-fun PlayerInfo.isGuest() = playerId.value == profileId
+fun PlayerInfo.isGuest() = id.value == profileId
 
 @Serializable
 enum class GameFinishReason {
@@ -87,6 +87,18 @@ data class GameOptions(
 )
 
 @Serializable
+data class Tournament(
+    @SerialName("tournamentId") val id: Uuid,
+    @SerialName("tournamentName") val name: String,
+    val round: Int,
+    val order: Int,
+    val bestOf: Int,
+    val currentGameNumber: Int,
+) {
+    val url get() = "$HEXO_WEBSITE/tournaments/$id"
+}
+
+@Serializable
 data class Match(
     val id: Uuid,
     val players: List<PlayerInfo>,
@@ -94,20 +106,21 @@ data class Match(
     val moveCount: Int,
     val gameResult: GameResult,
     val gameOptions: GameOptions,
+    val tournament: Tournament?,
     val moves: List<Move>,
 ) {
     val playerIdMappings = mapOf(
         playerTiles.entries.first { (_, tile) -> tile.color.red > 200 }.key to Player.X,
         playerTiles.entries.first { (_, tile) -> tile.color.blue > 200 }.key to Player.O,
     )
-    val playerMappings = playerIdMappings.entries.associate { (id, player) -> player to players.first { it.playerId == id } }
+    val playerMappings = playerIdMappings.entries.associate { (id, player) -> player to players.first { it.id == id } }
 
     fun asBoard(maxMoves: Int = moveCount, showTurnNumber: Boolean = false) = Board().apply {
         repeat(maxMoves.coerceIn(0, moveCount)) {
             val move = moves[it]
 
             val cell = this[move.q, move.r]
-            cell.owner = playerIdMappings[move.playerId]
+            cell.owner = playerIdMappings[move.id]
 
             val turn = (it + 1) / 2
             if (showTurnNumber) cell.turn = turn
