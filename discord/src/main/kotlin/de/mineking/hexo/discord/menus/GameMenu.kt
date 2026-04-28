@@ -119,11 +119,11 @@ fun UIManager.gameMenu(matchRepository: MatchRepository) = registerLocalizedMenu
                     append(playerInfo.displayName)
 
                     if (!playerInfo.isGuest()) append(" (`${playerInfo.elo} ELO`)")
-                    if (match.gameResult.winningPlayerId == playerInfo.playerId) append(" :first_place:")
+                    if (match.gameResult.winningPlayerId == playerInfo.id) append(" :first_place:")
                 }
 
                 listOf(CustomEmoji.PlayerX to Player.X, CustomEmoji.PlayerO to Player.O)
-                    .sortedBy { (_, player) -> match.moves.indexOfFirst { match.playerIdMappings[it.playerId] == player } }
+                    .sortedBy { (_, player) -> match.moves.indexOfFirst { match.playerIdMappings[it.id] == player } }
                     .forEach { (emoji, player) -> +playerLine(emoji, player) }
 
                 +line()

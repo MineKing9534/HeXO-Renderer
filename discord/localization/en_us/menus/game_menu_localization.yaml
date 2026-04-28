@@ -7,6 +7,9 @@ menu.game:
   title.content: !<match:Match> |-
     # ${if (!match.gameOptions.rated) ":seedling:" else ":trophy:"} Game Review
     -# https://hexo.did.science/games/${match.id}
+    ${ match.tournament?.let { tournament ->
+      "-# Tournament: [${tournament.name}](${tournament.url})${if (tournament.bestOf > 1) ", G${tournament.currentGameNumber} (BO${tournament.bestOf})" else ""}"
+    } ?: "" }
 
   move:
     title: Enter the move to inspect

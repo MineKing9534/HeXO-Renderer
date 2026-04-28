@@ -16,6 +16,8 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import kotlin.uuid.Uuid
 
+const val HEXO_WEBSITE = "https://hexo.did.science"
+
 interface MatchRepository {
     suspend fun getGame(id: Uuid): Match?
 }
@@ -25,7 +27,7 @@ fun MatchRepository.cached(cacheSize: Long = 16): MatchRepository = when (this) 
     else -> CachingMatchRepository(this, cacheSize)
 }
 
-fun MatchRepository(): MatchRepository = MatchRepositoryImpl(CIO.create(), "https://hexo.did.science/api")
+fun MatchRepository(): MatchRepository = MatchRepositoryImpl(CIO.create(), "$HEXO_WEBSITE/api")
 
 private class MatchRepositoryImpl(engine: HttpClientEngine, private val host: String) : MatchRepository {
     private val client = HttpClient(engine) {
