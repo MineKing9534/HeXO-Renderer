@@ -12,11 +12,11 @@ menu.game:
             else -> ":seedling:"
         }
     } Game Review
-    -# https://hexo.did.science/games/${match.id}
     ${ match.tournament?.let { tournament ->
       "-# Tournament: [${tournament.name}](${tournament.url})${if (tournament.bestOf > 1) ", G${tournament.currentGameNumber} (BO${tournament.bestOf})" else ""}"
     } ?: "" }
 
+  view.label: View in Browser
   move:
     title: Enter the move to inspect
     inputs:

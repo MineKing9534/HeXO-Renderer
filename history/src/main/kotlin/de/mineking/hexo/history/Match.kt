@@ -109,6 +109,8 @@ data class Match(
     val tournament: Tournament?,
     val moves: List<Move>,
 ) {
+    val url get() = "$HEXO_WEBSITE/games/$id"
+
     val playerIdMappings = mapOf(
         playerTiles.entries.first { (_, tile) -> tile.color.red > 200 }.key to Player.X,
         playerTiles.entries.first { (_, tile) -> tile.color.blue > 200 }.key to Player.O,
