@@ -4,7 +4,7 @@ kotlin-serialization = "1.11.0"
 kotlin-coroutines = "1.10.2"
 
 shadow = "9.2.2"
-detekt = "2.0.0-alpha.2"
+detekt = "2.0.0-alpha.3"
 testlogger = "4.0.0"
 
 cache = "3.0.3"

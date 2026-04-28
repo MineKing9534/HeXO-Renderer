@@ -49,6 +49,8 @@ ktlint:
     maxLineLength: 150
   Wrapping:
     active: false
+  CommentWrapping:
+    active: false
   PropertyWrapping:
     maxLineLength: 140
   ParameterListWrapping:
