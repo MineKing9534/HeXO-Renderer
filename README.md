@@ -71,26 +71,28 @@ The basic idea of BKE notation is dividing the board in rings (identified by let
 Even though the zero offset line is not required to identify a formation on an empty board, it is relevant to know in which orientation the formation should be rendered. 
 Also, when applying BKE on a non-empty board, the origin and zero offset line become vital to avoid ambiguity.
 
-To encode the zero offset line, the actual BKE notation has to be prefixed with one of these indicators: `->`, `\>`, `</`, `<-`, `<\`, `/>` representing one of the right, bottom right, bottom left, left, top left or top right zero offset lines.
-It is also optionally possible to specify the direction in which to step from that zero offset line by adding `CCW` or `CW`, for counterclockwise and clockwise respectively, behind the suffix.
+To encode the zero offset line, the actual BKE notation can be prefixed with one of these indicators: `->`, `\>`, `</`, `<-`, `<\`, `/>` representing one of the right, bottom right, bottom left, left, top left or top right zero offset lines.
+If no direction is specified, `/>` is used implicitly.
+It is also optionally possible to specify the direction (chirality) in which to step from that zero offset line by adding `CCW` or `CW`, for counterclockwise and clockwise respectively, behind the direction prefix.
+If no chirality is specified, the value will default to clockwise.
 
-For example, `</CCW:o A0 A1 x A2 B3` renders as follows:
+For example, `</ CCW o A0 A1 x A2 B3` renders as follows:
 
 ![example bke](assets/example_bke.png)
 
 To avoid long offset values, you can optionally use sector addressing. 
 For this, the board is split into 6 sectors divided by the possible zero offset lines. Using `sector.offset` you can use a sector-relative offset.
-For example, `</CCW:o A0 A1 x A2 B1.1` would be equivalent to the example before.
+For example, `</ CCW o A0 A1 x A2 B1.1` would be equivalent to the example before.
 
 ### Combined
 
 It is also possible to combine rectilinear notation with BKE notation. This is useful if you want to encode an initial state and the moves made from that point on.
 For that you just write `<rectilinear>, <bke>` with each part following the corresponding rules stated above. The BKE origin will be the top left cell by default. 
-You can change this by adding a `@(q, r)` before the `:` of the BKE notation, where q and r define the axial coordinates of the new origin relative to the top left corner.
+You can change this by adding a `@(q, r)` before the actual BKE notation, where q and r define the axial coordinates of the new origin relative to the top left corner.
 
 The following are equivalent: 
-- `.x/xx, <\@(1,0): o A0 A1 x B3.1 B3.2`
-- `.x/xx, />: o A0 B1 x B2.0 B2.1`
+- `.x/xx, <\ @(1,0) o A0 A1 x B3.1 B3.2`
+- `.x/xx, /> o A0 B1 x B2.0 B2.1`
 
 ![example combined](assets/example_combined.png)
 
