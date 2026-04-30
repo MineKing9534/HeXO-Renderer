@@ -2,26 +2,10 @@ package de.mineking.hexo.parse
 
 import de.mineking.hexo.core.Board
 import de.mineking.hexo.core.CellCoordinate
+import de.mineking.hexo.core.Direction
 import de.mineking.hexo.core.Player
 import de.mineking.hexo.core.plus
 import de.mineking.hexo.core.times
-
-enum class ZeroOffsetLine(val symbol: String, val direction: CellCoordinate) {
-    Right("->", CellCoordinate(1, 0)),
-    BottomRight("\\>", CellCoordinate(0, 1)),
-    BottomLeft("</", CellCoordinate(-1, 1)),
-    Left("<-", CellCoordinate(-1, 0)),
-    TopLeft("<\\", CellCoordinate(0, -1)),
-    TopRight("/>", CellCoordinate(1, -1)),
-    ;
-
-    companion object {
-        fun fromSymbol(symbol: String) = entries.firstOrNull { it.symbol == symbol }
-            ?: throw IllegalArgumentException("Unknown symbol: $symbol. Valid symbols are ${entries.map { it.symbol }}")
-    }
-
-    fun ringDirection(sector: Int) = entries[(ordinal + sector + 2) % entries.size].direction
-}
 
 enum class Chirality(val symbol: String) {
     Clockwise("CW"),
@@ -40,7 +24,7 @@ object BKENotationParser : BoardParser {
 
 fun String.parseBKENotation(
     origin: CellCoordinate? = null,
-    zeroOffsetLine: ZeroOffsetLine = ZeroOffsetLine.Right,
+    zeroOffsetLine: Direction = Direction.Right,
     chirality: Chirality = Chirality.Clockwise,
 ): Board {
     val turns = parseBKETurns()
@@ -122,7 +106,7 @@ private fun String.parseRingOffset(): RingOffset {
     return RingOffset(ring, offset)
 }
 
-private fun RingOffset.toCellCoordinate(origin: CellCoordinate, zeroOffsetLine: ZeroOffsetLine, chirality: Chirality): CellCoordinate {
+private fun RingOffset.toCellCoordinate(origin: CellCoordinate, zeroOffsetLine: Direction, chirality: Chirality): CellCoordinate {
     val perimeter = 6 * ring
     val orientedOffset = if (chirality == Chirality.CounterClockwise) (perimeter - offset) % perimeter else offset
 

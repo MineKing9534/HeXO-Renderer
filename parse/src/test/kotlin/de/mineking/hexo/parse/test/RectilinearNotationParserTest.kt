@@ -2,6 +2,8 @@ package de.mineking.hexo.parse.test
 
 import de.mineking.hexo.core.Cell
 import de.mineking.hexo.core.CellCoordinate
+import de.mineking.hexo.core.Direction
+import de.mineking.hexo.core.HighlightLine
 import de.mineking.hexo.core.Player
 import de.mineking.hexo.parse.parseRectilinearNotation
 import kotlin.test.Test
@@ -68,6 +70,41 @@ class RectilinearNotationParserTest {
                 CellCoordinate(0, 3) to Cell(Player.X),
             ),
             board.cells,
+        )
+    }
+
+    @Test
+    fun `parse with cell highlight`() {
+        val board = "x X - ! O".parseRectilinearNotation()
+        assertEquals(
+            mapOf(
+                CellCoordinate(0, 0) to Cell(Player.X),
+                CellCoordinate(1, 0) to Cell(Player.X, highlighted = true),
+                CellCoordinate(4, 0) to Cell(null, highlighted = true),
+                CellCoordinate(5, 0) to Cell(Player.O, highlighted = true),
+            ),
+            board.cells,
+        )
+    }
+
+    @Test
+    fun `parse line highlight`() {
+        val board = "..(<-3x)/x/o(<\\)".parseRectilinearNotation()
+
+        assertEquals(
+            mapOf(
+                CellCoordinate(0, 1) to Cell(Player.X),
+                CellCoordinate(0, 2) to Cell(Player.O),
+            ),
+            board.cells,
+        )
+
+        assertEquals(
+            listOf(
+                HighlightLine(CellCoordinate(1, 0), Direction.Left, length = 3, color = Player.X),
+                HighlightLine(CellCoordinate(0, 2), Direction.TopLeft, length = 4, color = null),
+            ),
+            board.highlightedLines,
         )
     }
 }

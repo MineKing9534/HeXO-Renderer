@@ -2,6 +2,7 @@ package de.mineking.hexo.parse
 
 import de.mineking.hexo.core.Board
 import de.mineking.hexo.core.CellCoordinate
+import de.mineking.hexo.core.Direction
 import de.mineking.hexo.core.merge
 
 private const val MOVE_PATTERN = /*language=regexp*/ """[A-Z](?:[0-5]\.)?\d+"""
@@ -36,7 +37,7 @@ private fun String.parseDirectionalBKENotation(pure: Boolean): Board? {
     val match = BKE_FORMAT.matchEntire(this) ?: return null
 
     val (_, zeroOffsetLineSymbol, chiralitySymbol, originQ, originR, content) = match.groupValues
-    val zeroOffsetLine = if (zeroOffsetLineSymbol.isNotEmpty()) ZeroOffsetLine.fromSymbol(zeroOffsetLineSymbol) else ZeroOffsetLine.TopRight
+    val zeroOffsetLine = if (zeroOffsetLineSymbol.isNotEmpty()) Direction.fromSymbol(zeroOffsetLineSymbol) else Direction.TopRight
     val chirality = if (chiralitySymbol.isNotEmpty()) Chirality.fromSymbol(chiralitySymbol) else Chirality.Clockwise
     val origin = if (pure) {
         require(originR.isEmpty()) { "Origin cannot be specified in pure BKE notation" }

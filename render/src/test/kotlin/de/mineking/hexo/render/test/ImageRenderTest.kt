@@ -1,6 +1,8 @@
 package de.mineking.hexo.render.test
 
 import de.mineking.hexo.core.Board
+import de.mineking.hexo.core.CellCoordinate
+import de.mineking.hexo.core.Direction
 import de.mineking.hexo.core.Player
 import de.mineking.hexo.render.renderToImage
 import java.io.ByteArrayOutputStream
@@ -34,7 +36,30 @@ class ImageRenderTest {
         val renderedBytes = ByteArrayOutputStream()
         ImageIO.write(renderedImage, "png", renderedBytes)
 
-        val expected = javaClass.getResourceAsStream("/grid.png")?.readAllBytes()
+        val expected = javaClass.getResourceAsStream("/example.png")?.readAllBytes()
+
+        assertTrue(expected.contentEquals(renderedBytes.toByteArray()))
+    }
+
+    @Test
+    fun `highlighted line`() {
+        val board = Board()
+        board[0, 1].owner = Player.X
+        board[0, 2].owner = Player.O
+        board.highlightLine(CellCoordinate(1, 0), Direction.Left, length = 3, color = Player.X)
+        board.highlightLine(CellCoordinate(0, 2), Direction.TopLeft, length = 4, color = null)
+
+        val renderedImage = board.renderToImage(
+            layoutRadius = 64.0,
+            gap = 6.0,
+            borderThickness = 2f,
+            padding = 32,
+        )
+
+        val renderedBytes = ByteArrayOutputStream()
+        ImageIO.write(renderedImage, "png", renderedBytes)
+
+        val expected = javaClass.getResourceAsStream("/highlight_lines.png")?.readAllBytes()
 
         assertTrue(expected.contentEquals(renderedBytes.toByteArray()))
     }

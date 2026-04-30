@@ -5,13 +5,17 @@ package de.mineking.hexo.render
 import de.mineking.hexo.core.Board
 import de.mineking.hexo.core.Cell
 import de.mineking.hexo.core.CellCoordinate
+import de.mineking.hexo.core.HighlightLine
 import de.mineking.hexo.core.Player
+import de.mineking.hexo.core.end
 import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Font
 import java.awt.Graphics2D
 import java.awt.RenderingHints
 import java.awt.Shape
+import java.awt.geom.Area
+import java.awt.geom.Line2D
 import java.awt.geom.Path2D
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
@@ -93,7 +97,7 @@ fun Board.renderToImage(
     require(cells.isNotEmpty())
 
     val size = RenderSize(layoutRadius, gap)
-    val boundingBox = cells.keys.findBoundingBox(size)
+    val boundingBox = findBoundingBox(size)
     val renderer = InternalBoardRenderer(
         boundingBox,
         size,
@@ -112,6 +116,10 @@ fun Board.renderToImage(
     for (position in boundingBox.findVisibleCoordinates(size)) {
         val cell = cells[position]?.let { it.copy(focussed = it.focussed || position in winningCells) } ?: Cell()
         renderer.drawCell(position, cell)
+    }
+
+    highlightedLines.forEach {
+        renderer.drawLine(it)
     }
 
     return renderer.image
@@ -143,13 +151,14 @@ private fun BoundingBox.findVisibleCoordinates(size: RenderSize) = sequence {
     }
 }
 
-private fun Collection<CellCoordinate>.findBoundingBox(size: RenderSize): BoundingBox {
+private fun Board.findBoundingBox(size: RenderSize): BoundingBox {
     var minX = Double.POSITIVE_INFINITY
     var maxX = Double.NEGATIVE_INFINITY
     var minY = Double.POSITIVE_INFINITY
     var maxY = Double.NEGATIVE_INFINITY
 
-    for (position in this) {
+    val endPoints = highlightedLines.flatMap { listOf(it.start, it.end) }
+    for (position in cells.keys + endPoints) {
         val (cx, cy) = size.run { position.toPixel() }
 
         for (i in 0 until 6) {
@@ -216,19 +225,35 @@ private class InternalBoardRenderer(
         }
     }
 
-    private val Player?.color get() = when (this) {
+    private fun Player?.color(emptyCellColor: Color) = when (this) {
         Player.X -> colorScheme.playerX
         Player.O -> colorScheme.playerO
-        null -> colorScheme.emptyCell
+        null -> emptyCellColor
+    }
+
+    fun drawLine(line: HighlightLine) {
+        val (sx, sy) = line.start.toPixel()
+        val (ex, ey) = line.end.toPixel()
+
+        val segment = Line2D.Double(sx, sy, ex, ey)
+
+        val innerStroke = BasicStroke(borderThickness * 6, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND).createStrokedShape(segment)
+        val outerStroke = BasicStroke(borderThickness * 8, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND).createStrokedShape(segment)
+
+        val inner = Area(innerStroke)
+        val ring = Area(outerStroke).apply { subtract(inner) }
+        graphics.color = colorScheme.cellBorder.withAlpha(128)
+        graphics.fill(ring)
+
+        graphics.color = line.color.color(emptyCellColor = colorScheme.highlightedCellBorder).withAlpha(220)
+        graphics.fill(inner)
     }
 
     fun drawCell(position: CellCoordinate, cell: Cell) {
-        val (x, y) = size.run { position.toPixel() }.let { (x, y) ->
-            x - boundingBox.minX + padding to y - boundingBox.minY + padding
-        }
+        val (x, y) = position.toPixel()
         val hex = createHex(x, y)
 
-        graphics.color = cell.owner.color
+        graphics.color = cell.owner.color(emptyCellColor = colorScheme.emptyCell)
         graphics.fill(hex)
 
         fun drawHighlight(color: Color) {
@@ -258,7 +283,7 @@ private class InternalBoardRenderer(
 
         val oldFont = graphics.font
         graphics.font = BOLD_FONT.deriveFont(Font.BOLD, size.hexSize.toFloat() * 0.7f)
-        graphics.color = cell.owner.color.darker()
+        graphics.color = cell.owner.color(emptyCellColor = colorScheme.emptyCell)
 
         val fm = graphics.fontMetrics
         val textX = x - fm.stringWidth(text) / 2.0
@@ -287,6 +312,12 @@ private class InternalBoardRenderer(
 
     override fun close() {
         graphics.dispose()
+    }
+
+    private fun CellCoordinate.toPixel() = size.run {
+        toPixel().let { (x, y) ->
+            x - boundingBox.minX + padding to y - boundingBox.minY + padding
+        }
     }
 }
 
