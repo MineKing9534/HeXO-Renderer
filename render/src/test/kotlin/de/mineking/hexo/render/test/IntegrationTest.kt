@@ -51,4 +51,19 @@ class IntegrationTest {
 
         assertEquals(board, parsed)
     }
+
+    @Test
+    fun `label integration test`() {
+        val board = Board()
+        board[0, 0].apply {
+            owner = Player.X
+            label = "a"
+        }
+        board[1, 0].label = "b"
+
+        val rendered = board.renderRectilinearNotation(RectilinearNotationType.Compact)
+        val parsed = rendered.parseRectilinearNotation()
+
+        assertEquals(board, parsed)
+    }
 }

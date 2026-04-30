@@ -42,7 +42,7 @@ class RectilinearNotationBoardRenderer(val type: RectilinearNotationType) : Boar
 fun Board.renderRectilinearNotation(type: RectilinearNotationType) = buildString {
     val winningCells = findWinningRows().flatten().map { it.first }.toSet()
     val lines = cells.entries
-        .filter { (_, cell) -> cell.owner != null || cell.highlighted }
+        .filter { (_, cell) -> cell.owner != null || cell.highlighted || cell.label.isNotBlank() }
         .groupBy { (coordinate, _) -> coordinate.r }
         .mapValues { (_, cells) ->
             val line = cells.associate { (coordinate, cell) -> coordinate.q to cell }
@@ -78,6 +78,10 @@ private fun StringBuilder.appendCell(cell: Cell?) {
         Player.O -> if (highlight) "O" else "o"
         null -> if (highlight) "!" else "."
     })
+
+    if (!cell?.label.isNullOrBlank()) {
+        append("[${cell.label}]")
+    }
 }
 
 private data class BoardSize(val minQ: Int, val maxQ: Int)
