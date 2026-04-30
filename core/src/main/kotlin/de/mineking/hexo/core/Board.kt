@@ -1,5 +1,6 @@
 package de.mineking.hexo.core
 
+import java.util.Objects
 import kotlin.collections.getOrPut
 import kotlin.collections.toMutableMap
 
@@ -31,8 +32,8 @@ class Board(initial: MutableMap<CellCoordinate, Cell> = mutableMapOf()) {
         cells[coordinate] = cell
     }
 
-    override fun hashCode() = cells.hashCode()
-    override fun equals(other: Any?) = other is Board && cells == other.cells
+    override fun hashCode() = Objects.hash(cells, highlightedLines)
+    override fun equals(other: Any?) = other is Board && cells == other.cells && highlightedLines == other.highlightedLines
 
     fun findWinningRows(): List<List<Pair<CellCoordinate, Cell>>> {
         val rows = mutableListOf<List<Pair<CellCoordinate, Cell>>>()
