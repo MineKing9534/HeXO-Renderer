@@ -6,6 +6,7 @@ import de.mineking.hexo.core.Direction
 import de.mineking.hexo.core.HighlightLine
 import de.mineking.hexo.core.Player
 import de.mineking.hexo.parse.parseRectilinearNotation
+import org.junit.jupiter.api.assertThrows
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -106,5 +107,38 @@ class RectilinearNotationParserTest {
             ),
             board.highlightedLines,
         )
+    }
+
+    @Test
+    fun `parse with label`() {
+        val board = """
+            x . [a] . o [b]
+        """.trimIndent().parseRectilinearNotation()
+
+        assertEquals(
+            mapOf(
+                CellCoordinate(0, 0) to Cell(Player.X),
+                CellCoordinate(1, 0) to Cell(null, label = "a"),
+                CellCoordinate(3, 0) to Cell(Player.O, label = "b"),
+            ),
+            board.cells,
+        )
+    }
+
+    @Test
+    fun `parse with label on empty row`() {
+        val e = assertThrows<IllegalArgumentException> {
+            " x/[a]".parseRectilinearNotation()
+        }
+
+        assertEquals("This operations requires a cell in the current row!", e.message)
+    }
+
+    @Test
+    fun `parse with unterminated label at eof`() {
+        val e = assertThrows<IllegalArgumentException> {
+            "x.[ab".parseRectilinearNotation()
+        }
+        assertEquals("Unterminated symbol at end of input", e.message)
     }
 }
