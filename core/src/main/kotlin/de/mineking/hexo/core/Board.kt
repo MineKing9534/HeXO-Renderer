@@ -1,14 +1,7 @@
 package de.mineking.hexo.core
 
-data class CellCoordinate(val q: Int, val r: Int) {
-    companion object {
-        val Zero = CellCoordinate(0, 0)
-    }
-}
-
-operator fun CellCoordinate.plus(other: CellCoordinate) = CellCoordinate(q + other.q, r + other.r)
-operator fun CellCoordinate.minus(other: CellCoordinate) = CellCoordinate(q - other.q, r - other.r)
-operator fun CellCoordinate.times(scalar: Int) = CellCoordinate(q * scalar, r * scalar)
+import kotlin.collections.getOrPut
+import kotlin.collections.toMutableMap
 
 class Board(initial: MutableMap<CellCoordinate, Cell> = mutableMapOf()) {
     companion object {
@@ -20,8 +13,15 @@ class Board(initial: MutableMap<CellCoordinate, Cell> = mutableMapOf()) {
         )
     }
 
+    val highlightedLines: List<HighlightLine>
+        field = mutableListOf()
+
     val cells: Map<CellCoordinate, Cell>
         field = initial
+
+    fun highlightLine(origin: CellCoordinate, direction: Direction, length: Int, color: Player? = null) {
+        highlightedLines += HighlightLine(origin, direction, length, color)
+    }
 
     operator fun get(q: Int, r: Int) = get(CellCoordinate(q, r))
     operator fun get(coordinate: CellCoordinate) = cells.getOrPut(coordinate) { Cell(null, false) }
