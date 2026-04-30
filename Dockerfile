@@ -14,6 +14,6 @@ RUN --mount=type=cache,target=/home/gradle/.gradle \
 FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
-COPY --from=build /workspace/discord/build/libs/discord-1.0.0-all.jar /app/bot.jar
+COPY --from=build /workspace/discord/build/libs/discord-*-all.jar /app/bot.jar
 
 ENTRYPOINT ["java", "-jar", "/app/bot.jar"]
