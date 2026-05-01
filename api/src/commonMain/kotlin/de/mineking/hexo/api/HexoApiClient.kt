@@ -23,6 +23,9 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.serialization.json.Json
 import kotlin.uuid.Uuid
 
+@RequiresOptIn(level = RequiresOptIn.Level.WARNING)
+annotation class InternalHexoApi
+
 const val HEXO_WEBSITE = "https://hexo.did.science"
 
 expect val DefaultHttpEngine: HttpClientEngine

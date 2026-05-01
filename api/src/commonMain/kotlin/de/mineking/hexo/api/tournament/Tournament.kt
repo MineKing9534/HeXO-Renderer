@@ -46,7 +46,7 @@ enum class TournamentStatus {
 data class TournamentParticipant(
     val profileId: ProfileId,
     val displayName: String,
-    val image: String,
+    val image: String?,
     val registeredAt: Instant,
 )
 
