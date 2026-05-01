@@ -72,11 +72,11 @@ internal class TournamentRepositoryImpl(private val client: HexoApiClient) : Tou
             }
         }
 
-        val data = getTournament(id)?.takeIf { !it.isComplete() }
+        val data = getTournament(id)
         cacheLock.withLock {
-            if (data == null) {
+            if (data == null || data.isComplete()) {
                 cache.remove(id)
-                return null
+                return data?.let { LiveTournament(it) }
             } else {
                 // This entry could exist by now
                 val cacheEntry = cache[id]
