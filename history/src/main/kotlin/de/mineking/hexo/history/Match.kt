@@ -32,8 +32,9 @@ data class Move(
 data class PlayerInfo(
     @SerialName("playerId") val id: PlayerId,
     val displayName: String,
-    val elo: Int,
     val profileId: String,
+    val elo: Int,
+    val eloChange: Int?,
 )
 
 fun PlayerInfo.isGuest() = id.value == profileId

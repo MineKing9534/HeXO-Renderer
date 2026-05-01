@@ -62,6 +62,7 @@ import net.dv8tion.jda.api.components.actionrow.ActionRow
 import net.dv8tion.jda.api.components.separator.Separator
 import net.dv8tion.jda.api.interactions.DiscordLocale
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback
+import kotlin.math.absoluteValue
 import kotlin.uuid.Uuid
 
 data class GameMenuParameter(val event: IReplyCallback, val id: Uuid, val move: Int)
@@ -123,7 +124,10 @@ fun UIManager.gameMenu(matchRepository: MatchRepository) = registerLocalizedMenu
                     append(" ")
                     append(playerInfo.displayName)
 
-                    if (!playerInfo.isGuest()) append(" (`${playerInfo.elo} ELO`)")
+                    if (!playerInfo.isGuest()) {
+                        val eloChange = playerInfo.eloChange?.let { "　[${if (it < 0) "▼" else "▲"} ${it.absoluteValue}]" } ?: ""
+                        append("　`${playerInfo.elo} ELO$eloChange`")
+                    }
                     if (match.gameResult.winningPlayerId == playerInfo.id) append(" :first_place:")
                 }
 
