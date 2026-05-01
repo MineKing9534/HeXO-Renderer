@@ -6,6 +6,8 @@ import de.mineking.discord.localization.DefaultLocalizationManager
 import de.mineking.discord.localization.LocalizationFile
 import de.mineking.discord.localization.read
 import de.mineking.discord.ui.message.MessageMenu
+import de.mineking.discord.utils.await
+import de.mineking.discord.utils.listen
 import de.mineking.discord.withLocalization
 import de.mineking.hexo.discord.commands.gameCommand
 import de.mineking.hexo.discord.commands.renderHexoContextCommand
@@ -18,10 +20,13 @@ import de.mineking.hexo.parse.RectilinearStateBKETurnNotationParser
 import de.mineking.hexo.parse.cached
 import de.mineking.hexo.render.ImageBoardRenderer
 import de.mineking.hexo.render.cached
+import dev.freya02.jda.emojis.unicode.Emojis
 import io.github.oshai.kotlinlogging.KotlinLogging
+import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.OnlineStatus
 import net.dv8tion.jda.api.entities.Activity
+import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
 import net.dv8tion.jda.api.utils.messages.MessageRequest
 
 internal val logger = KotlinLogging.logger {}
@@ -71,6 +76,22 @@ class HeXODiscordBot(token: String) {
             updateCommands().queue()
         }
         .build()
+
+    init {
+        jda.registerMessageDeleteListener()
+    }
+}
+
+private fun JDA.registerMessageDeleteListener() {
+    listen<MessageReactionAddEvent> {
+        if (reaction.emoji != Emojis.WASTEBASKET) return@listen
+
+        val message = retrieveMessage().await()
+        if (message.author != jda.selfUser) return@listen
+        if (message.interactionMetadata?.user?.idLong != userIdLong) return@listen
+
+        message.delete().queue()
+    }
 }
 
 inline fun <reified L : LocalizationFile> HeXODiscordBot.localization() = dtk.localizationManager.read<L>()
