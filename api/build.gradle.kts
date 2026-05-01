@@ -24,7 +24,9 @@ kotlin {
     sourceSets.jvmMain {
         dependencies {
             implementation(projects.board)
+
             implementation(libs.cache)
+            implementation(libs.ktor.client.cio)
 
             implementation(libs.logging)
 
@@ -34,6 +36,8 @@ kotlin {
 
     sourceSets.jsMain {
         dependencies {
+            implementation(libs.ktor.client.js)
+
             implementation(libs.logging)
 
             implementation(npm("socket.io-client", "4.8.3"))

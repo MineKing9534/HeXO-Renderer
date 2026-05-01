@@ -8,7 +8,6 @@ import de.mineking.hexo.api.tournament.TournamentRepository
 import de.mineking.hexo.api.tournament.TournamentRepositoryImpl
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
-import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.websocket.WebSockets
@@ -26,11 +25,13 @@ import kotlin.uuid.Uuid
 
 const val HEXO_WEBSITE = "https://hexo.did.science"
 
+expect val DefaultHttpEngine: HttpClientEngine
+
 class HexoApiClient(
     internal val coroutineScope: CoroutineScope,
     private val host: String = HEXO_WEBSITE,
     connectSocketIO: Boolean = false,
-    engine: HttpClientEngine = CIO.create(),
+    engine: HttpClientEngine = DefaultHttpEngine,
 ) {
     companion object {
         private val json = Json {
