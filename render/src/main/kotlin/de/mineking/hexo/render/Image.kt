@@ -34,6 +34,7 @@ data class ColorScheme(
     val highlightedCellBorder: Color,
     val focussedCellBorder: Color,
     val emptyCell: Color,
+    val emptyCellLabel: Color,
     val playerX: Color,
     val playerO: Color,
 ) {
@@ -44,6 +45,7 @@ data class ColorScheme(
             highlightedCellBorder = Color(0xec6fb1),
             focussedCellBorder = Color.WHITE,
             emptyCell = Color(0, true),
+            emptyCellLabel = Color(0x7182a3),
             playerX = Color(0xfbc139),
             playerO = Color(0x38bdf8),
         )
@@ -275,15 +277,17 @@ private class InternalBoardRenderer(
             }
         }
 
-        drawTurnNumber(cell, x, y)
+        drawLabel(cell, x, y)
     }
 
-    private fun drawTurnNumber(cell: Cell, x: Double, y: Double) {
-        val text = cell.turn?.toString() ?: return
+    private fun drawLabel(cell: Cell, x: Double, y: Double) {
+        val text = cell.label.takeIf { it.isNotBlank() }
+            ?: cell.turn?.toString()
+            ?: return
 
         val oldFont = graphics.font
         graphics.font = BOLD_FONT.deriveFont(Font.BOLD, size.hexSize.toFloat() * 0.7f)
-        graphics.color = cell.owner.color(emptyCellColor = colorScheme.emptyCell)
+        graphics.color = cell.owner.color(emptyCellColor = colorScheme.emptyCellLabel)
 
         val fm = graphics.fontMetrics
         val textX = x - fm.stringWidth(text) / 2.0

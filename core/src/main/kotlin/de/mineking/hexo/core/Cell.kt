@@ -17,6 +17,7 @@ data class Cell(
     var highlighted: Boolean = false,
     var focussed: Boolean = false,
     var turn: Int? = null,
+    var label: String = "",
 )
 
 data class CellCoordinate(val q: Int, val r: Int) {

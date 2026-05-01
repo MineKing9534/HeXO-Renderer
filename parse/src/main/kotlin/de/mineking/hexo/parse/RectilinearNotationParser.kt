@@ -35,6 +35,7 @@ private enum class ParserState {
             return when {
                 ch.isDigit() -> GapDigits.handleChar(ch, offset, cursor, buffer)
                 ch == '(' -> LineHighlight
+                ch == '[' -> Label
                 else -> {
                     cursor.handleNormalChar(ch, offset)
                     this
@@ -74,6 +75,20 @@ private enum class ParserState {
                 buffer.clear()
 
                 return Normal.handleChar(ch, offset, cursor, buffer)
+            }
+        }
+    },
+    Label {
+        override fun handleChar(ch: Char, offset: Int, cursor: Cursor, buffer: StringBuilder): ParserState {
+            if (ch == ']') {
+                require(buffer.length <= 3) { "Labels can be at most 3 characters long!" }
+                cursor.configurePrevious { label = buffer.toString() }
+                buffer.clear()
+
+                return Normal
+            } else {
+                buffer.append(ch)
+                return this
             }
         }
     },
@@ -125,6 +140,11 @@ private class Cursor(private val board: Board) {
 
     fun configureCurrent(block: Cell.() -> Unit) {
         board[position].block()
+    }
+
+    fun configurePrevious(block: Cell.() -> Unit) {
+        require(position.q >= 1) { "This operations requires a cell in the current row!" }
+        board[position - STEP_DIRECTION].block()
     }
 
     fun highlightLine(origin: CellCoordinate, direction: Direction, length: Int, color: Player?) {

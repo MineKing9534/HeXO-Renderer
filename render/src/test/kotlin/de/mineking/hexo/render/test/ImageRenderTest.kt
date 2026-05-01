@@ -25,6 +25,11 @@ class ImageRenderTest {
         board[0, 1].owner = Player.O
         board[2, 1].owner = Player.O
         board[0, 3].owner = Player.X
+        board[0, 4].apply {
+            highlighted = true
+            label = "b"
+        }
+        board[-1, 4].label = "a"
 
         val renderedImage = board.renderToImage(
             layoutRadius = 64.0,

@@ -10,6 +10,9 @@ Add HeXO Renderer to your server or user account: [Invite HeXO Renderer](https:/
   * [Table of Contents](#table-of-contents)
   * [Notation](#notation)
     * [Rectilinear Notation](#rectilinear-notation)
+      * [Basics](#basics)
+      * [Highlighting](#highlighting)
+      * [Custom Labels](#custom-labels)
     * [BKE Notation](#bke-notation)
     * [Combined](#combined)
   * [Features](#features)
@@ -22,6 +25,7 @@ Add HeXO Renderer to your server or user account: [Invite HeXO Renderer](https:/
 
 ## Notation
 ### Rectilinear Notation
+#### Basics
 Rectilinear notation is a notation for encoding board states used by the community to quickly write down formations in text messages. 
 However, it can become hard to reason about for more complex states. To solve this issue, this bot provides a way to render this notation as an image directly from within Discord.
 
@@ -50,6 +54,7 @@ Or for a more complex example:
 ```
 ![example 2](assets/example_2.png)
 
+#### Highlighting
 It is also possible to highlight cells. For player characters you can use uppercase letters and for empty cells `!`:
 
 | Default Character | Highlighted Variant |
@@ -74,6 +79,18 @@ Also, either `x` or `o` can ba added last, which specifies the color of the line
 `.(->)xx/.o(\>3o)/(->o)oo`
 
 ![example highlight line](assets/example_highlight_line.png)
+
+#### Custom Labels
+Cells can also be labeled. The label will be rendered as text inside the labeled cell.
+
+> [!NOTE]
+> Labels can be at most 3 characters long to avoid overlap with other cells.
+
+Labels are define for the previous cell in square brackets.
+
+`.o.[a].[b].[c].[d]/oxxxx.[e]/.[f].[g].[h]x.[i]/...[j].[k]`
+
+![example label](assets/example_label.png)
 
 ### BKE Notation
 The bot can also render a variation of BKE notation. This is especially useful if you want turn numbers to be displayed on the rendered tiles.
