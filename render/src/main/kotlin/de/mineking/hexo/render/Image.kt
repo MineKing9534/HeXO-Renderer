@@ -287,7 +287,7 @@ private class InternalBoardRenderer(
 
         val oldFont = graphics.font
         graphics.font = BOLD_FONT.deriveFont(Font.BOLD, size.hexSize.toFloat() * 0.7f)
-        graphics.color = cell.owner.color(emptyCellColor = colorScheme.emptyCellLabel)
+        graphics.color = cell.owner.color(emptyCellColor = colorScheme.emptyCellLabel.brighter()).darker()
 
         val fm = graphics.fontMetrics
         val textX = x - fm.stringWidth(text) / 2.0

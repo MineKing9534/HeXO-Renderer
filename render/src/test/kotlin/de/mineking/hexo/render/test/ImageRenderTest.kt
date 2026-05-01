@@ -22,7 +22,10 @@ class ImageRenderTest {
             owner = Player.X
             focussed = true
         }
-        board[0, 1].owner = Player.O
+        board[0, 1].apply {
+            owner = Player.O
+            label = "1"
+        }
         board[2, 1].owner = Player.O
         board[0, 3].owner = Player.X
         board[0, 4].apply {
