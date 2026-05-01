@@ -40,6 +40,12 @@ import de.mineking.discord.ui.render
 import de.mineking.discord.ui.setValue
 import de.mineking.discord.ui.state
 import de.mineking.discord.ui.terminateRender
+import de.mineking.hexo.api.asBoard
+import de.mineking.hexo.api.game.FinishedGame
+import de.mineking.hexo.api.game.FinishedGameRepository
+import de.mineking.hexo.api.game.GameFinishReason
+import de.mineking.hexo.api.game.isGuest
+import de.mineking.hexo.api.utils.TimeControl
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.core.Player
 import de.mineking.hexo.discord.CustomEmoji
@@ -49,12 +55,6 @@ import de.mineking.hexo.discord.effectiveLocale
 import de.mineking.hexo.discord.main
 import de.mineking.hexo.discord.renderAsComponent
 import de.mineking.hexo.discord.respond
-import de.mineking.hexo.history.GameFinishReason
-import de.mineking.hexo.history.Match
-import de.mineking.hexo.history.MatchRepository
-import de.mineking.hexo.history.TimeControl
-import de.mineking.hexo.history.asBoard
-import de.mineking.hexo.history.isGuest
 import de.mineking.hexo.render.RectilinearNotationType
 import de.mineking.hexo.render.renderRectilinearNotation
 import dev.freya02.jda.emojis.unicode.Emojis
@@ -67,9 +67,11 @@ import kotlin.math.absoluteValue
 import kotlin.uuid.Uuid
 
 data class GameMenuParameter(val event: IReplyCallback, val id: Uuid, val move: Int)
-private data class MatchData(val match: Match, val board: Board)
+private data class MatchData(val game: FinishedGame, val board: Board)
 
-fun UIManager.gameMenu(matchRepository: MatchRepository) = registerLocalizedMenu<GameMenuParameter, GameMenuLocalization>("game") { localization ->
+fun UIManager.gameMenu(
+    gameRepository: FinishedGameRepository,
+) = registerLocalizedMenu<GameMenuParameter, GameMenuLocalization>("game") { localization ->
     var id by state(Uuid.NIL)
     val moveState = state(0)
     val showTurnNumber = state(false)
@@ -85,7 +87,7 @@ fun UIManager.gameMenu(matchRepository: MatchRepository) = registerLocalizedMenu
     localize(locale) // Predefine locale for potential error handling
 
     val lazyMatchData = lazy(default = null) {
-        val match = matchRepository.getGame(id) ?: return@lazy null
+        val match = gameRepository.getGame(id) ?: return@lazy null
         val board = match.asBoard(move, showTurnNumber.value)
 
         MatchData(match, board)
@@ -101,10 +103,10 @@ fun UIManager.gameMenu(matchRepository: MatchRepository) = registerLocalizedMenu
         }
 
         localize(locale) {
-            bindParameter("match", matchData.match)
+            bindParameter("game", matchData.game)
         }
 
-        move = move.coerceIn(0, matchData.match.moveCount)
+        move = move.coerceIn(0, matchData.game.moveCount)
     }
 
     +container {
@@ -149,11 +151,9 @@ fun UIManager.gameMenu(matchRepository: MatchRepository) = registerLocalizedMenu
             +separator(spacing = Separator.Spacing.LARGE)
             +main.run { board.renderAsComponent() }
             +separator(spacing = Separator.Spacing.LARGE)
-
-            match to board
         }
 
-        +moveSelector("move", matchData?.match?.moveCount ?: Int.MAX_VALUE, moveState)
+        +moveSelector("move", matchData?.game?.moveCount ?: Int.MAX_VALUE, moveState)
         +additionalActions(main, lazyMatchData, showTurnNumber)
     }
 }

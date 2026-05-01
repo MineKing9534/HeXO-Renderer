@@ -1,8 +1,9 @@
-package de.mineking.hexo.history
+package de.mineking.hexo.api
 
+import de.mineking.hexo.api.game.FinishedGame
 import de.mineking.hexo.board.Board
 
-fun Match.asBoard(maxMoves: Int = moveCount, showTurnNumber: Boolean = false) = Board().apply {
+fun FinishedGame.asBoard(maxMoves: Int = moveCount, showTurnNumber: Boolean = false) = Board().apply {
     val maxMoves = maxMoves.coerceIn(0, moveCount)
     repeat(maxMoves) {
         val move = moves[it]

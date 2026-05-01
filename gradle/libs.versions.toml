@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.3.20"
+kotlin = "2.4.0-Beta2"
 kotlin-serialization = "1.11.0"
 kotlin-coroutines = "1.10.2"
 
@@ -38,7 +38,7 @@ jda = { module = "net.dv8tion:JDA", version.ref = "jda" }
 jda-emoji = { module = "dev.freya02:jda-emojis", version.ref = "jda-emoji" }
 dtk = { module = "de.mineking:DiscordToolKit", version.ref = "dtk-core" }
 
-logging = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "logging" }
+logging = { module = "io.github.oshai:kotlin-logging", version.ref = "logging" }
 logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 
 [bundles]

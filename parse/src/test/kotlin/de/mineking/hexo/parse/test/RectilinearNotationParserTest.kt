@@ -128,7 +128,7 @@ class RectilinearNotationParserTest {
     @Test
     fun `parse with label on empty row`() {
         val e = assertThrows<IllegalArgumentException> {
-            " x/[a]".parseRectilinearNotation()
+            val _ = " x/[a]".parseRectilinearNotation()
         }
 
         assertEquals("This operations requires a cell in the current row!", e.message)
@@ -137,7 +137,7 @@ class RectilinearNotationParserTest {
     @Test
     fun `parse with unterminated label at eof`() {
         val e = assertThrows<IllegalArgumentException> {
-            "x.[ab".parseRectilinearNotation()
+            val _ = "x.[ab".parseRectilinearNotation()
         }
         assertEquals("Unterminated symbol at end of input", e.message)
     }

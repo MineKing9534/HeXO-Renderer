@@ -9,19 +9,21 @@ import de.mineking.discord.ui.message.MessageMenu
 import de.mineking.discord.utils.await
 import de.mineking.discord.utils.listen
 import de.mineking.discord.withLocalization
+import de.mineking.hexo.api.HexoApiClient
+import de.mineking.hexo.api.cached
 import de.mineking.hexo.discord.commands.gameCommand
 import de.mineking.hexo.discord.commands.renderHexoContextCommand
 import de.mineking.hexo.discord.commands.renderHexoSlashCommand
 import de.mineking.hexo.discord.menus.GameMenuParameter
 import de.mineking.hexo.discord.menus.gameMenu
-import de.mineking.hexo.history.MatchRepository
-import de.mineking.hexo.history.cached
 import de.mineking.hexo.parse.RectilinearStateBKETurnNotationParser
 import de.mineking.hexo.parse.cached
 import de.mineking.hexo.render.ImageBoardRenderer
 import de.mineking.hexo.render.cached
 import dev.freya02.jda.emojis.unicode.Emojis
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.OnlineStatus
@@ -36,13 +38,15 @@ fun main() {
 
     val token = System.getenv("TOKEN")
         ?: error("Missing required 'TOKEN' environment variable!")
-    HeXODiscordBot(token)
+
+    val _ = HeXODiscordBot(token)
 }
 
 val Manager.main get() = manager.bot as HeXODiscordBot
 
 class HeXODiscordBot(token: String) {
-    private val matchRepository = MatchRepository().cached()
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private val finishedGameRepository = HexoApiClient(coroutineScope = coroutineScope).finishedGameRepository.cached()
 
     val jda = JDABuilder.createLight(token)
         .setStatus(OnlineStatus.ONLINE)
@@ -62,7 +66,7 @@ class HeXODiscordBot(token: String) {
             localize()
             installErrorHandling()
 
-            gameMenu = gameMenu(matchRepository)
+            gameMenu = gameMenu(finishedGameRepository)
         }
         .withCommandManager {
             localize()

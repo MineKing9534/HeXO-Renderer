@@ -20,6 +20,6 @@ include(":board")
 include(":render")
 include(":parse")
 
-include(":history")
+include(":api")
 
 include(":discord")

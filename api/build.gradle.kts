@@ -3,6 +3,10 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+detekt {
+    source = files("src/commonMain/kotlin", "src/jsMain/kotlin", "src/jvmMain/kotlin")
+}
+
 kotlin {
     sourceSets.commonMain {
         dependencies {
@@ -17,6 +21,18 @@ kotlin {
         dependencies {
             implementation(projects.board)
             implementation(libs.cache)
+
+            implementation(libs.logging)
+
+            implementation("io.socket:socket.io-client:2.1.1")
+        }
+    }
+
+    sourceSets.jsMain {
+        dependencies {
+            implementation(libs.logging)
+
+            implementation(npm("socket.io-client", "4.8.3"))
         }
     }
 }

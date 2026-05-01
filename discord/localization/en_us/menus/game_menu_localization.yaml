@@ -4,15 +4,15 @@ error:
     The queried game with id **$id** was not found!
 
 menu.game:
-  title.content: !<match:Match> |-
+  title.content: !<game:FinishedGame> |-
     # ${
         when {
-            match.tournament != null -> ":dart:"
-            match.gameOptions.rated -> ":trophy:"
+            game.tournament != null -> ":dart:"
+            game.gameOptions.rated -> ":trophy:"
             else -> ":seedling:"
         }
     } Game Review
-    ${ match.tournament?.let { tournament ->
+    ${ game.tournament?.let { tournament ->
       "-# Tournament: [${tournament.name}](${tournament.url})${if (tournament.bestOf > 1) ", G${tournament.currentGameNumber} (BO${tournament.bestOf})" else ""}"
     } ?: "" }
 
@@ -22,7 +22,7 @@ menu.game:
     inputs:
       move:
         label: Move number
-        description: !<match:Match> The move to inspect [1-${match.moveCount}]
+        description: !<game:FinishedGame> The move to inspect [1-${game.moveCount}]
         placeholder: 42
   format.label: Print Notation
   turn.label: Show Turn Numbers

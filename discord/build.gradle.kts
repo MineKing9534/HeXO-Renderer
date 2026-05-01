@@ -15,7 +15,7 @@ dependencies {
     implementation(projects.parse)
     implementation(projects.render)
 
-    implementation(projects.history)
+    implementation(projects.api)
 
     implementation(libs.kotlin.coroutines.core)
 
@@ -38,9 +38,9 @@ discordLocalization {
 
     botPackage = "de.mineking.hexo.discord"
 
-    import("de.mineking.hexo.history.Match")
-    import("de.mineking.hexo.history.TimeControl")
-    import("de.mineking.hexo.history.GameFinishReason")
+    import("de.mineking.hexo.api.utils.TimeControl")
+    import("de.mineking.hexo.api.game.FinishedGame")
+    import("de.mineking.hexo.api.game.GameFinishReason")
 }
 
 application {

@@ -39,11 +39,13 @@ fun String.parseBKENotation(
     }
 
     turns.forEachIndexed { index, (player, first, second) ->
-        fun CellCoordinate.applyMove() = board[this].apply {
-            owner = player
-            turn = index + 1
+        fun CellCoordinate.applyMove() {
+            board[this].apply {
+                owner = player
+                turn = index + 1
 
-            focussed = index == turns.lastIndex
+                focussed = index == turns.lastIndex
+            }
         }
 
         first.toCellCoordinate(origin, zeroOffsetLine, chirality).applyMove()

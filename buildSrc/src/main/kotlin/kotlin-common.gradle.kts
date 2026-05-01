@@ -12,9 +12,10 @@ repositories {
 }
 
 private val commonKotlinCompilerArgs = listOf(
-    "-opt-in=kotlin.uuid.ExperimentalUuidApi",
-    "-Xexplicit-backing-fields",
-    "-Xcontext-parameters",
+//    "-Xexplicit-backing-fields",
+//    "-Xcontext-parameters",
+    "-Xexpect-actual-classes",
+    "-Xreturn-value-checker=full",
 )
 
 private val javaVersion = 21
