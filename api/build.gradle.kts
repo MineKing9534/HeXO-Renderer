@@ -1,6 +1,8 @@
 plugins {
     id("kotlin-multiplatform")
     alias(libs.plugins.kotlin.serialization)
+
+    id("publish")
 }
 
 detekt {
@@ -8,6 +10,8 @@ detekt {
 }
 
 kotlin {
+    withSourcesJar(publish = true)
+
     sourceSets.commonMain {
         dependencies {
             implementation(projects.core)
