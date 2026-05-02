@@ -41,8 +41,14 @@ class LiveTournament(data: Tournament) {
     val timeControl: StateFlow<TimeControl>
         field = MutableStateFlow(data.timeControl)
 
-    val participants: StateFlow<List<LiveTournamentParticipant>>
+    val standings: StateFlow<List<LiveTournamentParticipant>>
         field = MutableStateFlow(data.toParticipantData())
+
+    val participants: StateFlow<Map<ProfileId, LiveTournamentParticipant>>
+        field = MutableStateFlow(standings.value.associateBy { it.profileId })
+
+    val matchOrganization: StateFlow<TournamentOrganization>
+        field = MutableStateFlow(data.toTournamentOrganization())
 
     @OptIn(InternalHexoApi::class)
     internal fun update(data: Tournament) {
@@ -60,7 +66,15 @@ class LiveTournament(data: Tournament) {
         registeredCount.value = data.registeredCount
         timeControl.value = data.timeControl
 
-        participants.value = data.toParticipantData()
+        standings.value = data.toParticipantData()
+        participants.value = standings.value.associateBy { it.profileId }
+
+        matchOrganization.value = data.toTournamentOrganization()
+    }
+
+    private fun Tournament.toTournamentOrganization() = when (format) {
+        TournamentFormat.Swiss -> SwissTournamentOrganization(this)
+        else -> error("Only swiss tournaments are supported by now")
     }
 
     private fun Tournament.toParticipantData(): List<LiveTournamentParticipant> {
