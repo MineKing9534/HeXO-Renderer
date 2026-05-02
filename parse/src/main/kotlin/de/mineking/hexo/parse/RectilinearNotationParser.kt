@@ -55,7 +55,7 @@ private enum class ParserState {
                 'o', 'O' -> configureCurrent { owner = Player.O }
                 '.', '!' -> {}
                 '-' -> step()
-                else -> throw IllegalArgumentException("Unexpected character '$ch' at offset $offset")
+                else -> throw IllegalArgumentException("Unexpected character `$ch` at offset $offset")
             }
 
             if (ch.isUpperCase() || ch == '!') {
@@ -109,7 +109,7 @@ private enum class ParserState {
 
         private fun Cursor.highlightLine(notation: String) {
             val match = pattern.matchEntire(notation)
-            require(match != null) { "Invalid line highlight notation, use [->|\\>|</|<-|<\\|/>][length][xo]?" }
+            require(match != null) { "Invalid line highlight notation, use `[->|\\>|</|<-|<\\|/>]<length>?[x|o]?`" }
 
             val direction = Direction.fromSymbol(match.groupValues[1])
             val length = match.groupValues[2].takeIf { it.isNotEmpty() }?.toInt() ?: 4

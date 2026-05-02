@@ -11,7 +11,7 @@ enum class Direction(val symbol: String, val direction: CellCoordinate) {
 
     companion object {
         fun fromSymbol(symbol: String) = entries.firstOrNull { it.symbol == symbol }
-            ?: throw IllegalArgumentException("Unknown symbol: $symbol. Valid symbols are ${entries.map { it.symbol }}")
+            ?: throw IllegalArgumentException("Unknown symbol: $symbol. Valid symbols are ${entries.joinToString { "`${it.symbol}`" }}")
     }
 
     fun ringDirection(sector: Int) = entries[(ordinal + sector + 2) % entries.size].direction

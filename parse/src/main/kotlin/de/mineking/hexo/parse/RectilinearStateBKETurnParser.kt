@@ -27,7 +27,7 @@ fun String.parseRectilinearStateBKETurnNotation(): Board {
 
         val originalState = rectilinear.parseRectilinearNotation()
         val additionalMoves = bke.parseDirectionalBKENotation(pure = false)
-            ?: throw IllegalArgumentException("Invalid BKE notation format, use [->|\\>|</|<-|<\\|/>][CW|CCW]?@(q,r) ...")
+            ?: throw IllegalArgumentException("Invalid BKE notation format, use `[->|\\>|</|<-|<\\|/>][CW|CCW]? ...`")
 
         originalState.merge(additionalMoves)
     }

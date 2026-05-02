@@ -14,7 +14,7 @@ enum class Chirality(val symbol: String) {
 
     companion object {
         fun fromSymbol(symbol: String) = entries.firstOrNull { it.symbol == symbol }
-            ?: throw IllegalArgumentException("Unknown symbol: $symbol. Valid symbols are ${entries.map { it.symbol }}")
+            ?: throw IllegalArgumentException("Unknown symbol: $symbol. Valid symbols are ${entries.joinToString { "`${it.symbol}`" }}")
     }
 }
 
@@ -67,7 +67,7 @@ private data class Turn(
 private fun String.parseBKETurns(): List<Turn> {
     val parts = trim().split(Regex("\\s+"))
     require(parts.isNotEmpty() && parts.size % 3 == 0) {
-        "BKE turns have to be in space separated blocks like this '[x|o] [A-B]<offset move 1> [A-B]<offset move 2>'"
+        "BKE turns have to be space separated blocks of the format `[x|o] [A-Z]<offset> [A-Z]<offset>`"
     }
 
     return parts.indices.step(3).map { offset ->
@@ -84,11 +84,11 @@ private fun String.parseBKETurns(): List<Turn> {
 private fun String.parsePlayer() = when (this) {
     "o" -> Player.O
     "x" -> Player.X
-    else -> throw IllegalArgumentException("Invalid player '$this'")
+    else -> throw IllegalArgumentException("Invalid player `$this`")
 }
 
 private fun String.parseRingOffset(): RingOffset {
-    require(length >= 2) { "Invalid bke move '$this', has to be in format [A-B]<offset>" }
+    require(length >= 2) { "Invalid bke move `$this`, has to be in format `[A-Z]<offset>`" }
     val ring = first().also { require(it in 'A'..'Z') } - 'A' + 1
 
     val offset = drop(1).let {
@@ -96,7 +96,7 @@ private fun String.parseRingOffset(): RingOffset {
         if (parts.size == 1) {
             it.toInt()
         } else {
-            require(parts.size == 2) { "Invalid bke move '$this', has to be in format [A-B]<offset>" }
+            require(parts.size == 2) { "Invalid bke move `$this`, has to be in format `[A-Z]<offset>`" }
             val (sector, offset) = parts
             sector.toInt() * ring + offset.toInt()
         }
