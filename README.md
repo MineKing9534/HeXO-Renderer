@@ -71,12 +71,12 @@ Additionally, winning rows (6 or more in a row) are highlighted automatically.
 
 You can also highlight lines. Highlighted lines are defined in parentheses after the cell that the line should start from. Inside the parentheses you have to specify at least the direction of the line, and optionally the length and color of the line.
 
-The direction of the line is indicated by one of the following symbols: `->`, `\>`, `</`, `<-`, `<\`, `/>` representing one of the right, bottom right, bottom left, left, top left or top right.
+The direction of the line is indicated by one of the following symbols: `>`, `q`, `p`, `<`, `b`, `d` representing one of the right, bottom right, bottom left, left, top left or top right.
 The length can be specified directly after. If no length is specified, it will default to `4`.
 
 Also, either `x` or `o` can ba added last, which specifies the color of the line. If no value is specified, the line will be pink by default.
 
-`.(->4)xx/.o(\>3o)/(->4o)oo`
+`.(>4)xx/.o(q3o)/(>4o)oo`
 
 ![example highlight line](assets/example_highlight_line.png)
 
@@ -99,18 +99,18 @@ The basic idea of BKE notation is dividing the board in rings (identified by let
 Even though the zero offset line is not required to identify a formation on an empty board, it is relevant to know in which orientation the formation should be rendered. 
 Also, when applying BKE on a non-empty board, the origin and zero offset line become vital to avoid ambiguity.
 
-To encode the zero offset line, the actual BKE notation can be prefixed with one of these indicators: `->`, `\>`, `</`, `<-`, `<\`, `/>` representing one of the right, bottom right, bottom left, left, top left or top right zero offset lines.
-If no direction is specified, `/>` is used implicitly.
+To encode the zero offset line, the actual BKE notation can be prefixed with one of these indicators: `>`, `q`, `p`, `<`, `b`, `d` representing one of the right, bottom right, bottom left, left, top left or top right zero offset lines.
+If no direction is specified, `d` is used implicitly.
 It is also optionally possible to specify the direction (chirality) in which to step from that zero offset line by adding `CCW` or `CW`, for counterclockwise and clockwise respectively, behind the direction prefix.
 If no chirality is specified, the value will default to clockwise.
 
-For example, `</ CCW o A0 A1 x A2 B3` renders as follows:
+For example, `p CCW o A0 A1 x A2 B3` renders as follows:
 
 ![example bke](assets/example_bke.png)
 
 To avoid long offset values, you can optionally use sector addressing. 
 For this, the board is split into 6 sectors divided by the possible zero offset lines. Using `sector.offset` you can use a sector-relative offset.
-For example, `</ CCW o A0 A1 x A2 B1.1` would be equivalent to the example before.
+For example, `p CCW o A0 A1 x A2 B1.1` would be equivalent to the example before.
 
 ### Combined
 
@@ -119,8 +119,8 @@ For that you just write `<rectilinear>, <bke>` with each part following the corr
 You can change this by adding a `@(q, r)` before the actual BKE notation, where q and r define the axial coordinates of the new origin relative to the top left corner.
 
 The following are equivalent: 
-- `.x/xx, <\ @(1,0) o A0 A1 x B3.1 B3.2`
-- `.x/xx, /> o A0 B1 x B2.0 B2.1`
+- `.x/xx, b @(1,0) o A0 A1 x B3.1 B3.2`
+- `.x/xx, d o A0 B1 x B2.0 B2.1`
 
 ![example combined](assets/example_combined.png)
 
