@@ -112,7 +112,7 @@ private enum class ParserState {
             require(match != null) { "Invalid line highlight notation, use `[->|\\>|</|<-|<\\|/>]<length>?[x|o]?`" }
 
             val direction = Direction.fromSymbol(match.groupValues[1])
-            val length = match.groupValues[2].takeIf { it.isNotEmpty() }?.toInt() ?: 4
+            val length = match.groupValues[2].takeIf { it.isNotEmpty() }?.toInt() ?: 6
             val color = when (match.groupValues[3]) {
                 "x" -> Player.X
                 "o" -> Player.O
