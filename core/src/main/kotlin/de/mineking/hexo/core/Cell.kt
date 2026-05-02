@@ -36,4 +36,4 @@ data class HighlightLine(val start: CellCoordinate, val direction: Direction, va
     }
 }
 
-val HighlightLine.end get() = start + direction.direction * length
+val HighlightLine.end get() = start + direction.direction * (length - 1)

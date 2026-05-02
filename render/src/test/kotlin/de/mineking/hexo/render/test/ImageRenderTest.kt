@@ -54,8 +54,8 @@ class ImageRenderTest {
         val board = Board()
         board[0, 1].owner = Player.X
         board[0, 2].owner = Player.O
-        board.highlightLine(CellCoordinate(1, 0), Direction.Left, length = 3, color = Player.X)
-        board.highlightLine(CellCoordinate(0, 2), Direction.TopLeft, length = 4, color = null)
+        board.highlightLine(CellCoordinate(1, 0), Direction.Left, length = 4, color = Player.X)
+        board.highlightLine(CellCoordinate(0, 2), Direction.TopLeft, length = 5, color = null)
 
         val renderedImage = board.renderToImage(
             layoutRadius = 64.0,
