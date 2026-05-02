@@ -7,6 +7,7 @@ import de.mineking.hexo.api.socket.SocketIOClient
 import de.mineking.hexo.api.tournament.TournamentRepository
 import de.mineking.hexo.api.tournament.TournamentRepositoryImpl
 import io.ktor.client.HttpClient
+import io.ktor.client.HttpClientConfig
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
@@ -30,14 +31,33 @@ const val HEXO_WEBSITE = "https://hexo.did.science"
 
 expect val DefaultHttpEngine: HttpClientEngine
 
+fun createDefaultHttpClient(
+    engine: HttpClientEngine = DefaultHttpEngine,
+    config: HttpClientConfig<*>.() -> Unit = {},
+) = HttpClient(engine) {
+    install(WebSockets) {
+        contentConverter = KotlinxWebsocketSerializationConverter(HexoApiClient.json)
+    }
+
+    install(ContentNegotiation) {
+        json(HexoApiClient.json)
+    }
+
+    defaultRequest {
+        contentType(ContentType.Application.Json)
+    }
+
+    config()
+}
+
 class HexoApiClient(
     internal val coroutineScope: CoroutineScope,
     private val host: String = HEXO_WEBSITE,
     connectSocketIO: Boolean = false,
-    engine: HttpClientEngine = DefaultHttpEngine,
+    private val httpClient: HttpClient = createDefaultHttpClient(),
 ) {
     companion object {
-        private val json = Json {
+        internal val json = Json {
             ignoreUnknownKeys = true
         }
     }
@@ -48,22 +68,8 @@ class HexoApiClient(
     val finishedGameRepository: FinishedGameRepository = FinishedGameRepositoryImpl(this)
     val tournamentRepository: TournamentRepository = TournamentRepositoryImpl(this)
 
-    private val client = HttpClient(engine) {
-        install(WebSockets) {
-            contentConverter = KotlinxWebsocketSerializationConverter(json)
-        }
-
-        install(ContentNegotiation) {
-            json(json)
-        }
-
-        defaultRequest {
-            contentType(ContentType.Application.Json)
-        }
-    }
-
     internal suspend fun request(path: String, builder: HttpRequestBuilder.() -> Unit = {}): HttpResponse =
-        client.request("$host/api$path", builder)
+        httpClient.request("$host/api$path", builder)
 
     private fun createSocketIOClient(host: String): SocketIOClient {
         val authData = AuthData(
