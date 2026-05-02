@@ -1,5 +1,5 @@
 group = "de.mineking"
-version = "1.1.0"
+version = "1.2.0"
 
 subprojects {
     apply(plugin = "kotlin-jvm-toolchain")
