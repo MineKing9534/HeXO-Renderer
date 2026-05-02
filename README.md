@@ -76,7 +76,7 @@ The length can be specified directly after. If no length is specified, it will d
 
 Also, either `x` or `o` can ba added last, which specifies the color of the line. If no value is specified, the line will be pink by default.
 
-`.(->)xx/.o(\>3o)/(->o)oo`
+`.(->4)xx/.o(\>3o)/(->4o)oo`
 
 ![example highlight line](assets/example_highlight_line.png)
 

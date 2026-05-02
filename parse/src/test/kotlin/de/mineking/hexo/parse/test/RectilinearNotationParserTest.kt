@@ -103,7 +103,7 @@ class RectilinearNotationParserTest {
         assertEquals(
             listOf(
                 HighlightLine(CellCoordinate(1, 0), Direction.Left, length = 3, color = Player.X),
-                HighlightLine(CellCoordinate(0, 2), Direction.TopLeft, length = 4, color = null),
+                HighlightLine(CellCoordinate(0, 2), Direction.TopLeft, length = 6, color = null),
             ),
             board.highlightedLines,
         )
