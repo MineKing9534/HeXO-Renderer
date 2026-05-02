@@ -45,7 +45,7 @@ data class ColorScheme(
             highlightedCellBorder = Color(0xec6fb1),
             focussedCellBorder = Color.WHITE,
             emptyCell = Color(0, true),
-            emptyCellLabel = Color(0x7182a3),
+            emptyCellLabel = Color(0xb1c1e0),
             playerX = Color(0xfbc139),
             playerO = Color(0x38bdf8),
         )
@@ -227,9 +227,9 @@ private class InternalBoardRenderer(
         }
     }
 
-    private fun Player?.color(emptyCellColor: Color) = when (this) {
-        Player.X -> colorScheme.playerX
-        Player.O -> colorScheme.playerO
+    private fun Player?.color(emptyCellColor: Color, transform: (Color) -> Color = { it }) = when (this) {
+        Player.X -> transform(colorScheme.playerX)
+        Player.O -> transform(colorScheme.playerO)
         null -> emptyCellColor
     }
 
@@ -287,7 +287,7 @@ private class InternalBoardRenderer(
 
         val oldFont = graphics.font
         graphics.font = BOLD_FONT.deriveFont(Font.BOLD, size.hexSize.toFloat() * 0.7f)
-        graphics.color = cell.owner.color(emptyCellColor = colorScheme.emptyCellLabel.brighter()).darker()
+        graphics.color = cell.owner.color(emptyCellColor = colorScheme.emptyCellLabel, transform = { it.darker().darker() })
 
         val fm = graphics.fontMetrics
         val textX = x - fm.stringWidth(text) / 2.0
