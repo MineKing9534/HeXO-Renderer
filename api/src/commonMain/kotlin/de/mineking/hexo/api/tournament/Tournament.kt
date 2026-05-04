@@ -3,7 +3,7 @@ package de.mineking.hexo.api.tournament
 import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.InternalHexoApi
 import de.mineking.hexo.api.ProfileId
-import de.mineking.hexo.api.game.GameId
+import de.mineking.hexo.api.game.GameReference
 import de.mineking.hexo.api.game.SessionId
 import de.mineking.hexo.api.utils.Instant
 import de.mineking.hexo.api.utils.TimeControl
@@ -52,7 +52,7 @@ class Tournament(
             }.sortedBy { it.standing.rank }
         }
 
-        private fun TournamentDto.createMatchList(participants: List<TournamentParticipant>): List<TournamentMatch> {
+        private fun TournamentDto.createMatchList(client: HexoApiClient, participants: List<TournamentParticipant>): List<TournamentMatch> {
             val participantsById = participants.associateBy { it.profileId }
 
             return matches.map { match ->
@@ -81,7 +81,7 @@ class Tournament(
                     waitingForPlayers = match.waitingForPlayers,
                     startedAt = match.startedAt,
                     resolvedAt = match.resolvedAt,
-                    gameIds = match.gameIds,
+                    pastGames = match.gameIds.map { GameReference(client, it) },
                     sessionId = match.sessionId,
                     players = players,
                     winner = participantsById[match.winnerProfileId],
@@ -91,7 +91,7 @@ class Tournament(
 
         internal fun of(client: HexoApiClient, dto: TournamentDto): Tournament {
             val participants = dto.createParticipantList()
-            val matches = dto.createMatchList(participants)
+            val matches = dto.createMatchList(client, participants)
 
             return Tournament(
                 client = client,
@@ -131,7 +131,7 @@ data class TournamentMatchPlayer(
     val isWinner: Boolean,
 )
 
-// TODO allow fetching games (both finished and ongoing)
+// TODO allow fetching current session
 class TournamentMatch(
     val id: TournamentMatchId,
     val bracket: TournamentBracket,
@@ -145,6 +145,6 @@ class TournamentMatch(
     val startedAt: Instant?,
     val resolvedAt: Instant?,
     val players: List<TournamentMatchPlayer>,
-    val gameIds: List<GameId>,
+    val pastGames: List<GameReference>,
     val sessionId: SessionId?,
 )

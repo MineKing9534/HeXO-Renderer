@@ -21,6 +21,14 @@ value class PlayerId(val value: String)
 @Serializable
 value class GameId(val value: Uuid)
 
+class GameReference(
+    @property:InternalHexoApi val client: HexoApiClient,
+    val id: GameId,
+) {
+    @OptIn(InternalHexoApi::class)
+    suspend fun retrieveGame() = client.finishedGameRepository.getGame(id)
+}
+
 class FinishedGame(
     @property:InternalHexoApi val client: HexoApiClient,
     val id: GameId,
