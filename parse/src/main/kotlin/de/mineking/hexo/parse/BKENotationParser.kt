@@ -5,7 +5,7 @@ import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.times
-import de.mineking.hexo.core.Player
+import de.mineking.hexo.core.CellOwner
 
 enum class Chirality(val symbol: String) {
     Clockwise("CW"),
@@ -32,7 +32,7 @@ fun String.parseBKENotation(
 
     val origin = origin ?: run {
         board[0, 0].apply {
-            owner = Player.X
+            owner = CellOwner.X
             turn = 0
         }
         CellCoordinate.Zero
@@ -61,7 +61,7 @@ private data class RingOffset(
 )
 
 private data class Turn(
-    val player: Player,
+    val player: CellOwner,
     val first: RingOffset,
     val second: RingOffset,
 )
@@ -84,8 +84,8 @@ private fun String.parseBKETurns(): List<Turn> {
 }
 
 private fun String.parsePlayer() = when (this) {
-    "o" -> Player.O
-    "x" -> Player.X
+    "o" -> CellOwner.O
+    "x" -> CellOwner.X
     else -> throw IllegalArgumentException("Invalid player `$this`")
 }
 

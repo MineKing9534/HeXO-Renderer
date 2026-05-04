@@ -1,19 +1,23 @@
 package de.mineking.hexo.api.game
 
 import de.mineking.hexo.api.HexoApiClient
+import de.mineking.hexo.api.utils.EntityRequester
 import io.ktor.client.call.body
 import io.ktor.http.isSuccess
-import kotlin.uuid.Uuid
+
+// TODO support ongoing games
 
 interface FinishedGameRepository {
-    suspend fun getGame(id: Uuid): FinishedGame?
+    suspend fun getGame(id: GameId): FinishedGame?
 }
 
 internal class FinishedGameRepositoryImpl(private val client: HexoApiClient) : FinishedGameRepository {
-    override suspend fun getGame(id: Uuid): FinishedGame? {
-        val response = client.request("/finished-games/$id")
+    private val requester = EntityRequester<GameId, FinishedGame>(client) {
+        val response = request("/finished-games/${it.value}")
 
-        if (!response.status.isSuccess()) return null
-        return response.body()
+        if (!response.status.isSuccess()) return@EntityRequester null
+        FinishedGame.of(client, response.body())
     }
+
+    override suspend fun getGame(id: GameId) = requester.fetch(id)
 }

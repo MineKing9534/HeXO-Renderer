@@ -15,8 +15,8 @@ import socketio.io
 private val logger = KotlinLogging.logger {}
 
 internal actual class SocketIOClient actual constructor(json: Json, host: String, authData: AuthData) {
-    actual val events: SharedFlow<HexoEvent>
-        field = MutableSharedFlow<HexoEvent>(extraBufferCapacity = 16)
+    actual val events: SharedFlow<HexoSocketEvent>
+        field = MutableSharedFlow<HexoSocketEvent>(extraBufferCapacity = 16)
 
     private fun AuthData.createOptions() = SocketOptions {
         transports = arrayOf("websocket")
@@ -30,12 +30,12 @@ internal actual class SocketIOClient actual constructor(json: Json, host: String
 
     @OptIn(ExperimentalSerializationApi::class)
     private val socket = io(host, authData.createOptions()).apply {
-        HexoEvent.eventMappings.forEach { (name, type) ->
+        HexoSocketEvent.eventMappings.forEach { (name, type) ->
             val serializer = json.serializersModule.serializer(type, emptyList(), false)
             on(name) { raw ->
                 @Suppress("TooGenericExceptionCaught")
                 try {
-                    val event = json.decodeFromDynamic(serializer, raw) as HexoEvent
+                    val event = json.decodeFromDynamic(serializer, raw) as HexoSocketEvent
                     if (!events.tryEmit(event)) {
                         logger.warn { "Dropped socket.io event of type '$name'" }
                     }

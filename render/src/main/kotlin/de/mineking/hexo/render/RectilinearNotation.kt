@@ -5,7 +5,7 @@ package de.mineking.hexo.render
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
-import de.mineking.hexo.core.Player
+import de.mineking.hexo.core.CellOwner
 import kotlin.math.max
 import kotlin.math.min
 
@@ -74,8 +74,8 @@ private fun StringBuilder.appendCell(cell: Cell?) {
     val highlight = cell != null && cell.highlighted
 
     append(when (cell?.owner) {
-        Player.X -> if (highlight) "X" else "x"
-        Player.O -> if (highlight) "O" else "o"
+        CellOwner.X -> if (highlight) "X" else "x"
+        CellOwner.O -> if (highlight) "O" else "o"
         null -> if (highlight) "!" else "."
     })
 

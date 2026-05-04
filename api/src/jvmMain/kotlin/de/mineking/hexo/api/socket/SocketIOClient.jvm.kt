@@ -12,8 +12,8 @@ import org.json.JSONObject
 private val logger = KotlinLogging.logger {}
 
 internal actual class SocketIOClient actual constructor(json: Json, host: String, authData: AuthData) {
-    actual val events: SharedFlow<HexoEvent>
-        field = MutableSharedFlow<HexoEvent>(extraBufferCapacity = 16)
+    actual val events: SharedFlow<HexoSocketEvent>
+        field = MutableSharedFlow<HexoSocketEvent>(extraBufferCapacity = 16)
 
     private fun AuthData.createOptions() = IO.Options.builder()
         .setAuth(
@@ -27,7 +27,7 @@ internal actual class SocketIOClient actual constructor(json: Json, host: String
 
     @OptIn(ExperimentalSerializationApi::class)
     private val socket = IO.socket(host, authData.createOptions()).apply {
-        HexoEvent.eventMappings.forEach { (name, type) ->
+        HexoSocketEvent.eventMappings.forEach { (name, type) ->
             val serializer = json.serializersModule.serializer(type, emptyList(), false)
             on(name) { args ->
                 @Suppress("TooGenericExceptionCaught")
@@ -38,7 +38,7 @@ internal actual class SocketIOClient actual constructor(json: Json, host: String
                         else -> error("Unsupported event type: ${raw.javaClass}")
                     }
 
-                    val event = json.decodeFromString(serializer, string) as HexoEvent
+                    val event = json.decodeFromString(serializer, string) as HexoSocketEvent
                     if (!events.tryEmit(event)) {
                         logger.warn { "Dropped socket.io event of type '$name'" }
                     }

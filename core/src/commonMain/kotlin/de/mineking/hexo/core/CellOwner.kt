@@ -1,6 +1,6 @@
 package de.mineking.hexo.core
 
-enum class Player {
+enum class CellOwner {
     X {
         override val other get() = O
     },
@@ -9,5 +9,5 @@ enum class Player {
     },
     ;
 
-    abstract val other: Player
+    abstract val other: CellOwner
 }

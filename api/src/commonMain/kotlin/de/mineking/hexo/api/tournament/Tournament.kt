@@ -1,10 +1,12 @@
 package de.mineking.hexo.api.tournament
 
+import de.mineking.hexo.api.HexoApiClient
+import de.mineking.hexo.api.InternalHexoApi
 import de.mineking.hexo.api.ProfileId
 import de.mineking.hexo.api.game.GameId
+import de.mineking.hexo.api.game.SessionId
 import de.mineking.hexo.api.utils.Instant
 import de.mineking.hexo.api.utils.TimeControl
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
 import kotlin.uuid.Uuid
@@ -13,15 +15,12 @@ import kotlin.uuid.Uuid
 @Serializable
 value class TournamentId(val value: Uuid)
 
+@JvmInline
 @Serializable
-enum class TournamentFormat {
-    @SerialName("single-elimination") SingleElimination,
-    @SerialName("double-elimination") DoubleElimination,
-    @SerialName("swiss") Swiss,
-}
+value class TournamentMatchId(val value: String)
 
-@Serializable
-data class Tournament(
+class Tournament(
+    @property:InternalHexoApi val client: HexoApiClient,
     val id: TournamentId,
     val name: String,
     val description: String?,
@@ -35,81 +34,117 @@ data class Tournament(
     val checkedInCount: Int,
     val timeControl: TimeControl,
     val participants: List<TournamentParticipant>,
-    val standings: List<TournamentStanding>,
     val matches: List<TournamentMatch>,
-    val swissRoundCount: Int?,
-)
+) {
+    companion object {
+        private fun TournamentDto.createParticipantList(): List<TournamentParticipant> {
+            val participantsDtos = participants.associateBy { it.profileId }
+            return standings.map {
+                val participant = participantsDtos[it.profileId] ?: error("Couldn't find participant ${it.profileId}")
+                TournamentParticipant(
+                    profileId = participant.profileId,
+                    displayName = participant.displayName,
+                    image = participant.image,
+                    registeredAt = participant.registeredAt,
+                    seed = participant.seed,
+                    standing = it,
+                )
+            }.sortedBy { it.standing.rank }
+        }
 
-fun Tournament.isComplete() = status >= TournamentStatus.Completed
+        private fun TournamentDto.createMatchList(participants: List<TournamentParticipant>): List<TournamentMatch> {
+            val participantsById = participants.associateBy { it.profileId }
 
-@Serializable
-enum class TournamentStatus {
-    @SerialName("draft") Draft,
-    @SerialName("registration-open") RegistrationOpen,
-    @SerialName("check-in-open") CheckInOpen,
-    @SerialName("waitlist-open") WaitlistOpen,
-    @SerialName("live") Live,
-    @SerialName("completed") Completed,
-    @SerialName("cancelled") Cancelled,
+            return matches.map { match ->
+                val players = match.slots.mapIndexed { index, slot ->
+                    TournamentMatchPlayer(
+                        participant = participantsById[slot.profileId],
+                        isByte = slot.isBye,
+                        wins = when (index) {
+                            0 -> match.leftWins
+                            1 -> match.rightWins
+                            else -> error("Unexpected slot index $index")
+                        },
+                        isWinner = slot.profileId == match.winnerProfileId,
+                        seed = slot.seed,
+                    )
+                }
+
+                TournamentMatch(
+                    id = match.id,
+                    bracket = match.bracket,
+                    round = match.round,
+                    order = match.order,
+                    state = match.state,
+                    bestOf = match.bestOf,
+                    resultType = match.resultType,
+                    waitingForPlayers = match.waitingForPlayers,
+                    startedAt = match.startedAt,
+                    resolvedAt = match.resolvedAt,
+                    gameIds = match.gameIds,
+                    sessionId = match.sessionId,
+                    players = players,
+                    winner = participantsById[match.winnerProfileId],
+                )
+            }
+        }
+
+        internal fun of(client: HexoApiClient, dto: TournamentDto): Tournament {
+            val participants = dto.createParticipantList()
+            val matches = dto.createMatchList(participants)
+
+            return Tournament(
+                client = client,
+                id = dto.id,
+                name = dto.name,
+                description = dto.description,
+                format = TournamentFormat.of(dto, matches),
+                status = dto.status,
+                scheduledStartAt = dto.scheduledStartAt,
+                checkInOpensAt = dto.checkInOpensAt,
+                checkInClosesAt = dto.checkInClosesAt,
+                maxPlayers = dto.maxPlayers,
+                registeredCount = dto.registeredCount,
+                checkedInCount = dto.checkedInCount,
+                timeControl = dto.timeControl,
+                participants = participants,
+                matches = matches,
+            )
+        }
+    }
 }
 
-@Serializable
-data class TournamentParticipant(
+class TournamentParticipant(
     val profileId: ProfileId,
     val displayName: String,
     val image: String?,
     val registeredAt: Instant,
     val seed: Int?,
+    val standing: TournamentStanding,
 )
 
-@Serializable
-data class TournamentStanding(
-    val rank: Int,
-    val profileId: ProfileId,
+data class TournamentMatchPlayer(
+    val participant: TournamentParticipant?,
+    val seed: Int?,
+    val isByte: Boolean,
     val wins: Int,
-    val losses: Int,
-    val buchholz: Int,
-    val sonnebornBerger: Int,
+    val isWinner: Boolean,
 )
 
-@Serializable
-enum class TournamentMatchState {
-    @SerialName("pending") Pending,
-    @SerialName("ready") Ready,
-    @SerialName("in-progress") InProgress,
-    @SerialName("completed") Completed,
-}
-
-@Serializable
-enum class TournamentMatchResultType {
-    @SerialName("played") Played,
-    @SerialName("bye") Byte,
-    @SerialName("walkover") Walkover,
-}
-
-@Serializable
-data class TournamentMatchSlot(
-    val profileId: ProfileId,
-    val displayName: String,
-    val image: String?,
-    val seed: Int,
-    val isBye: Boolean,
-)
-
-@Serializable
-data class TournamentMatch(
+// TODO allow fetching games (both finished and ongoing)
+class TournamentMatch(
+    val id: TournamentMatchId,
+    val bracket: TournamentBracket,
     val round: Int,
     val order: Int,
     val state: TournamentMatchState,
     val bestOf: Int,
-    val leftWins: Int,
-    val rightWins: Int,
-    val winnerProfileId: ProfileId?,
-    val loserProfileId: ProfileId?,
+    val winner: TournamentParticipant?,
     val resultType: TournamentMatchResultType?,
     val waitingForPlayers: Boolean,
     val startedAt: Instant?,
     val resolvedAt: Instant?,
-    val slots: List<TournamentMatchSlot>,
+    val players: List<TournamentMatchPlayer>,
     val gameIds: List<GameId>,
+    val sessionId: SessionId?,
 )

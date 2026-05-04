@@ -12,8 +12,6 @@ repositories {
 }
 
 private val commonKotlinCompilerArgs = listOf(
-//    "-Xexplicit-backing-fields",
-//    "-Xcontext-parameters",
     "-Xexpect-actual-classes",
     "-Xreturn-value-checker=full",
 )

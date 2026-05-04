@@ -1,9 +1,9 @@
 package de.mineking.hexo.board
 
-import de.mineking.hexo.core.Player
+import de.mineking.hexo.core.CellOwner
 
 data class Cell(
-    var owner: Player? = null,
+    var owner: CellOwner? = null,
     var highlighted: Boolean = false,
     var focussed: Boolean = false,
     var turn: Int? = null,
@@ -20,7 +20,7 @@ operator fun CellCoordinate.plus(other: CellCoordinate) = CellCoordinate(q + oth
 operator fun CellCoordinate.minus(other: CellCoordinate) = CellCoordinate(q - other.q, r - other.r)
 operator fun CellCoordinate.times(scalar: Int) = CellCoordinate(q * scalar, r * scalar)
 
-data class HighlightLine(val start: CellCoordinate, val direction: Direction, val length: Int, val color: Player?) {
+data class HighlightLine(val start: CellCoordinate, val direction: Direction, val length: Int, val color: CellOwner?) {
     init {
         require(length in 1..10)
     }

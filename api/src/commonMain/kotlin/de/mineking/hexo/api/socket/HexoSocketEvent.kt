@@ -1,12 +1,12 @@
 package de.mineking.hexo.api.socket
 
-import de.mineking.hexo.api.game.LobbyId
+import de.mineking.hexo.api.game.SessionId
 import de.mineking.hexo.api.tournament.TournamentId
 import de.mineking.hexo.api.utils.Instant
 import de.mineking.hexo.api.utils.TimeControl
 import kotlinx.serialization.Serializable
 
-sealed interface HexoEvent {
+sealed interface HexoSocketEvent {
     companion object {
         internal val eventMappings = mapOf(
             "tournament-updated" to TournamentUpdate::class,
@@ -19,19 +19,19 @@ sealed interface HexoEvent {
     data class TournamentUpdate(
         val tournamentId: TournamentId,
         val updatedAt: Instant,
-    ) : HexoEvent
+    ) : HexoSocketEvent
 
     @Serializable
     data class LobbyUpdate(
-        val id: LobbyId,
+        val id: SessionId,
         val timeControl: TimeControl,
         val rated: Boolean,
         val createdAt: Instant,
         val startedAt: Instant?,
-    ) : HexoEvent
+    ) : HexoSocketEvent
 
     @Serializable
     data class LobbyRemove(
-        val id: LobbyId,
-    ) : HexoEvent
+        val id: SessionId,
+    ) : HexoSocketEvent
 }

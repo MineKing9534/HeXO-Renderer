@@ -1,6 +1,6 @@
 package de.mineking.hexo.board
 
-import de.mineking.hexo.core.Player
+import de.mineking.hexo.core.CellOwner
 import java.util.Objects
 
 class Board(initial: MutableMap<CellCoordinate, Cell> = mutableMapOf()) {
@@ -19,7 +19,7 @@ class Board(initial: MutableMap<CellCoordinate, Cell> = mutableMapOf()) {
     val cells: Map<CellCoordinate, Cell>
         field = initial
 
-    fun highlightLine(origin: CellCoordinate, direction: Direction, length: Int, color: Player? = null) {
+    fun highlightLine(origin: CellCoordinate, direction: Direction, length: Int, color: CellOwner? = null) {
         highlightedLines += HighlightLine(origin, direction, length, color)
     }
 

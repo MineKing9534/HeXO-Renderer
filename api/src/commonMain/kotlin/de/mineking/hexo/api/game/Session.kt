@@ -7,4 +7,4 @@ import kotlin.jvm.JvmInline
 
 @JvmInline
 @Serializable
-value class LobbyId(val value: String)
+value class SessionId(val value: String)
