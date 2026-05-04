@@ -16,7 +16,9 @@ import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.request
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
+import io.ktor.http.Url
 import io.ktor.http.contentType
+import io.ktor.http.headers
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineScope
@@ -28,6 +30,30 @@ import kotlin.uuid.Uuid
 annotation class InternalHexoApi
 
 const val HEXO_WEBSITE = "https://hexo.did.science"
+
+class HexoApiClient(
+    internal val coroutineScope: CoroutineScope,
+    private val host: String = HEXO_WEBSITE,
+    socketIOOptions: SocketIOOptions? = SocketIOOptions.createDefault(host),
+    private val httpClient: HttpClient = createDefaultHttpClient(),
+) {
+    companion object {
+        internal val json = Json {
+            ignoreUnknownKeys = true
+        }
+    }
+
+    private val sockerIO = socketIOOptions?.let {
+        SocketIOClient(json, it.host, it.path, it.authData, it.headers)
+    }
+    val events = sockerIO?.events ?: MutableSharedFlow()
+
+    val finishedGameRepository: FinishedGameRepository = FinishedGameRepositoryImpl(this)
+    val tournamentRepository: TournamentRepository = TournamentRepositoryImpl(this)
+
+    internal suspend fun request(path: String, builder: HttpRequestBuilder.() -> Unit = {}): HttpResponse =
+        httpClient.request("$host/api$path", builder)
+}
 
 expect val DefaultHttpEngine: HttpClientEngine
 
@@ -50,34 +76,25 @@ fun createDefaultHttpClient(
     config()
 }
 
-class HexoApiClient(
-    internal val coroutineScope: CoroutineScope,
-    private val host: String = HEXO_WEBSITE,
-    connectSocketIO: Boolean = false,
-    private val httpClient: HttpClient = createDefaultHttpClient(),
+data class SocketIOOptions(
+    val host: String,
+    val path: String,
+    val headers: Map<String, String>,
+    val authData: AuthData,
 ) {
     companion object {
-        internal val json = Json {
-            ignoreUnknownKeys = true
+        fun createDefault(url: String): SocketIOOptions {
+            val url = Url(url)
+            return SocketIOOptions(
+                host = url.host,
+                path = "${url.encodedPath}/socket.io",
+                headers = emptyMap(),
+                authData = AuthData(
+                    deviceId = Uuid.random().toString(),
+                    ephemeralClientId = Uuid.random().toString(),
+                    versionHash = "HeXO-Kotlin",
+                ),
+            )
         }
-    }
-
-    private val sockerIO = if (connectSocketIO) createSocketIOClient(host) else null
-    val events = sockerIO?.events ?: MutableSharedFlow()
-
-    val finishedGameRepository: FinishedGameRepository = FinishedGameRepositoryImpl(this)
-    val tournamentRepository: TournamentRepository = TournamentRepositoryImpl(this)
-
-    internal suspend fun request(path: String, builder: HttpRequestBuilder.() -> Unit = {}): HttpResponse =
-        httpClient.request("$host/api$path", builder)
-
-    private fun createSocketIOClient(host: String): SocketIOClient {
-        val authData = AuthData(
-            deviceId = Uuid.random().toString(),
-            ephemeralClientId = Uuid.random().toString(),
-            versionHash = "HeXO-Kotlin",
-        )
-
-        return SocketIOClient(json, host, authData)
     }
 }

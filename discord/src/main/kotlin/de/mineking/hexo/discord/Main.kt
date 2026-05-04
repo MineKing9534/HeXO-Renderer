@@ -46,7 +46,7 @@ val Manager.main get() = manager.bot as HeXODiscordBot
 
 class HeXODiscordBot(token: String) {
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
-    private val finishedGameRepository = HexoApiClient(coroutineScope = coroutineScope).finishedGameRepository.cached()
+    private val finishedGameRepository = HexoApiClient(coroutineScope = coroutineScope, socketIOOptions = null).finishedGameRepository.cached()
 
     val jda = JDABuilder.createLight(token)
         .setStatus(OnlineStatus.ONLINE)

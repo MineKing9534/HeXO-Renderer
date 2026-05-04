@@ -27,8 +27,10 @@ external interface AuthPayload {
 
 external interface SocketOptions {
     var transports: Array<String>
-    var withCredentials: Boolean
     var auth: AuthPayload
+    var path: String
+    var extraHeaders: dynamic
+    var addTrailingSlash: Boolean
 
     companion object
 }

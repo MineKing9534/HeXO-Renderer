@@ -11,25 +11,35 @@ import socketio.AuthPayload
 import socketio.SocketOptions
 import socketio.invoke
 import socketio.io
+import socketio.toJsObject
 
 private val logger = KotlinLogging.logger {}
 
-internal actual class SocketIOClient actual constructor(json: Json, host: String, authData: AuthData) {
+internal actual class SocketIOClient actual constructor(
+    json: Json,
+    host: String,
+    path: String,
+    authData: AuthData,
+    headers: Map<String, String>,
+) {
     actual val events: SharedFlow<HexoSocketEvent>
         field = MutableSharedFlow<HexoSocketEvent>(extraBufferCapacity = 16)
 
-    private fun AuthData.createOptions() = SocketOptions {
-        transports = arrayOf("websocket")
-        withCredentials = true
-        auth = AuthPayload {
-            deviceId = this@createOptions.deviceId
-            ephemeralClientId = this@createOptions.ephemeralClientId
-            versionHash = this@createOptions.versionHash
-        }
-    }
-
     @OptIn(ExperimentalSerializationApi::class)
-    private val socket = io(host, authData.createOptions()).apply {
+    private val socket = io(
+        url = host,
+        options = SocketOptions {
+            this.transports = arrayOf("websocket")
+            this.extraHeaders = headers.toJsObject()
+            this.path = path
+            this.addTrailingSlash = true
+            this.auth = AuthPayload {
+                deviceId = authData.deviceId
+                ephemeralClientId = authData.ephemeralClientId
+                versionHash = authData.versionHash
+            }
+        },
+    ).apply {
         HexoSocketEvent.eventMappings.forEach { (name, type) ->
             val serializer = json.serializersModule.serializer(type, emptyList(), false)
             on(name) { raw ->
@@ -43,6 +53,10 @@ internal actual class SocketIOClient actual constructor(json: Json, host: String
                     logger.error(e) { "Error while handling socket.io event of type '$name'" }
                 }
             }
+        }
+
+        on("error") { args ->
+            logger.error { "Failed to open socket.io connection: ${args.contentToString()}" }
         }
 
         connect()

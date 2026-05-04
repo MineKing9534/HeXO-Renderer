@@ -11,22 +11,32 @@ import org.json.JSONObject
 
 private val logger = KotlinLogging.logger {}
 
-internal actual class SocketIOClient actual constructor(json: Json, host: String, authData: AuthData) {
+internal actual class SocketIOClient actual constructor(
+    json: Json,
+    host: String,
+    path: String,
+    authData: AuthData,
+    headers: Map<String, String>,
+) {
     actual val events: SharedFlow<HexoSocketEvent>
         field = MutableSharedFlow<HexoSocketEvent>(extraBufferCapacity = 16)
 
-    private fun AuthData.createOptions() = IO.Options.builder()
-        .setAuth(
-            mapOf(
-                "deviceId" to deviceId,
-                "ephemeralClientId" to ephemeralClientId,
-                "versionHash" to versionHash,
-            ),
-        )
-        .build()
-
     @OptIn(ExperimentalSerializationApi::class)
-    private val socket = IO.socket(host, authData.createOptions()).apply {
+    private val socket = IO.socket(
+        host,
+        IO.Options.builder()
+            .setTransports(arrayOf("websocket"))
+            .setExtraHeaders(headers.mapValues { (_, value) -> listOf(value) })
+            .setPath(path.let { if (it.endsWith("/")) it else "$it/" })
+            .setAuth(
+                mapOf(
+                    "deviceId" to authData.deviceId,
+                    "ephemeralClientId" to authData.ephemeralClientId,
+                    "versionHash" to authData.versionHash,
+                ),
+            )
+            .build(),
+    ).apply {
         HexoSocketEvent.eventMappings.forEach { (name, type) ->
             val serializer = json.serializersModule.serializer(type, emptyList(), false)
             on(name) { args ->
@@ -46,6 +56,10 @@ internal actual class SocketIOClient actual constructor(json: Json, host: String
                     logger.error(e) { "Error while handling socket.io event of type '$name'" }
                 }
             }
+        }
+
+        on("error") { args ->
+            logger.error { "Failed to open socket.io connection: ${args.contentToString()}" }
         }
 
         connect()
