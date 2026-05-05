@@ -14,6 +14,8 @@ import java.awt.Font
 import java.awt.Graphics2D
 import java.awt.RenderingHints
 import java.awt.Shape
+import java.awt.font.TextLayout
+import java.awt.geom.AffineTransform
 import java.awt.geom.Area
 import java.awt.geom.Line2D
 import java.awt.geom.Path2D
@@ -124,6 +126,8 @@ fun Board.renderToImage(
         renderer.drawLine(it)
     }
 
+    cells.forEach { (position, cell) -> renderer.drawCellLabel(position, cell) }
+
     return renderer.image
 }
 
@@ -214,6 +218,8 @@ private class InternalBoardRenderer(
     val image: BufferedImage
     private val graphics: Graphics2D
 
+    private val cellColors = mutableMapOf<Cell, Color>()
+
     init {
         val width = ceil(boundingBox.maxX - boundingBox.minX + 2 * padding).toInt()
         val height = ceil(boundingBox.maxY - boundingBox.minY + 2 * padding).toInt()
@@ -277,24 +283,33 @@ private class InternalBoardRenderer(
             }
         }
 
-        drawLabel(cell, x, y)
+        if (x.toInt() in 0..image.width && y.toInt() in 0..image.height) {
+            cellColors[cell] = Color(image.getRGB(x.toInt(), y.toInt()), false)
+        }
     }
 
-    private fun drawLabel(cell: Cell, x: Double, y: Double) {
+    fun drawCellLabel(position: CellCoordinate, cell: Cell) {
+        val (x, y) = position.toPixel()
         val text = cell.label.takeIf { it.isNotBlank() }
             ?: cell.turn?.toString()
             ?: return
 
-        val oldFont = graphics.font
-        graphics.font = BOLD_FONT.deriveFont(Font.BOLD, size.hexSize.toFloat() * 0.7f)
-        graphics.color = cell.owner.color(emptyCellColor = colorScheme.emptyCellLabel, transform = { it.darker().darker() })
+        val fontSize = size.hexSize.toFloat() * 0.7f
+        graphics.font = BOLD_FONT.deriveFont(Font.BOLD, fontSize)
 
         val fm = graphics.fontMetrics
         val textX = x - fm.stringWidth(text) / 2.0
         val textY = y + (fm.ascent - fm.descent) / 2.0
 
-        graphics.drawString(text, textX.toFloat(), textY.toFloat())
-        graphics.font = oldFont
+        val layout = TextLayout(text, graphics.font, graphics.fontRenderContext)
+        val shape = layout.getOutline(AffineTransform.getTranslateInstance(textX, textY))
+
+        graphics.color = cellColors[cell]
+        graphics.stroke = BasicStroke(fontSize / 6)
+        graphics.draw(shape)
+
+        graphics.color = cell.owner.color(emptyCellColor = colorScheme.emptyCellLabel, transform = { it.darker().darker() })
+        graphics.fill(shape)
     }
 
     fun createHex(x: Double, y: Double, inset: Float = 0f): Shape {
