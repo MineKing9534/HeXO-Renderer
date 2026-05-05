@@ -304,9 +304,12 @@ private class InternalBoardRenderer(
         val layout = TextLayout(text, graphics.font, graphics.fontRenderContext)
         val shape = layout.getOutline(AffineTransform.getTranslateInstance(textX, textY))
 
-        graphics.color = cellColors[cell]
-        graphics.stroke = BasicStroke(fontSize / 6)
-        graphics.draw(shape)
+        val cellColor = cellColors[cell]
+        if (cellColor != null) {
+            graphics.color = cellColor
+            graphics.stroke = BasicStroke(fontSize / 6)
+            graphics.draw(shape)
+        }
 
         graphics.color = cell.owner.color(emptyCellColor = colorScheme.emptyCellLabel, transform = { it.darker().darker() })
         graphics.fill(shape)
