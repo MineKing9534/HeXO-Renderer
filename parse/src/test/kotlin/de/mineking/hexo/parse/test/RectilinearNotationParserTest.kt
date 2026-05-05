@@ -90,7 +90,7 @@ class RectilinearNotationParserTest {
 
     @Test
     fun `parse line highlight`() {
-        val board = "..(<-3x)/x/o(<\\)".parseRectilinearNotation()
+        val board = "..(<3x)/x/o(b)".parseRectilinearNotation()
 
         assertEquals(
             mapOf(

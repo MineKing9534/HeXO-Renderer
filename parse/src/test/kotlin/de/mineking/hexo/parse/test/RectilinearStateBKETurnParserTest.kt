@@ -10,7 +10,7 @@ import kotlin.test.assertEquals
 class RectilinearStateBKETurnParserTest {
     @Test
     fun `test 1`() {
-        val board = ".x/xx, <\\@(1,0): o A0 A1 x B3.1 B3.2".parseRectilinearStateBKETurnNotation()
+        val board = ".x/xx, b@(1,0): o A0 A1 x B3.1 B3.2".parseRectilinearStateBKETurnNotation()
         assertEquals(
             mapOf(
                 CellCoordinate(1, 0) to Cell(Player.X),

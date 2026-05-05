@@ -11,7 +11,7 @@ private const val TURN_LIST_PATTERN = /*language=regexp*/ """$TURN_PATTERN(?:\s+
 
 private const val ORIGIN_PATTERN = /*language=regexp*/ """@\s*\((-?\d+),\s*(-?\d+)\)"""
 
-private val BKE_FORMAT = """^([-/\\<>]{2})?\s*(CW|CCW)?\s*(?:$ORIGIN_PATTERN)?\s*[:\s]\s*($TURN_LIST_PATTERN)$""".toRegex()
+private val BKE_FORMAT = """^([bdpq<>])?\s*(CW|CCW)?\s*(?:$ORIGIN_PATTERN)?\s*[:\s]\s*($TURN_LIST_PATTERN)$""".toRegex()
 
 object RectilinearStateBKETurnNotationParser : BoardParser {
     override suspend fun parse(notation: String) = notation.parseRectilinearStateBKETurnNotation()
@@ -27,7 +27,7 @@ fun String.parseRectilinearStateBKETurnNotation(): Board {
 
         val originalState = rectilinear.parseRectilinearNotation()
         val additionalMoves = bke.parseDirectionalBKENotation(pure = false)
-            ?: throw IllegalArgumentException("Invalid BKE notation format, use `[->|\\>|</|<-|<\\|/>][CW|CCW]? ...`")
+            ?: throw IllegalArgumentException("Invalid BKE notation format, use `[b,d,p,q,<,>][CW,CCW]? ...`")
 
         originalState.merge(additionalMoves)
     }

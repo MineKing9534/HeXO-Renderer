@@ -93,7 +93,7 @@ private enum class ParserState {
         }
     },
     LineHighlight {
-        private val pattern = """^([-/\\<>]{2})\s*(\d*)\s*([xo]?)$""".toRegex()
+        private val pattern = """^([bdpq<>])\s*(\d*)\s*([xo]?)$""".toRegex()
 
         override fun handleChar(ch: Char, offset: Int, cursor: Cursor, buffer: StringBuilder): ParserState {
             if (ch == ')') {
@@ -109,7 +109,7 @@ private enum class ParserState {
 
         private fun Cursor.highlightLine(notation: String) {
             val match = pattern.matchEntire(notation)
-            require(match != null) { "Invalid line highlight notation, use `[->|\\>|</|<-|<\\|/>]<length>?[x|o]?`" }
+            require(match != null) { "Invalid line highlight notation, use `[b,d,p,q,<,>]<length>?[x,o]?`" }
 
             val direction = Direction.fromSymbol(match.groupValues[1])
             val length = match.groupValues[2].takeIf { it.isNotEmpty() }?.toInt() ?: 6
