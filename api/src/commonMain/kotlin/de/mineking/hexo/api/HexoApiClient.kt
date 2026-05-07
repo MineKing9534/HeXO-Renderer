@@ -6,6 +6,7 @@ import de.mineking.hexo.api.socket.SocketIOClient
 import de.mineking.hexo.api.socket.SocketIOOptions
 import de.mineking.hexo.api.tournament.TournamentRepository
 import de.mineking.hexo.api.tournament.TournamentRepositoryImpl
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.engine.HttpClientEngine
@@ -19,13 +20,17 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.serialization.json.Json
 
 @RequiresOptIn(level = RequiresOptIn.Level.WARNING)
 annotation class InternalHexoApi
 
+private val logger = KotlinLogging.logger {}
 const val HEXO_WEBSITE = "https://hexo.did.science"
 
 private val json = Json {
@@ -34,7 +39,7 @@ private val json = Json {
 }
 
 class HexoApiClient(
-    internal val coroutineScope: CoroutineScope,
+    internal val coroutineScope: CoroutineScope = createCoroutineScope(),
     private val host: String = HEXO_WEBSITE,
     socketIOOptions: SocketIOOptions? = SocketIOOptions.createDefault(host),
     private val httpClient: HttpClient = createDefaultHttpClient(),
@@ -50,6 +55,7 @@ class HexoApiClient(
 }
 
 expect val DefaultHttpEngine: HttpClientEngine
+expect val DefaultCoroutineDispatcher: CoroutineDispatcher
 
 fun createDefaultHttpClient(
     engine: HttpClientEngine = DefaultHttpEngine,
@@ -68,4 +74,15 @@ fun createDefaultHttpClient(
     }
 
     config()
+}
+
+fun createCoroutineScope(dispatcher: CoroutineDispatcher = DefaultCoroutineDispatcher): CoroutineScope {
+    val parent = SupervisorJob()
+    return CoroutineScope(dispatcher + parent + CoroutineExceptionHandler { _, throwable ->
+        logger.error(throwable) { "Uncaught exception from coroutine" }
+        if (throwable is Error) {
+            parent.cancel()
+            throw throwable
+        }
+    })
 }

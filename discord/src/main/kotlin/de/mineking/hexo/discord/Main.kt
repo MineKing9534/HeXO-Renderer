@@ -22,8 +22,6 @@ import de.mineking.hexo.render.ImageBoardRenderer
 import de.mineking.hexo.render.cached
 import dev.freya02.jda.emojis.unicode.Emojis
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.OnlineStatus
@@ -45,8 +43,7 @@ fun main() {
 val Manager.main get() = manager.bot as HeXODiscordBot
 
 class HeXODiscordBot(token: String) {
-    private val coroutineScope = CoroutineScope(Dispatchers.IO)
-    private val finishedGameRepository = HexoApiClient(coroutineScope = coroutineScope, socketIOOptions = null).finishedGameRepository.cached()
+    private val finishedGameRepository = HexoApiClient(socketIOOptions = null).finishedGameRepository.cached()
 
     val jda = JDABuilder.createLight(token)
         .setStatus(OnlineStatus.ONLINE)
