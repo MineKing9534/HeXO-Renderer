@@ -2,8 +2,8 @@ package de.mineking.hexo.api
 
 import de.mineking.hexo.api.game.FinishedGameRepository
 import de.mineking.hexo.api.game.FinishedGameRepositoryImpl
-import de.mineking.hexo.api.socket.AuthData
 import de.mineking.hexo.api.socket.SocketIOClient
+import de.mineking.hexo.api.socket.SocketIOOptions
 import de.mineking.hexo.api.tournament.TournamentRepository
 import de.mineking.hexo.api.tournament.TournamentRepositoryImpl
 import io.ktor.client.HttpClient
@@ -16,20 +16,22 @@ import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.request
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
-import io.ktor.http.Url
 import io.ktor.http.contentType
-import io.ktor.http.headers
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.serialization.json.Json
-import kotlin.uuid.Uuid
 
 @RequiresOptIn(level = RequiresOptIn.Level.WARNING)
 annotation class InternalHexoApi
 
 const val HEXO_WEBSITE = "https://hexo.did.science"
+
+private val json = Json {
+    ignoreUnknownKeys = true
+    isLenient = true
+}
 
 class HexoApiClient(
     internal val coroutineScope: CoroutineScope,
@@ -37,15 +39,7 @@ class HexoApiClient(
     socketIOOptions: SocketIOOptions? = SocketIOOptions.createDefault(host),
     private val httpClient: HttpClient = createDefaultHttpClient(),
 ) {
-    companion object {
-        internal val json = Json {
-            ignoreUnknownKeys = true
-        }
-    }
-
-    private val sockerIO = socketIOOptions?.let {
-        SocketIOClient(json, it.host, it.path, it.authData, it.headers)
-    }
+    private val sockerIO = socketIOOptions?.let { SocketIOClient(json, it) }
     val events = sockerIO?.events ?: MutableSharedFlow()
 
     val finishedGameRepository: FinishedGameRepository = FinishedGameRepositoryImpl(this)
@@ -62,11 +56,11 @@ fun createDefaultHttpClient(
     config: HttpClientConfig<*>.() -> Unit = {},
 ) = HttpClient(engine) {
     install(WebSockets) {
-        contentConverter = KotlinxWebsocketSerializationConverter(HexoApiClient.json)
+        contentConverter = KotlinxWebsocketSerializationConverter(json)
     }
 
     install(ContentNegotiation) {
-        json(HexoApiClient.json)
+        json(json)
     }
 
     defaultRequest {
@@ -74,27 +68,4 @@ fun createDefaultHttpClient(
     }
 
     config()
-}
-
-data class SocketIOOptions(
-    val host: String,
-    val path: String,
-    val headers: Map<String, String>,
-    val authData: AuthData,
-) {
-    companion object {
-        fun createDefault(url: String): SocketIOOptions {
-            val url = Url(url)
-            return SocketIOOptions(
-                host = url.host,
-                path = "${url.encodedPath}/socket.io",
-                headers = emptyMap(),
-                authData = AuthData(
-                    deviceId = Uuid.random().toString(),
-                    ephemeralClientId = Uuid.random().toString(),
-                    versionHash = "HeXO-Kotlin",
-                ),
-            )
-        }
-    }
 }

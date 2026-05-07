@@ -1,5 +1,5 @@
 plugins {
-    id("kotlin-jvm-toolchain")
+    id("kotlin-jvm")
     id("publish")
 }
 

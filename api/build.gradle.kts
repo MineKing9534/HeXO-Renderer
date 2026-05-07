@@ -1,24 +1,39 @@
+@file:OptIn(ExperimentalKotlinGradlePluginApi::class)
+
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
+import kotlin.jvm.java
+
 plugins {
     id("kotlin-multiplatform")
+    id("publish")
+
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.atomicfu)
 
-    id("publish")
+    alias(libs.plugins.ksp)
 }
 
 detekt {
     source = files("src/commonMain/kotlin", "src/jsMain/kotlin", "src/jvmMain/kotlin")
 }
 
+dependencies {
+    kspCommonMainMetadata(projects.api.processor)
+}
+
 kotlin {
     withSourcesJar(publish = true)
 
     sourceSets.commonMain {
+        generatedKotlin.srcDir(layout.buildDirectory.dir("generated/ksp"))
         dependencies {
             implementation(projects.core)
 
             implementation(libs.kotlin.serialization.json)
             implementation(libs.bundles.ktor.client)
+
+            implementation(libs.logging)
         }
     }
 
@@ -29,8 +44,6 @@ kotlin {
             implementation(libs.cache)
             implementation(libs.ktor.client.cio)
 
-            implementation(libs.logging)
-
             implementation("io.socket:socket.io-client:2.1.1")
         }
     }
@@ -39,9 +52,17 @@ kotlin {
         dependencies {
             implementation(libs.ktor.client.js)
 
-            implementation(libs.logging)
-
             implementation(npm("socket.io-client", "4.8.3"))
         }
     }
+}
+
+project.tasks.withType(KotlinCompilationTask::class.java).configureEach {
+    if (name != "kspCommonMainKotlinMetadata") {
+        dependsOn("kspCommonMainKotlinMetadata")
+    }
+}
+
+project.tasks.matching { it.name.lowercase().endsWith("sourcesjar") }.configureEach {
+    dependsOn("kspCommonMainKotlinMetadata")
 }

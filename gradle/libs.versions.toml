@@ -4,6 +4,9 @@ kotlin-serialization = "1.11.0"
 kotlin-coroutines = "1.10.2"
 kotlin-atomicfu = "0.32.1"
 
+kotlin-poet = "2.3.0"
+ksp = "2.3.7"
+
 shadow = "9.2.2"
 detekt = "2.0.0-alpha.3"
 testlogger = "4.0.0"
@@ -25,6 +28,9 @@ logback = "1.5.19"
 build-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 detekt-gradle-plugin = { module = "dev.detekt:dev.detekt.gradle.plugin", version.ref = "detekt" }
 testlogger-gradle-plugin = { module = "com.adarshr.test-logger:com.adarshr.test-logger.gradle.plugin", version.ref = "testlogger" }
+
+kotlin-poet = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlin-poet" }
+ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 
 kotlin-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlin-serialization" }
 kotlin-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlin-coroutines" }
@@ -51,5 +57,7 @@ ktor-client = [ "ktor-client-core", "ktor-client-contentNegotiation", "ktor-seri
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-atomicfu = { id = "org.jetbrains.kotlinx.atomicfu", version.ref = "kotlin-atomicfu" }
 shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 
 dtk-localization = { id = "de.mineking.discord.localization", version.ref = "dtk-localization" }

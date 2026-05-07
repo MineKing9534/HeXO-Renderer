@@ -8,6 +8,9 @@ external interface Socket {
     fun on(event: String, callback: (dynamic) -> Unit): Socket
 
     @IgnorableReturnValue
+    fun off(event: String, callback: (dynamic) -> Unit): Socket
+
+    @IgnorableReturnValue
     fun emit(event: String, data: dynamic = definedExternally): Socket
 
     @IgnorableReturnValue
@@ -26,6 +29,7 @@ external interface AuthPayload {
 }
 
 external interface SocketOptions {
+    var autoConnect: Boolean
     var transports: Array<String>
     var auth: AuthPayload
     var path: String

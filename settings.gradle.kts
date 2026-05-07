@@ -21,5 +21,6 @@ include(":render")
 include(":parse")
 
 include(":api")
+include(":api:processor")
 
 include(":discord")
