@@ -52,7 +52,7 @@ class SocketIOClient(private val json: Json, private val options: SocketIOOption
     init {
         val driver = createSocketIODriver(version = DEFAULT_VERSION_HASH)
 
-        driver.listen<ProtocolSocketEvent.ConnectError> { event ->
+        val errorListener = driver.listen<ProtocolSocketEvent.ConnectError> { event ->
             val match = versionMismatchError.matchEntire(event.message)
             if (match == null) {
                 emitEvent(event)
@@ -64,6 +64,8 @@ class SocketIOClient(private val json: Json, private val options: SocketIOOption
                 createSocketIODriver(version = correctVersion).connect()
             }
         }
+
+        driver.listen<ProtocolSocketEvent.Connected> { errorListener.remove() }
 
         driver.connect()
     }
@@ -77,14 +79,9 @@ class SocketIOClient(private val json: Json, private val options: SocketIOOption
 
         val driver = SocketIOClientDriver(json, options.host, options.path, authData, DEFAULT_HEADERS + options.headers)
 
-        lateinit var connectListener: EventListener
-        connectListener = driver.listen<ProtocolSocketEvent.Connected> {
-            emitEvent(it)
-            connectListener.remove()
-            SocketEventRegistry.events.forEach { (name, event) ->
-                driver.listen(name, event) { event ->
-                    emitEvent(event)
-                }
+        SocketEventRegistry.events.forEach { (name, event) ->
+            driver.listen(name, event) { event ->
+                emitEvent(event)
             }
         }
 
