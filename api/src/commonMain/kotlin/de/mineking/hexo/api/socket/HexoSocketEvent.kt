@@ -42,7 +42,7 @@ sealed interface ProtocolSocketEvent : SocketEvent {
 
     @Serializable
     @SocketEventName("disconnect")
-    data object Disconnected : ProtocolSocketEvent
+    data class Disconnected(val message: String? = null) : ProtocolSocketEvent
 
     @Serializable
     @SocketEventName("reconnect")

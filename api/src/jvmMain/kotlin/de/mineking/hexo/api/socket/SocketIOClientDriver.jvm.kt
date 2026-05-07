@@ -48,7 +48,7 @@ internal actual class SocketIOClientDriver actual constructor(
             @Suppress("TooGenericExceptionCaught")
             try {
                 val string = when (val raw = args.firstOrNull() ?: "{}") {
-                    is String -> raw
+                    is String -> """{"message":${json.encodeToString(raw)}}"""
                     is JSONObject -> raw.toString()
                     is Exception -> {
                         logger.error(raw) { "Socket IO $name:" }
