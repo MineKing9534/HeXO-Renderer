@@ -13,13 +13,13 @@ internal actual class SocketIOClientDriver actual constructor(
     host: String,
     path: String,
     authData: AuthData,
-    headers: Map<String, String>,
+    headers: Map<String, String?>,
 ) {
     private val socket = IO.socket(
         host,
         IO.Options.builder()
             .setTransports(arrayOf("websocket"))
-            .setExtraHeaders(headers.mapValues { (_, value) -> listOf(value) })
+            .setExtraHeaders(headers.mapValues { (_, value) -> listOfNotNull(value) })
             .setPath(path.let { if (it.endsWith("/")) it else "$it/" })
             .setAuth(
                 mapOf(

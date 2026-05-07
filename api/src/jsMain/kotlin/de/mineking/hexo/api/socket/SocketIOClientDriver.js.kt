@@ -16,14 +16,14 @@ internal actual class SocketIOClientDriver actual constructor(
     host: String,
     path: String,
     authData: AuthData,
-    headers: Map<String, String>,
+    headers: Map<String, String?>,
 ) {
     private val socket = io(
         url = host,
         options = SocketOptions {
             this.autoConnect = false
             this.transports = arrayOf("websocket")
-            this.extraHeaders = headers.toJsObject()
+            this.extraHeaders = headers.filterValues { it != null }.toJsObject()
             this.path = path
             this.addTrailingSlash = true
             this.auth = AuthPayload {

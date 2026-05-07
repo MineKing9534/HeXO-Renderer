@@ -5,3 +5,6 @@ import kotlinx.coroutines.Dispatchers
 
 actual val DefaultHttpEngine = Js.create()
 actual val DefaultCoroutineDispatcher = Dispatchers.Default
+
+// Prevent CORS problems
+actual val HEXO_USER_AGENT: String? = null

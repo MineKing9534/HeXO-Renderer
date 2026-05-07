@@ -1,5 +1,6 @@
 package de.mineking.hexo.api.socket
 
+import de.mineking.hexo.api.HEXO_USER_AGENT
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.Url
 import io.ktor.http.protocolWithAuthority
@@ -41,9 +42,11 @@ class SocketIOClient(private val json: Json, private val options: SocketIOOption
     }
 
     companion object {
-        private const val DEFAULT_VERSION_HASH = "---"
+        private const val DEFAULT_VERSION_HASH = "version-query"
         private val versionMismatchError =
             "Client version hash ${Regex.escape(DEFAULT_VERSION_HASH)} does not match server version hash (.*). Please refresh the page.".toRegex()
+
+        private val DEFAULT_HEADERS = mapOf("User-Agent" to HEXO_USER_AGENT)
     }
 
     init {
@@ -72,7 +75,7 @@ class SocketIOClient(private val json: Json, private val options: SocketIOOption
             versionHash = version,
         )
 
-        val driver = SocketIOClientDriver(json, options.host, options.path, authData, options.headers)
+        val driver = SocketIOClientDriver(json, options.host, options.path, authData, DEFAULT_HEADERS + options.headers)
 
         lateinit var connectListener: EventListener
         connectListener = driver.listen<ProtocolSocketEvent.Connected> {
@@ -98,7 +101,7 @@ internal expect class SocketIOClientDriver(
     host: String,
     path: String,
     authData: AuthData,
-    headers: Map<String, String>,
+    headers: Map<String, String?>,
 ) {
     fun connect()
     fun disconnect()

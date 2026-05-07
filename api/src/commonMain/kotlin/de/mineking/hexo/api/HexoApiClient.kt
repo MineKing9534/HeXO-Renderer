@@ -14,9 +14,11 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.header
 import io.ktor.client.request.request
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
@@ -57,6 +59,8 @@ class HexoApiClient(
 expect val DefaultHttpEngine: HttpClientEngine
 expect val DefaultCoroutineDispatcher: CoroutineDispatcher
 
+expect val HEXO_USER_AGENT: String?
+
 fun createDefaultHttpClient(
     engine: HttpClientEngine = DefaultHttpEngine,
     config: HttpClientConfig<*>.() -> Unit = {},
@@ -71,6 +75,7 @@ fun createDefaultHttpClient(
 
     defaultRequest {
         contentType(ContentType.Application.Json)
+        header(HttpHeaders.UserAgent, HEXO_USER_AGENT)
     }
 
     config()
