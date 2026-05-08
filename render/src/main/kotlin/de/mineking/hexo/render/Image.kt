@@ -2,12 +2,12 @@
 
 package de.mineking.hexo.render
 
-import de.mineking.hexo.core.Board
-import de.mineking.hexo.core.Cell
-import de.mineking.hexo.core.CellCoordinate
-import de.mineking.hexo.core.HighlightLine
-import de.mineking.hexo.core.Player
-import de.mineking.hexo.core.end
+import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.Cell
+import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.HighlightLine
+import de.mineking.hexo.board.end
+import de.mineking.hexo.core.CellOwner
 import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Font
@@ -233,9 +233,9 @@ private class InternalBoardRenderer(
         }
     }
 
-    private fun Player?.color(emptyCellColor: Color, transform: (Color) -> Color = { it }) = when (this) {
-        Player.X -> transform(colorScheme.playerX)
-        Player.O -> transform(colorScheme.playerO)
+    private fun CellOwner?.color(emptyCellColor: Color, transform: (Color) -> Color = { it }) = when (this) {
+        CellOwner.X -> transform(colorScheme.playerX)
+        CellOwner.O -> transform(colorScheme.playerO)
         null -> emptyCellColor
     }
 

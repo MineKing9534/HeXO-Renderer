@@ -8,6 +8,7 @@ import de.mineking.discord.localization.LocalizationParameter
 import de.mineking.discord.localization.Localize
 import de.mineking.discord.ui.message.MessageMenu
 import de.mineking.discord.ui.message.replyMenu
+import de.mineking.hexo.api.game.GameId
 import de.mineking.hexo.discord.finalErrorResponse
 import de.mineking.hexo.discord.menus.GameMenuParameter
 import net.dv8tion.jda.api.interactions.DiscordLocale
@@ -30,7 +31,7 @@ fun gameCommand(gameMenu: MessageMenu<GameMenuParameter, *>) = localizedSlashCom
         }
 
         deferReply().queue()
-        replyMenu(gameMenu, GameMenuParameter(event, parsed, Int.MAX_VALUE)).queue()
+        replyMenu(gameMenu, GameMenuParameter(event, GameId(parsed), Int.MAX_VALUE)).queue()
     }
 }
 

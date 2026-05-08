@@ -40,8 +40,15 @@ import de.mineking.discord.ui.render
 import de.mineking.discord.ui.setValue
 import de.mineking.discord.ui.state
 import de.mineking.discord.ui.terminateRender
-import de.mineking.hexo.core.Board
-import de.mineking.hexo.core.Player
+import de.mineking.hexo.api.asBoard
+import de.mineking.hexo.api.game.FinishedGame
+import de.mineking.hexo.api.game.FinishedGameRepository
+import de.mineking.hexo.api.game.GameFinishReason
+import de.mineking.hexo.api.game.GameId
+import de.mineking.hexo.api.game.isGuest
+import de.mineking.hexo.api.utils.TimeControl
+import de.mineking.hexo.board.Board
+import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.discord.CustomEmoji
 import de.mineking.hexo.discord.HeXODiscordBot
 import de.mineking.hexo.discord.MessageColor
@@ -49,11 +56,6 @@ import de.mineking.hexo.discord.effectiveLocale
 import de.mineking.hexo.discord.main
 import de.mineking.hexo.discord.renderAsComponent
 import de.mineking.hexo.discord.respond
-import de.mineking.hexo.history.GameFinishReason
-import de.mineking.hexo.history.Match
-import de.mineking.hexo.history.MatchRepository
-import de.mineking.hexo.history.TimeControl
-import de.mineking.hexo.history.isGuest
 import de.mineking.hexo.render.RectilinearNotationType
 import de.mineking.hexo.render.renderRectilinearNotation
 import dev.freya02.jda.emojis.unicode.Emojis
@@ -65,11 +67,13 @@ import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback
 import kotlin.math.absoluteValue
 import kotlin.uuid.Uuid
 
-data class GameMenuParameter(val event: IReplyCallback, val id: Uuid, val move: Int)
-private data class MatchData(val match: Match, val board: Board)
+data class GameMenuParameter(val event: IReplyCallback, val id: GameId, val move: Int)
+private data class MatchData(val game: FinishedGame, val board: Board)
 
-fun UIManager.gameMenu(matchRepository: MatchRepository) = registerLocalizedMenu<GameMenuParameter, GameMenuLocalization>("game") { localization ->
-    var id by state(Uuid.NIL)
+fun UIManager.gameMenu(
+    gameRepository: FinishedGameRepository,
+) = registerLocalizedMenu<GameMenuParameter, GameMenuLocalization>("game") { localization ->
+    var id by state(GameId(Uuid.NIL))
     val moveState = state(0)
     val showTurnNumber = state(false)
 
@@ -84,7 +88,7 @@ fun UIManager.gameMenu(matchRepository: MatchRepository) = registerLocalizedMenu
     localize(locale) // Predefine locale for potential error handling
 
     val lazyMatchData = lazy(default = null) {
-        val match = matchRepository.getGame(id) ?: return@lazy null
+        val match = gameRepository.getGame(id) ?: return@lazy null
         val board = match.asBoard(move, showTurnNumber.value)
 
         MatchData(match, board)
@@ -100,10 +104,10 @@ fun UIManager.gameMenu(matchRepository: MatchRepository) = registerLocalizedMenu
         }
 
         localize(locale) {
-            bindParameter("match", matchData.match)
+            bindParameter("game", matchData.game)
         }
 
-        move = move.coerceIn(0, matchData.match.moveCount)
+        move = move.coerceIn(0, matchData.game.moves.size)
     }
 
     +container {
@@ -116,44 +120,48 @@ fun UIManager.gameMenu(matchRepository: MatchRepository) = registerLocalizedMenu
             )
             +separator(invisible = true)
 
-            +buildTextDisplay {
-                fun playerLine(emoji: CustomEmoji, player: Player) = line {
-                    val playerInfo = match.playerMappings[player]!!
+            main.run {
+                +match.gameDetails(localization, locale)
 
-                    append(main.emojiManager[emoji].formatted)
-                    append(" ")
-                    append(playerInfo.displayName)
-
-                    if (!playerInfo.isGuest()) {
-                        val eloChange = playerInfo.eloChange?.let { "　[${if (it < 0) "▼" else "▲"} ${it.absoluteValue}]" } ?: ""
-                        append("　`${playerInfo.elo} ELO$eloChange`")
-                    }
-                    if (match.gameResult.winningPlayerId == playerInfo.id) append(" :first_place:")
-                }
-
-                listOf(CustomEmoji.PlayerX to Player.X, CustomEmoji.PlayerO to Player.O)
-                    .sortedBy { (_, player) -> match.moves.indexOfFirst { match.playerIdMappings[it.id] == player } }
-                    .forEach { (emoji, player) -> +playerLine(emoji, player) }
-
-                +line()
-                +line {
-                    +code("${Emojis.HOURGLASS.formatted} ${match.gameResult.duration}")
-                    append("\u2003")
-                    +code("${Emojis.TIMER_CLOCK.formatted} ${localization.timeControl(locale, match.gameOptions.timeControl)}")
-                    append("\u2003")
-                    +code(match.gameResult.reason.localize(locale, localization))
-                }
+                +separator(spacing = Separator.Spacing.LARGE)
+                +board.renderAsComponent()
+                +separator(spacing = Separator.Spacing.LARGE)
             }
-
-            +separator(spacing = Separator.Spacing.LARGE)
-            +main.run { board.renderAsComponent() }
-            +separator(spacing = Separator.Spacing.LARGE)
-
-            match to board
         }
 
-        +moveSelector("move", matchData?.match?.moveCount ?: Int.MAX_VALUE, moveState)
+        +moveSelector("move", matchData?.game?.moves?.size ?: Int.MAX_VALUE, moveState)
         +additionalActions(main, lazyMatchData, showTurnNumber)
+    }
+}
+
+context(main: HeXODiscordBot)
+private fun FinishedGame.gameDetails(localization: GameMenuLocalization, locale: DiscordLocale) = buildTextDisplay {
+    players.forEach { player ->
+        +line {
+            val emoji = when (player.color) {
+                CellOwner.X -> CustomEmoji.PlayerX
+                CellOwner.O -> CustomEmoji.PlayerO
+            }
+
+            append(main.emojiManager[emoji].formatted)
+            append(" ")
+            append(player.displayName)
+
+            if (!player.isGuest()) {
+                val eloChange = player.eloChange?.let { "　[${if (it < 0) "▼" else "▲"} ${it.absoluteValue}]" } ?: ""
+                append("　`${player.elo} ELO$eloChange`")
+            }
+            if (result.winner?.playerId == player.playerId) append(" :first_place:")
+        }
+    }
+
+    +line()
+    +line {
+        +code("${Emojis.HOURGLASS.formatted} ${result.duration}")
+        append("\u2003")
+        +code("${Emojis.TIMER_CLOCK.formatted} ${localization.timeControl(locale, options.timeControl)}")
+        append("\u2003")
+        +code(result.reason.localize(locale, localization))
     }
 }
 
@@ -253,7 +261,7 @@ private fun MessageMenuConfig<*, *>.moveSelector(
 
 interface GameMenuLocalization : LocalizationFile {
     @Localize
-    fun errorMatchNotFound(@Locale locale: DiscordLocale, @LocalizationParameter id: Uuid): String
+    fun errorMatchNotFound(@Locale locale: DiscordLocale, @LocalizationParameter id: GameId): String
 
     @Localize
     fun timeControl(@Locale locale: DiscordLocale, @LocalizationParameter control: TimeControl): String

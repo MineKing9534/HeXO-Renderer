@@ -1,9 +1,9 @@
 package de.mineking.hexo.parse
 
-import de.mineking.hexo.core.Board
-import de.mineking.hexo.core.CellCoordinate
-import de.mineking.hexo.core.Direction
-import de.mineking.hexo.core.merge
+import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.Direction
+import de.mineking.hexo.board.merge
 
 private const val MOVE_PATTERN = /*language=regexp*/ """[A-Z](?:[0-5]\.)?\d+"""
 private const val TURN_PATTERN = /*language=regexp*/ """[xo]\s+$MOVE_PATTERN\s+$MOVE_PATTERN"""

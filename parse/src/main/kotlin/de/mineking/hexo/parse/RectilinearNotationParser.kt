@@ -1,13 +1,13 @@
 package de.mineking.hexo.parse
 
-import de.mineking.hexo.core.Board
-import de.mineking.hexo.core.Cell
-import de.mineking.hexo.core.CellCoordinate
-import de.mineking.hexo.core.Direction
-import de.mineking.hexo.core.Player
-import de.mineking.hexo.core.minus
-import de.mineking.hexo.core.plus
-import de.mineking.hexo.core.times
+import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.Cell
+import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.Direction
+import de.mineking.hexo.board.minus
+import de.mineking.hexo.board.plus
+import de.mineking.hexo.board.times
+import de.mineking.hexo.core.CellOwner
 
 object RectilinearNotationParser : BoardParser {
     override suspend fun parse(notation: String) = notation.parseRectilinearNotation()
@@ -51,8 +51,8 @@ private enum class ParserState {
                     return
                 }
 
-                'x', 'X' -> configureCurrent { owner = Player.X }
-                'o', 'O' -> configureCurrent { owner = Player.O }
+                'x', 'X' -> configureCurrent { owner = CellOwner.X }
+                'o', 'O' -> configureCurrent { owner = CellOwner.O }
                 '.', '!' -> {}
                 '-' -> step()
                 else -> throw IllegalArgumentException("Unexpected character `$ch` at offset $offset")
@@ -114,8 +114,8 @@ private enum class ParserState {
             val direction = Direction.fromSymbol(match.groupValues[1])
             val length = match.groupValues[2].takeIf { it.isNotEmpty() }?.toInt() ?: 6
             val color = when (match.groupValues[3]) {
-                "x" -> Player.X
-                "o" -> Player.O
+                "x" -> CellOwner.X
+                "o" -> CellOwner.O
                 else -> null
             }
 
@@ -147,7 +147,7 @@ private class Cursor(private val board: Board) {
         board[position - STEP_DIRECTION].block()
     }
 
-    fun highlightLine(origin: CellCoordinate, direction: Direction, length: Int, color: Player?) {
+    fun highlightLine(origin: CellCoordinate, direction: Direction, length: Int, color: CellOwner?) {
         board.highlightLine(origin, direction, length, color)
     }
 

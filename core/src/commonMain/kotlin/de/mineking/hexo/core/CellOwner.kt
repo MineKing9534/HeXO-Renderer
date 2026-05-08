@@ -1,0 +1,13 @@
+package de.mineking.hexo.core
+
+enum class CellOwner {
+    X {
+        override val other get() = O
+    },
+    O {
+        override val other get() = X
+    },
+    ;
+
+    abstract val other: CellOwner
+}

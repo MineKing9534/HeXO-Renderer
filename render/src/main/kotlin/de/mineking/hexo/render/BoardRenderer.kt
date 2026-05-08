@@ -4,7 +4,7 @@ package de.mineking.hexo.render
 
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.sksamuel.aedile.core.asCache
-import de.mineking.hexo.core.Board
+import de.mineking.hexo.board.Board
 
 interface BoardRenderer<T : Any> {
     suspend fun Board.render(): T

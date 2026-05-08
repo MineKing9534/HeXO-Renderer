@@ -1,11 +1,11 @@
 package de.mineking.hexo.parse
 
-import de.mineking.hexo.core.Board
-import de.mineking.hexo.core.CellCoordinate
-import de.mineking.hexo.core.Direction
-import de.mineking.hexo.core.Player
-import de.mineking.hexo.core.plus
-import de.mineking.hexo.core.times
+import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.Direction
+import de.mineking.hexo.board.plus
+import de.mineking.hexo.board.times
+import de.mineking.hexo.core.CellOwner
 
 enum class Chirality(val symbol: String) {
     Clockwise("CW"),
@@ -32,18 +32,20 @@ fun String.parseBKENotation(
 
     val origin = origin ?: run {
         board[0, 0].apply {
-            owner = Player.X
+            owner = CellOwner.X
             turn = 0
         }
         CellCoordinate.Zero
     }
 
     turns.forEachIndexed { index, (player, first, second) ->
-        fun CellCoordinate.applyMove() = board[this].apply {
-            owner = player
-            turn = index + 1
+        fun CellCoordinate.applyMove() {
+            board[this].apply {
+                owner = player
+                turn = index + 1
 
-            focussed = index == turns.lastIndex
+                focussed = index == turns.lastIndex
+            }
         }
 
         first.toCellCoordinate(origin, zeroOffsetLine, chirality).applyMove()
@@ -59,7 +61,7 @@ private data class RingOffset(
 )
 
 private data class Turn(
-    val player: Player,
+    val player: CellOwner,
     val first: RingOffset,
     val second: RingOffset,
 )
@@ -82,8 +84,8 @@ private fun String.parseBKETurns(): List<Turn> {
 }
 
 private fun String.parsePlayer() = when (this) {
-    "o" -> Player.O
-    "x" -> Player.X
+    "o" -> CellOwner.O
+    "x" -> CellOwner.X
     else -> throw IllegalArgumentException("Invalid player `$this`")
 }
 

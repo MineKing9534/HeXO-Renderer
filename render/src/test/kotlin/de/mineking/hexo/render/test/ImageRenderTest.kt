@@ -1,9 +1,9 @@
 package de.mineking.hexo.render.test
 
-import de.mineking.hexo.core.Board
-import de.mineking.hexo.core.CellCoordinate
-import de.mineking.hexo.core.Direction
-import de.mineking.hexo.core.Player
+import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.Direction
+import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.render.renderToImage
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
@@ -15,19 +15,19 @@ class ImageRenderTest {
     fun `render image`() {
         val board = Board()
         board[0, 0].apply {
-            owner = Player.X
+            owner = CellOwner.X
             highlighted = true
         }
         board[3, 0].apply {
-            owner = Player.X
+            owner = CellOwner.X
             focussed = true
         }
         board[0, 1].apply {
-            owner = Player.O
+            owner = CellOwner.O
             label = "1"
         }
-        board[2, 1].owner = Player.O
-        board[0, 3].owner = Player.X
+        board[2, 1].owner = CellOwner.O
+        board[0, 3].owner = CellOwner.X
         board[0, 4].apply {
             highlighted = true
             label = "b"
@@ -52,9 +52,9 @@ class ImageRenderTest {
     @Test
     fun `highlighted line`() {
         val board = Board()
-        board[0, 1].owner = Player.X
-        board[0, 2].owner = Player.O
-        board.highlightLine(CellCoordinate(1, 0), Direction.Left, length = 4, color = Player.X)
+        board[0, 1].owner = CellOwner.X
+        board[0, 2].owner = CellOwner.O
+        board.highlightLine(CellCoordinate(1, 0), Direction.Left, length = 4, color = CellOwner.X)
         board.highlightLine(CellCoordinate(0, 2), Direction.TopLeft, length = 5, color = null)
 
         val renderedImage = board.renderToImage(
