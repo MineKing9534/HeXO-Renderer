@@ -1,23 +1,51 @@
 package de.mineking.hexo.api.utils
 
-import de.mineking.hexo.api.HexoApiClient
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-class EntityRequester<K, T>(
-    private val client: HexoApiClient,
-    private val request: suspend HexoApiClient.(K) -> T?,
-) {
+interface EntityRequester<K, T> {
+    suspend fun fetch(id: K): T?
+}
+
+interface EntityRequesterFactory {
+    fun <K, T> createEntityRequester(resolver: suspend (K) -> T?): EntityRequester<K, T>
+
+    class Debouncing(private val coroutineScope: CoroutineScope) : EntityRequesterFactory {
+        override fun <K, T> createEntityRequester(resolver: suspend (K) -> T?) = DebouncingEntityRequester(coroutineScope, resolver)
+    }
+}
+
+fun EntityRequesterFactory.logRequestErrors(): EntityRequesterFactory = ErrorLoggingEntityRequesterFactory(this)
+private class ErrorLoggingEntityRequesterFactory(val delegate: EntityRequesterFactory) : EntityRequesterFactory {
+    private val logger = KotlinLogging.logger {}
+
+    override fun <K, T> createEntityRequester(resolver: suspend (K) -> T?) = delegate.createEntityRequester<K, T> {
+        @Suppress("TooGenericExceptionCaught")
+        try {
+            resolver(it)
+        } catch (e: Exception) {
+            logger.error(e) { "Error during entity request for $it" }
+            null
+        }
+    }
+}
+
+class DebouncingEntityRequester<K, T>(
+    private val coroutineScope: CoroutineScope,
+    private val request: suspend (K) -> T?,
+) : EntityRequester<K, T> {
     private val waitingLock = Mutex()
     private val waiting = mutableMapOf<K, Deferred<T?>>()
 
-    suspend fun fetch(id: K): T? {
+    override suspend fun fetch(id: K): T? {
         val deferred = waitingLock.withLock {
             waiting.getOrPut(id) {
-                client.coroutineScope.async {
-                    client.request(id)
+                coroutineScope.async {
+                    request(id)
                 }
             }
         }

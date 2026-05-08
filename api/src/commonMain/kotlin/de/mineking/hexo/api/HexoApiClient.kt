@@ -6,6 +6,8 @@ import de.mineking.hexo.api.socket.SocketIOClient
 import de.mineking.hexo.api.socket.SocketIOOptions
 import de.mineking.hexo.api.tournament.TournamentRepository
 import de.mineking.hexo.api.tournament.TournamentRepositoryImpl
+import de.mineking.hexo.api.utils.EntityRequesterFactory
+import de.mineking.hexo.api.utils.logRequestErrors
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
@@ -45,6 +47,7 @@ class HexoApiClient(
     private val host: String = HEXO_WEBSITE,
     socketIOOptions: SocketIOOptions? = SocketIOOptions.createDefault(host),
     private val httpClient: HttpClient = createDefaultHttpClient(),
+    internal val entityRequesterFactory: EntityRequesterFactory = EntityRequesterFactory.Debouncing(coroutineScope).logRequestErrors(),
 ) {
     private val sockerIO = socketIOOptions?.let { SocketIOClient(json, it) }
     val events = sockerIO?.events ?: MutableSharedFlow()

@@ -2,7 +2,6 @@ package de.mineking.hexo.api.tournament
 
 import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.socket.HexoSocketEvent
-import de.mineking.hexo.api.utils.EntityRequester
 import de.mineking.hexo.api.utils.EntityState
 import de.mineking.hexo.api.utils.withLock
 import io.ktor.client.call.body
@@ -32,8 +31,8 @@ internal class TournamentRepositoryImpl(private val client: HexoApiClient) : Tou
     private val cacheLock = SynchronizedObject()
     private val cache = mutableMapOf<TournamentId, MutableStateFlow<EntityState<Tournament>>>()
 
-    private val requester = EntityRequester<TournamentId, Tournament>(client) {
-        val response = request("/tournaments/${it.value}")
+    private val requester = client.entityRequesterFactory.createEntityRequester<TournamentId, Tournament> {
+        val response = client.request("/tournaments/${it.value}")
         val tournament = when {
             response.status.isSuccess() -> Tournament.of(client, response.body<TournamentDto>())
             else -> null
