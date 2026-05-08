@@ -108,25 +108,27 @@ fun Board.renderToImage(
         padding,
     )
 
-    val winningCells =
-        if (focusWinningRows) {
-            findWinningRows().flatten().map { it.first }.toSet()
-        } else {
-            emptyList()
+    renderer.use {
+        val winningCells =
+            if (focusWinningRows) {
+                findWinningRows().flatten().map { it.first }.toSet()
+            } else {
+                emptyList()
+            }
+
+        for (position in boundingBox.findVisibleCoordinates(size)) {
+            val cell = cells[position]?.let { it.copy(focussed = it.focussed || position in winningCells) } ?: Cell()
+            renderer.drawCell(position, cell)
         }
 
-    for (position in boundingBox.findVisibleCoordinates(size)) {
-        val cell = cells[position]?.let { it.copy(focussed = it.focussed || position in winningCells) } ?: Cell()
-        renderer.drawCell(position, cell)
+        highlightedLines.forEach {
+            renderer.drawLine(it)
+        }
+
+        cells.forEach { (position, cell) -> renderer.drawCellLabel(position, cell) }
+
+        return renderer.image
     }
-
-    highlightedLines.forEach {
-        renderer.drawLine(it)
-    }
-
-    cells.forEach { (position, cell) -> renderer.drawCellLabel(position, cell) }
-
-    return renderer.image
 }
 
 private data class BoundingBox(
