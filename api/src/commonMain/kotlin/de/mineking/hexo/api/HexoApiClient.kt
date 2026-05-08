@@ -2,6 +2,10 @@ package de.mineking.hexo.api
 
 import de.mineking.hexo.api.game.FinishedGameRepository
 import de.mineking.hexo.api.game.FinishedGameRepositoryImpl
+import de.mineking.hexo.api.leaderboard.LeaderboardRepository
+import de.mineking.hexo.api.leaderboard.LeaderboardRepositoryImpl
+import de.mineking.hexo.api.profile.ProfileRepository
+import de.mineking.hexo.api.profile.ProfileRepositoryImpl
 import de.mineking.hexo.api.socket.SocketIOClient
 import de.mineking.hexo.api.socket.SocketIOOptions
 import de.mineking.hexo.api.tournament.TournamentRepository
@@ -54,6 +58,9 @@ class HexoApiClient(
 
     val finishedGameRepository: FinishedGameRepository = FinishedGameRepositoryImpl(this)
     val tournamentRepository: TournamentRepository = TournamentRepositoryImpl(this)
+
+    val leaderboardRepository: LeaderboardRepository = LeaderboardRepositoryImpl(this)
+    val profileRepository: ProfileRepository = ProfileRepositoryImpl(this)
 
     internal suspend fun request(path: String, builder: HttpRequestBuilder.() -> Unit = {}): HttpResponse =
         httpClient.request("$host/api$path", builder)

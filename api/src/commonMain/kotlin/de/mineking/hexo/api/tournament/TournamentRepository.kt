@@ -34,7 +34,7 @@ internal class TournamentRepositoryImpl(private val client: HexoApiClient) : Tou
     private val requester = client.entityRequesterFactory.createEntityRequester<TournamentId, Tournament> {
         val response = client.request("/tournaments/${it.value}")
         val tournament = when {
-            response.status.isSuccess() -> Tournament.of(client, response.body<TournamentDto>())
+            response.status.isSuccess() -> Tournament.of(client, response.body())
             else -> null
         }
 

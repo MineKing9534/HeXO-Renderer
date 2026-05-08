@@ -85,6 +85,14 @@ class SocketIOClient(private val json: Json, private val options: SocketIOOption
             }
         }
 
+        driver.listen<ProtocolSocketEvent.Connected> {
+            logger.info { "Connected" }
+        }
+
+        driver.listen<ProtocolSocketEvent.Disconnected> {
+            logger.warn { "Got disconnected from server: ${it.message ?: "no message provided"}" }
+        }
+
         return driver
     }
 }

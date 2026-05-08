@@ -1,5 +1,3 @@
-@file:Suppress("MatchingDeclarationName")
-
 package de.mineking.hexo.render
 
 import de.mineking.hexo.board.Board

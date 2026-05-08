@@ -3,7 +3,7 @@ package de.mineking.hexo.api.game
 import de.mineking.hexo.api.HEXO_WEBSITE
 import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.InternalHexoApi
-import de.mineking.hexo.api.ProfileId
+import de.mineking.hexo.api.profile.ProfileId
 import de.mineking.hexo.api.tournament.TournamentBracket
 import de.mineking.hexo.api.tournament.TournamentId
 import de.mineking.hexo.api.tournament.TournamentMatchId
@@ -39,7 +39,7 @@ class FinishedGame(
     val players: List<Player>,
 ) {
     companion object {
-        private fun FinishedGameDto.createPlayerList() = players.map { data ->
+        private fun FinishedGameDto.createPlayerList(client: HexoApiClient) = players.map { data ->
             val color = playerTiles[data.playerId]?.color ?: error("Player tile for ${data.playerId} not defined")
             val owner = when {
                 color.red > 200 -> CellOwner.X
@@ -48,8 +48,9 @@ class FinishedGame(
             }
 
             Player(
+                client = client,
                 playerId = data.playerId,
-                profileId = data.profileId,
+                profileId = data.profileId.takeIf { it.value != data.playerId.value },
                 displayName = data.displayName,
                 elo = data.elo,
                 eloChange = data.eloChange,
@@ -78,7 +79,7 @@ class FinishedGame(
         )
 
         internal fun of(client: HexoApiClient, dto: FinishedGameDto): FinishedGame {
-            val players = dto.createPlayerList()
+            val players = dto.createPlayerList(client)
             val playersById = players.associateBy { it.playerId }
 
             return FinishedGame(
@@ -96,18 +97,24 @@ class FinishedGame(
     val url get() = "${HEXO_WEBSITE}/games/${id.value}"
 }
 
-data class Player(
+class Player(
+    @property:InternalHexoApi val client: HexoApiClient,
     val playerId: PlayerId,
-    val profileId: ProfileId,
+    val profileId: ProfileId?,
     val displayName: String,
     val elo: Int,
     val eloChange: Int?,
     val color: CellOwner,
     val tournamentMatchWins: Int?,
     val isWinner: Boolean,
-)
+) {
+    @OptIn(InternalHexoApi::class)
+    suspend fun fetchProfile() = profileId?.let { client.profileRepository.getProfile(it) }
+}
 
-data class TournamentMatchSnapshot(
+fun Player.isGuest() = profileId == null
+
+class TournamentMatchSnapshot(
     @property:InternalHexoApi val client: HexoApiClient,
     val tournamentId: TournamentId,
     val tournamentName: String,
@@ -123,8 +130,6 @@ data class TournamentMatchSnapshot(
     @OptIn(InternalHexoApi::class)
     suspend fun retrieveTournament() = client.tournamentRepository.getTournament(tournamentId)
 }
-
-fun Player.isGuest() = profileId.value == playerId.value
 
 data class GameResult(
     val winner: Player?,

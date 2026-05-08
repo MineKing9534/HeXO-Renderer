@@ -2,9 +2,9 @@ package de.mineking.hexo.api.tournament
 
 import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.InternalHexoApi
-import de.mineking.hexo.api.ProfileId
 import de.mineking.hexo.api.game.GameReference
 import de.mineking.hexo.api.game.SessionId
+import de.mineking.hexo.api.profile.ProfileId
 import de.mineking.hexo.api.utils.Instant
 import de.mineking.hexo.api.utils.TimeControl
 import kotlinx.serialization.Serializable
@@ -19,7 +19,7 @@ value class TournamentId(val value: Uuid)
 @Serializable
 value class TournamentMatchId(val value: String)
 
-class Tournament(
+data class Tournament(
     @property:InternalHexoApi val client: HexoApiClient,
     val id: TournamentId,
     val name: String,
@@ -37,11 +37,12 @@ class Tournament(
     val matches: List<TournamentMatch>,
 ) {
     companion object {
-        private fun TournamentDto.createParticipantList(): List<TournamentParticipant> {
+        private fun TournamentDto.createParticipantList(client: HexoApiClient): List<TournamentParticipant> {
             val participantsDtos = participants.associateBy { it.profileId }
             return standings.map {
                 val participant = participantsDtos[it.profileId] ?: error("Couldn't find participant ${it.profileId}")
                 TournamentParticipant(
+                    client = client,
                     profileId = participant.profileId,
                     displayName = participant.displayName,
                     image = participant.image,
@@ -90,7 +91,7 @@ class Tournament(
         }
 
         internal fun of(client: HexoApiClient, dto: TournamentDto): Tournament {
-            val participants = dto.createParticipantList()
+            val participants = dto.createParticipantList(client)
             val matches = dto.createMatchList(client, participants)
 
             return Tournament(
@@ -115,13 +116,17 @@ class Tournament(
 }
 
 class TournamentParticipant(
+    @property:InternalHexoApi val client: HexoApiClient,
     val profileId: ProfileId,
     val displayName: String,
     val image: String?,
     val registeredAt: Instant,
     val seed: Int?,
     val standing: TournamentStanding,
-)
+) {
+    @OptIn(InternalHexoApi::class)
+    suspend fun fetchProfile() = client.profileRepository.getProfile(profileId)
+}
 
 data class TournamentMatchPlayer(
     val participant: TournamentParticipant?,
@@ -132,7 +137,7 @@ data class TournamentMatchPlayer(
 )
 
 // TODO allow fetching current session
-class TournamentMatch(
+data class TournamentMatch(
     val id: TournamentMatchId,
     val bracket: TournamentBracket,
     val round: Int,
