@@ -36,8 +36,6 @@ class ImageRenderTest {
 
         val renderedImage = board.renderToImage(
             layoutRadius = 64.0,
-            gap = 6.0,
-            borderThickness = 2f,
             padding = 32,
         )
 
@@ -52,15 +50,16 @@ class ImageRenderTest {
     @Test
     fun `highlighted line`() {
         val board = Board()
-        board[0, 1].owner = CellOwner.X
+        board[0, 1].apply {
+            owner = CellOwner.X
+            label = "a"
+        }
         board[0, 2].owner = CellOwner.O
         board.highlightLine(CellCoordinate(1, 0), Direction.Left, length = 4, color = CellOwner.X)
         board.highlightLine(CellCoordinate(0, 2), Direction.TopLeft, length = 5, color = null)
 
         val renderedImage = board.renderToImage(
             layoutRadius = 64.0,
-            gap = 6.0,
-            borderThickness = 2f,
             padding = 32,
         )
 

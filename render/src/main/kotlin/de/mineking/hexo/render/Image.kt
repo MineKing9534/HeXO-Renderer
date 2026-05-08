@@ -5,7 +5,6 @@ import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.HighlightLine
 import de.mineking.hexo.board.end
-import de.mineking.hexo.core.CellOwner
 import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Font
@@ -28,30 +27,6 @@ import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-data class ColorScheme(
-    val background: Color,
-    val cellBorder: Color,
-    val highlightedCellBorder: Color,
-    val focussedCellBorder: Color,
-    val emptyCell: Color,
-    val emptyCellLabel: Color,
-    val playerX: Color,
-    val playerO: Color,
-) {
-    companion object {
-        val Default = ColorScheme(
-            background = Color(0x0f172a),
-            cellBorder = Color(0x202a3d),
-            highlightedCellBorder = Color(0xec6fb1),
-            focussedCellBorder = Color.WHITE,
-            emptyCell = Color(0, true),
-            emptyCellLabel = Color(0xb1c1e0),
-            playerX = Color(0xfbc139),
-            playerO = Color(0x38bdf8),
-        )
-    }
-}
-
 private fun BufferedImage.toByteArray(): ByteArray {
     val output = ByteArrayOutputStream()
     ImageIO.write(this, "png", output)
@@ -63,49 +38,40 @@ suspend fun Board.renderToByteArray() = renderer.run { render().toByteArray() }
 
 class ImageBoardRenderer(
     private val layoutRadius: Double,
-    private val gap: Double,
-    private val borderThickness: Float,
     private val padding: Int,
     private val focusWinningRows: Boolean = true,
-    private val colorScheme: ColorScheme = ColorScheme.Default,
+    private val theme: Theme = BasicTheme.Default,
 ) : BoardRenderer<BufferedImage> {
     companion object {
         val Default = ImageBoardRenderer(
             layoutRadius = 64.0,
-            gap = 6.0,
-            borderThickness = 2f,
             padding = 32,
         )
     }
 
     override suspend fun Board.render() = renderToImage(
         layoutRadius = layoutRadius,
-        gap = gap,
-        borderThickness = borderThickness,
         padding = padding,
         focusWinningRows = focusWinningRows,
-        colorScheme = colorScheme,
+        theme = theme,
     )
 }
 
 fun Board.renderToImage(
     layoutRadius: Double,
-    gap: Double,
-    borderThickness: Float,
     padding: Int,
     focusWinningRows: Boolean = true,
-    colorScheme: ColorScheme = ColorScheme.Default,
+    theme: Theme = BasicTheme.Default,
 ): BufferedImage {
     require(cells.isNotEmpty())
 
-    val size = RenderSize(layoutRadius, gap)
+    val size = RenderSize(layoutRadius)
     val boundingBox = findBoundingBox(size)
     val renderer = InternalBoardRenderer(
         boundingBox,
         size,
-        colorScheme,
-        borderThickness,
         padding,
+        theme,
     )
 
     renderer.use {
@@ -141,15 +107,14 @@ private data class BoundingBox(
 private fun BoundingBox.findVisibleCoordinates(size: RenderSize) = sequence {
     val horizontalStep = size.layoutRadius * RenderSize.sqrt3
     val verticalStep = size.layoutRadius * 1.5
-    val margin = size.hexSize
 
-    val minR = floor((minY - margin) / verticalStep).toInt() - 1
-    val maxR = ceil((maxY + margin) / verticalStep).toInt() + 1
+    val minR = floor(minY / verticalStep).toInt() - 1
+    val maxR = ceil(maxY / verticalStep).toInt() + 1
 
     for (r in minR..maxR) {
         val rOffset = r / 2.0
-        val minQ = floor((minX - margin) / horizontalStep - rOffset).toInt() - 1
-        val maxQ = ceil((maxX + margin) / horizontalStep - rOffset).toInt() + 1
+        val minQ = floor(minX / horizontalStep - rOffset).toInt() - 1
+        val maxQ = ceil(maxX / horizontalStep - rOffset).toInt() + 1
 
         for (q in minQ..maxQ) {
             yield(CellCoordinate(q, r))
@@ -169,8 +134,8 @@ private fun Board.findBoundingBox(size: RenderSize): BoundingBox {
 
         for (i in 0 until 6) {
             val angle = Math.toRadians(60.0 * i - 30)
-            val x = cx + size.hexSize * cos(angle)
-            val y = cy + size.hexSize * sin(angle)
+            val x = cx + size.layoutRadius * cos(angle)
+            val y = cy + size.layoutRadius * sin(angle)
 
             minX = min(minX, x)
             maxX = max(maxX, x)
@@ -187,15 +152,10 @@ private fun Board.findBoundingBox(size: RenderSize): BoundingBox {
     )
 }
 
-private class RenderSize(
-    val layoutRadius: Double,
-    private val gap: Double,
-) {
+private class RenderSize(val layoutRadius: Double) {
     companion object {
         val sqrt3 = sqrt(3.0)
     }
-
-    val hexSize get() = layoutRadius - gap
 
     fun CellCoordinate.toPixel(): Pair<Double, Double> {
         val x = layoutRadius * (sqrt3 * q + sqrt3 / 2 * r)
@@ -207,13 +167,15 @@ private class RenderSize(
 private class InternalBoardRenderer(
     private val boundingBox: BoundingBox,
     private val size: RenderSize,
-    private val colorScheme: ColorScheme,
-    private val borderThickness: Float,
     private val padding: Int,
+    private val theme: Theme,
 ) : AutoCloseable {
     companion object {
         private val BOLD_FONT = Font.createFont(Font.TRUETYPE_FONT, javaClass.getResourceAsStream("/fonts/open-sans.extrabold.ttf"))
     }
+
+    private val hexSize = size.layoutRadius * (1 - theme.gap / 64)
+    private val borderThickness = (size.layoutRadius * theme.borderThickness / 64).toFloat()
 
     val image: BufferedImage
     private val graphics: Graphics2D
@@ -226,17 +188,11 @@ private class InternalBoardRenderer(
 
         image = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
         graphics = image.createGraphics().apply {
-            color = colorScheme.background
+            color = theme.backgroundColor
             fillRect(0, 0, width, height)
 
             setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
         }
-    }
-
-    private fun CellOwner?.color(emptyCellColor: Color, transform: (Color) -> Color = { it }) = when (this) {
-        CellOwner.X -> transform(colorScheme.playerX)
-        CellOwner.O -> transform(colorScheme.playerO)
-        null -> emptyCellColor
     }
 
     fun drawLine(line: HighlightLine) {
@@ -250,10 +206,13 @@ private class InternalBoardRenderer(
 
         val inner = Area(innerStroke)
         val ring = Area(outerStroke).apply { subtract(inner) }
-        graphics.color = colorScheme.cellBorder.withAlpha(128)
+
+        val (backgroundColor, borderColor) = theme.run { line.color() }
+
+        graphics.color = borderColor
         graphics.fill(ring)
 
-        graphics.color = line.color.color(emptyCellColor = colorScheme.highlightedCellBorder).withAlpha(220)
+        graphics.color = backgroundColor
         graphics.fill(inner)
     }
 
@@ -261,29 +220,29 @@ private class InternalBoardRenderer(
         val (x, y) = position.toPixel()
         val hex = createHex(x, y)
 
-        graphics.color = cell.owner.color(emptyCellColor = colorScheme.emptyCell)
+        graphics.color = theme.run { cell.backgroundColor() }
         graphics.fill(hex)
 
-        fun drawHighlight(color: Color) {
-            graphics.color = color.withAlpha(48)
+        fun drawHighlight(color: Theme.ElementColors) {
+            graphics.color = color.backgroundColor
             graphics.fill(hex)
 
             graphics.stroke = BasicStroke(borderThickness * 3)
-            graphics.color = color
+            graphics.color = color.borderColor
             graphics.draw(hex)
         }
 
         when {
-            cell.highlighted -> drawHighlight(colorScheme.highlightedCellBorder)
-            cell.focussed -> drawHighlight(colorScheme.focussedCellBorder)
+            cell.highlighted -> drawHighlight(theme.highlightColor)
+            cell.focussed -> drawHighlight(theme.focusColor)
             else -> {
                 graphics.stroke = BasicStroke(borderThickness)
-                graphics.color = colorScheme.cellBorder
+                graphics.color = theme.cellBorderColor
                 graphics.draw(hex)
             }
         }
 
-        if (x.toInt() in 0..image.width && y.toInt() in 0..image.height) {
+        if (x.toInt() in 0 until image.width && y.toInt() in 0 until image.height) {
             cellColors[cell] = Color(image.getRGB(x.toInt(), y.toInt()), false)
         }
     }
@@ -294,7 +253,7 @@ private class InternalBoardRenderer(
             ?: cell.turn?.toString()
             ?: return
 
-        val fontSize = size.hexSize.toFloat() * 0.7f
+        val fontSize = hexSize.toFloat() * 0.7f
         graphics.font = BOLD_FONT.deriveFont(Font.BOLD, fontSize)
 
         val fm = graphics.fontMetrics
@@ -311,7 +270,7 @@ private class InternalBoardRenderer(
             graphics.draw(shape)
         }
 
-        graphics.color = cell.owner.color(emptyCellColor = colorScheme.emptyCellLabel, transform = { it.darker().darker() })
+        graphics.color = theme.run { cell.labelColor() }
         graphics.fill(shape)
     }
 
@@ -321,7 +280,7 @@ private class InternalBoardRenderer(
         for (i in 0 until 6) {
             val angle = Math.toRadians(60.0 * i - 30)
 
-            val radius = size.hexSize - inset
+            val radius = hexSize - inset
             val x = x + radius * cos(angle)
             val y = y + radius * sin(angle)
 
@@ -342,5 +301,3 @@ private class InternalBoardRenderer(
         }
     }
 }
-
-private fun Color.withAlpha(alpha: Int) = Color(red, green, blue, alpha)
