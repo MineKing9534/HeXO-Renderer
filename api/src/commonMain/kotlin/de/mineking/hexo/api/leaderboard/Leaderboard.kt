@@ -1,8 +1,8 @@
 package de.mineking.hexo.api.leaderboard
 
-import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.InternalHexoApi
 import de.mineking.hexo.api.profile.ProfileId
+import de.mineking.hexo.api.profile.ProfileRepository
 import de.mineking.hexo.api.utils.Instant
 
 class Leaderboard(
@@ -11,13 +11,13 @@ class Leaderboard(
     val players: List<LeaderboardEntry>,
 ) {
     companion object {
-        internal fun of(client: HexoApiClient, dto: LeaderboardDto): Leaderboard {
+        internal fun of(profileRepository: ProfileRepository, dto: LeaderboardDto): Leaderboard {
             return Leaderboard(
                 generatedAt = dto.generatedAt,
                 nextRefreshAt = dto.nextRefreshAt,
                 players = dto.players.map {
                     LeaderboardEntry(
-                        client = client,
+                        repository = profileRepository,
                         profileId = it.profileId,
                         displayName = it.displayName,
                         image = it.image,
@@ -32,7 +32,7 @@ class Leaderboard(
 }
 
 class LeaderboardEntry(
-    @property:InternalHexoApi val client: HexoApiClient,
+    private val repository: ProfileRepository,
     val profileId: ProfileId,
     val displayName: String,
     val image: String?,
@@ -41,5 +41,5 @@ class LeaderboardEntry(
     val gamesWon: Int,
 ) {
     @OptIn(InternalHexoApi::class)
-    suspend fun retrieveProfile() = client.profileRepository.getProfile(profileId)
+    suspend fun retrieveProfile() = repository.getProfile(profileId)
 }

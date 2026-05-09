@@ -10,7 +10,7 @@ import de.mineking.discord.utils.await
 import de.mineking.discord.utils.listen
 import de.mineking.discord.withLocalization
 import de.mineking.hexo.api.HexoApiClient
-import de.mineking.hexo.api.cached
+import de.mineking.hexo.api.caching.createCachingRepositories
 import de.mineking.hexo.discord.commands.gameCommand
 import de.mineking.hexo.discord.commands.renderHexoContextCommand
 import de.mineking.hexo.discord.commands.renderHexoSlashCommand
@@ -43,7 +43,8 @@ fun main() {
 val Manager.main get() = manager.bot as HeXODiscordBot
 
 class HeXODiscordBot(token: String) {
-    private val finishedGameRepository = HexoApiClient(socketIOOptions = null).finishedGameRepository.cached()
+    private val client = HexoApiClient(socketIOOptions = null)
+    private val repositories = client.createCachingRepositories()
 
     val jda = JDABuilder.createLight(token)
         .setStatus(OnlineStatus.ONLINE)
@@ -63,7 +64,7 @@ class HeXODiscordBot(token: String) {
             localize()
             installErrorHandling()
 
-            gameMenu = gameMenu(finishedGameRepository)
+            gameMenu = gameMenu(repositories.finishedGames)
         }
         .withCommandManager {
             localize()

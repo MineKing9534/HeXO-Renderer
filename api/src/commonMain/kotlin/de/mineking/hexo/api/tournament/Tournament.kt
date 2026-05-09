@@ -2,9 +2,11 @@ package de.mineking.hexo.api.tournament
 
 import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.InternalHexoApi
+import de.mineking.hexo.api.game.FinishedGameRepository
 import de.mineking.hexo.api.game.GameReference
 import de.mineking.hexo.api.game.SessionId
 import de.mineking.hexo.api.profile.ProfileId
+import de.mineking.hexo.api.profile.ProfileRepository
 import de.mineking.hexo.api.utils.Instant
 import de.mineking.hexo.api.utils.TimeControl
 import kotlinx.serialization.Serializable
@@ -37,12 +39,12 @@ data class Tournament(
     val matches: List<TournamentMatch>,
 ) {
     companion object {
-        private fun TournamentDto.createParticipantList(client: HexoApiClient): List<TournamentParticipant> {
+        private fun TournamentDto.createParticipantList(repository: ProfileRepository): List<TournamentParticipant> {
             val participantsDtos = participants.associateBy { it.profileId }
             return standings.map {
                 val participant = participantsDtos[it.profileId] ?: error("Couldn't find participant ${it.profileId}")
                 TournamentParticipant(
-                    client = client,
+                    repository = repository,
                     profileId = participant.profileId,
                     displayName = participant.displayName,
                     image = participant.image,
@@ -53,7 +55,10 @@ data class Tournament(
             }.sortedBy { it.standing.rank }
         }
 
-        private fun TournamentDto.createMatchList(client: HexoApiClient, participants: List<TournamentParticipant>): List<TournamentMatch> {
+        private fun TournamentDto.createMatchList(
+            repository: FinishedGameRepository,
+            participants: List<TournamentParticipant>,
+        ): List<TournamentMatch> {
             val participantsById = participants.associateBy { it.profileId }
 
             return matches.map { match ->
@@ -82,7 +87,7 @@ data class Tournament(
                     waitingForPlayers = match.waitingForPlayers,
                     startedAt = match.startedAt,
                     resolvedAt = match.resolvedAt,
-                    pastGames = match.gameIds.map { GameReference(client, it) },
+                    pastGames = match.gameIds.map { GameReference(repository, it) },
                     sessionId = match.sessionId,
                     players = players,
                     winner = participantsById[match.winnerProfileId],
@@ -90,9 +95,14 @@ data class Tournament(
             }
         }
 
-        internal fun of(client: HexoApiClient, dto: TournamentDto): Tournament {
-            val participants = dto.createParticipantList(client)
-            val matches = dto.createMatchList(client, participants)
+        internal fun of(
+            client: HexoApiClient,
+            profileRepository: ProfileRepository,
+            finishedGameRepository: FinishedGameRepository,
+            dto: TournamentDto,
+        ): Tournament {
+            val participants = dto.createParticipantList(profileRepository)
+            val matches = dto.createMatchList(finishedGameRepository, participants)
 
             return Tournament(
                 client = client,
@@ -116,7 +126,7 @@ data class Tournament(
 }
 
 class TournamentParticipant(
-    @property:InternalHexoApi val client: HexoApiClient,
+    private val repository: ProfileRepository,
     val profileId: ProfileId,
     val displayName: String,
     val image: String?,
@@ -125,7 +135,7 @@ class TournamentParticipant(
     val standing: TournamentStanding,
 ) {
     @OptIn(InternalHexoApi::class)
-    suspend fun fetchProfile() = client.profileRepository.getProfile(profileId)
+    suspend fun fetchProfile() = repository.getProfile(profileId)
 }
 
 data class TournamentMatchPlayer(

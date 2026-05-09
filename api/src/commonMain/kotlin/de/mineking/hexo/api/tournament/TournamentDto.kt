@@ -46,6 +46,8 @@ enum class TournamentStatus {
     @SerialName("cancelled") Cancelled,
 }
 
+fun TournamentStatus.isTerminal() = this >= TournamentStatus.Completed
+
 @Serializable
 internal data class TournamentParticipantDto(
     val profileId: ProfileId,
