@@ -32,6 +32,9 @@ class ProfileStatistics(
     val totalMovesMade: Int,
     val elo: Int,
     val worldRank: Int,
+    val totalGames: TotalGames,
+    val rankedGames: TotalRankedGames,
+    val eloHistory: ProfileEloHistory,
 ) {
     sealed interface GameStatistics {
         val played: Int
@@ -52,3 +55,17 @@ class ProfileStatistics(
         val longestWinStreak: Int,
     ) : GameStatistics
 }
+
+@Serializable
+data class ProfileEloHistory(
+    @SerialName("bucketSizeMs") val bucketSize: Duration,
+    val points: List<ProfileEloHistoryPoint>,
+) {
+    val highestPoint = points.maxBy { it.elo }
+}
+
+@Serializable
+data class ProfileEloHistoryPoint(
+    val timestamp: Instant,
+    val elo: Int,
+)

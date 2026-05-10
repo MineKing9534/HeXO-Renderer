@@ -1,0 +1,5 @@
+menu.leaderboard:
+  title.content: "# :trophy: HeXO Leaderboard"
+  details.placeholder: View a player's profile
+  player.details: "**`${entry.gamesWon}`** Won, **`${entry.gamesPlayed}`** Played, **`${entry.elo}`** ELO"
+  reload.label: Reload

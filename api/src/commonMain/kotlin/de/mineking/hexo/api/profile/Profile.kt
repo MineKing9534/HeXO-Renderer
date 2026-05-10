@@ -1,5 +1,6 @@
 package de.mineking.hexo.api.profile
 
+import de.mineking.hexo.api.HEXO_WEBSITE
 import de.mineking.hexo.api.utils.Instant
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
@@ -28,4 +29,6 @@ class Profile(
             )
         }
     }
+
+    val url get() = "${HEXO_WEBSITE}/profile/${id.value}"
 }

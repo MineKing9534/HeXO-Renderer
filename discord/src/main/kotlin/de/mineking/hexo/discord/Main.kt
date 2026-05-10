@@ -12,10 +12,14 @@ import de.mineking.discord.withLocalization
 import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.caching.createCachingRepositories
 import de.mineking.hexo.discord.commands.gameCommand
+import de.mineking.hexo.discord.commands.leaderboardCommand
 import de.mineking.hexo.discord.commands.renderHexoContextCommand
 import de.mineking.hexo.discord.commands.renderHexoSlashCommand
 import de.mineking.hexo.discord.menus.GameMenuParameter
+import de.mineking.hexo.discord.menus.ProfileMenuParameter
 import de.mineking.hexo.discord.menus.gameMenu
+import de.mineking.hexo.discord.menus.leaderboardMenu
+import de.mineking.hexo.discord.menus.profileMenu
 import de.mineking.hexo.parse.RectilinearStateBKETurnNotationParser
 import de.mineking.hexo.parse.cached
 import de.mineking.hexo.render.ImageBoardRenderer
@@ -27,6 +31,7 @@ import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.OnlineStatus
 import net.dv8tion.jda.api.entities.Activity
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
+import net.dv8tion.jda.api.interactions.Interaction
 import net.dv8tion.jda.api.utils.messages.MessageRequest
 
 internal val logger = KotlinLogging.logger {}
@@ -57,6 +62,8 @@ class HeXODiscordBot(token: String) {
     val boardRenderer = ImageBoardRenderer.Default.cached()
 
     lateinit var gameMenu: MessageMenu<GameMenuParameter, *> private set
+    lateinit var profileMenu: MessageMenu<ProfileMenuParameter, *> private set
+    lateinit var leaderboardMenu: MessageMenu<Interaction, *> private set
 
     val dtk = discordToolKit(jda, this)
         .withLocalization<_, DefaultLocalizationManager>()
@@ -65,6 +72,8 @@ class HeXODiscordBot(token: String) {
             installErrorHandling()
 
             gameMenu = gameMenu(repositories.finishedGames)
+            profileMenu = profileMenu(repositories.profiles)
+            leaderboardMenu = leaderboardMenu(repositories.leaderboard, profileMenu)
         }
         .withCommandManager {
             localize()
@@ -74,6 +83,7 @@ class HeXODiscordBot(token: String) {
             +renderHexoSlashCommand()
 
             +gameCommand(gameMenu)
+            +leaderboardCommand(leaderboardMenu)
 
             updateCommands().queue()
         }

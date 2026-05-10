@@ -45,8 +45,8 @@ internal object DurationAsMillisecondsSerializer : KSerializer<Duration> {
 internal object InstantAsEpochSerializer : KSerializer<Instant> {
     override val descriptor = PrimitiveSerialDescriptor("Instant", PrimitiveKind.LONG)
 
-    override fun serialize(encoder: Encoder, value: Instant) = encoder.encodeLong(value.epochSeconds)
-    override fun deserialize(decoder: Decoder) = Instant.fromEpochSeconds(decoder.decodeLong())
+    override fun serialize(encoder: Encoder, value: Instant) = encoder.encodeLong(value.toEpochMilliseconds())
+    override fun deserialize(decoder: Decoder) = Instant.fromEpochMilliseconds(decoder.decodeLong())
 }
 
 internal object ColorSerializer : KSerializer<Color> {

@@ -1,5 +1,6 @@
 package de.mineking.hexo.api.tournament
 
+import de.mineking.hexo.api.HEXO_WEBSITE
 import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.InternalHexoApi
 import de.mineking.hexo.api.game.FinishedGameRepository
@@ -123,6 +124,8 @@ data class Tournament(
             )
         }
     }
+
+    val url get() = "${HEXO_WEBSITE}/tournaments/${id.value}"
 }
 
 class TournamentParticipant(
