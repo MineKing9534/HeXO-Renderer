@@ -13,6 +13,7 @@ import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.caching.createCachingRepositories
 import de.mineking.hexo.discord.commands.gameCommand
 import de.mineking.hexo.discord.commands.leaderboardCommand
+import de.mineking.hexo.discord.commands.profileCommand
 import de.mineking.hexo.discord.commands.renderHexoContextCommand
 import de.mineking.hexo.discord.commands.renderHexoSlashCommand
 import de.mineking.hexo.discord.menus.GameMenuParameter
@@ -84,6 +85,7 @@ class HeXODiscordBot(token: String) {
 
             +gameCommand(gameMenu)
             +leaderboardCommand(leaderboardMenu)
+            +profileCommand(profileMenu)
 
             updateCommands().queue()
         }
