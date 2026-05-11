@@ -1,6 +1,6 @@
 package de.mineking.hexo.api.game
 
-import de.mineking.hexo.api.ProfileId
+import de.mineking.hexo.api.profile.ProfileId
 import de.mineking.hexo.api.tournament.TournamentBracket
 import de.mineking.hexo.api.tournament.TournamentId
 import de.mineking.hexo.api.tournament.TournamentMatchId

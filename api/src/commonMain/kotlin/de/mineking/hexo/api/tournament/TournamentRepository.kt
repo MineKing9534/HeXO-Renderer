@@ -1,6 +1,8 @@
 package de.mineking.hexo.api.tournament
 
 import de.mineking.hexo.api.HexoApiClient
+import de.mineking.hexo.api.game.FinishedGameRepository
+import de.mineking.hexo.api.profile.ProfileRepository
 import de.mineking.hexo.api.socket.HexoSocketEvent
 import de.mineking.hexo.api.utils.EntityState
 import de.mineking.hexo.api.utils.withLock
@@ -17,7 +19,11 @@ interface TournamentRepository {
     fun observeTournament(id: TournamentId): StateFlow<EntityState<Tournament>>
 }
 
-internal class TournamentRepositoryImpl(private val client: HexoApiClient) : TournamentRepository {
+internal class TournamentRepositoryImpl(
+    private val client: HexoApiClient,
+    private val profileRepository: ProfileRepository,
+    private val finishedGameRepository: FinishedGameRepository,
+) : TournamentRepository {
     init {
         client.coroutineScope.launch {
             client.events
@@ -31,19 +37,19 @@ internal class TournamentRepositoryImpl(private val client: HexoApiClient) : Tou
     private val cacheLock = SynchronizedObject()
     private val cache = mutableMapOf<TournamentId, MutableStateFlow<EntityState<Tournament>>>()
 
-    private val requester = client.entityRequesterFactory.createEntityRequester<TournamentId, Tournament> {
-        val response = client.request("/tournaments/${it.value}")
+    private val requester = client.entityRequesterFactory.createEntityRequester<TournamentId, Tournament> { id ->
+        val response = client.request("/tournaments/${id.value}")
         val tournament = when {
-            response.status.isSuccess() -> Tournament.of(client, response.body<TournamentDto>())
+            response.status.isSuccess() -> Tournament.of(client, profileRepository, finishedGameRepository, response.body())
             else -> null
         }
 
         cacheLock.withLock {
-            if (tournament == null) {
-                cache[it]?.value = EntityState.NotFound
-                cache -= it
-            } else {
-                cache[it]?.value = EntityState.Data(tournament)
+            val state = tournament?.let { EntityState.Data(it) } ?: EntityState.NotFound
+            cache[id]?.value = state
+
+            if (tournament == null || tournament.status.isTerminal()) {
+                cache -= id
             }
         }
 
@@ -53,15 +59,27 @@ internal class TournamentRepositoryImpl(private val client: HexoApiClient) : Tou
     override suspend fun getTournament(id: TournamentId) = requester.fetch(id)
 
     override fun observeTournament(id: TournamentId): StateFlow<EntityState<Tournament>> {
+        var shouldStartFetch = false
         val flow = cacheLock.withLock {
             cache.getOrPut(id) {
+                shouldStartFetch = true
                 MutableStateFlow(EntityState.Loading)
             }
         }
 
-        if (flow.value == EntityState.Loading) {
+        if (shouldStartFetch) {
             client.coroutineScope.launch {
-                val _ = getTournament(id)
+                val tournament = getTournament(id)
+                cacheLock.withLock {
+                    flow.value = when {
+                        tournament == null -> EntityState.NotFound
+                        else -> EntityState.Data(tournament)
+                    }
+
+                    if (tournament == null || tournament.status.isTerminal()) {
+                        cache -= id
+                    }
+                }
             }
         }
 

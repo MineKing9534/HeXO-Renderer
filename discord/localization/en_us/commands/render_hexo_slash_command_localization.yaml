@@ -6,7 +6,6 @@ command.hexo:
 response.error: |-
   ## Failed to parse the given input
   
-  
   ```hexo
   $input
   ```

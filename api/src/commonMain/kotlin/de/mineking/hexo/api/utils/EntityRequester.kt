@@ -1,6 +1,7 @@
 package de.mineking.hexo.api.utils
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
@@ -27,6 +28,8 @@ private class ErrorLoggingEntityRequesterFactory(val delegate: EntityRequesterFa
         @Suppress("TooGenericExceptionCaught")
         try {
             resolver(it)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error(e) { "Error during entity request for $it" }
             null

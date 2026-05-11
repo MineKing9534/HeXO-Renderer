@@ -19,6 +19,8 @@ dependencies {
 
     implementation(libs.kotlin.coroutines.core)
 
+    implementation(libs.cache)
+
     implementation(libs.jda)
     implementation(libs.jda.emoji)
     implementation(libs.dtk)
@@ -41,6 +43,10 @@ discordLocalization {
     import("de.mineking.hexo.api.utils.TimeControl")
     import("de.mineking.hexo.api.game.FinishedGame")
     import("de.mineking.hexo.api.game.GameFinishReason")
+    import("de.mineking.hexo.api.profile.Profile")
+
+    import("kotlin.time.toJavaInstant")
+    import("net.dv8tion.jda.api.utils.TimeFormat")
 }
 
 application {

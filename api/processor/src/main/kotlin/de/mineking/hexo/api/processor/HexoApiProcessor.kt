@@ -16,8 +16,10 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.WildcardTypeName
+import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
+import kotlin.reflect.KClass
 
 private val SOCKET_EVENT_INTERFACE = ClassName("de.mineking.hexo.api.socket", "SocketEvent")
 private val SOCKET_EVENT_NAME_ANNOTATION = ClassName("de.mineking.hexo.api.socket", "SocketEventName")
@@ -70,13 +72,10 @@ class HexoApiProcessor(private val codeGenerator: CodeGenerator) : SymbolProcess
     }
 
     private fun createEventMappingsProperty(events: Map<String, KSClassDeclaration>): PropertySpec {
-        val type = ClassName("kotlin.collections", "Map")
-            .parameterizedBy(
-                ClassName("kotlin", "String"),
-                ClassName("kotlin.reflect", "KClass").parameterizedBy(
-                    WildcardTypeName.producerOf(SOCKET_EVENT_INTERFACE),
-                ),
-            )
+        val type = Map::class.asClassName().parameterizedBy(
+            String::class.asClassName(),
+            KClass::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(SOCKET_EVENT_INTERFACE)),
+        )
 
         return PropertySpec.builder("events", type)
             .initializer(
@@ -94,13 +93,10 @@ class HexoApiProcessor(private val codeGenerator: CodeGenerator) : SymbolProcess
     }
 
     private fun createEventNameMappingsProperty(events: Map<String, KSClassDeclaration>): PropertySpec {
-        val type = ClassName("kotlin.collections", "Map")
-            .parameterizedBy(
-                ClassName("kotlin.reflect", "KClass").parameterizedBy(
-                    WildcardTypeName.producerOf(SOCKET_EVENT_INTERFACE),
-                ),
-                ClassName("kotlin", "String"),
-            )
+        val type = Map::class.asClassName().parameterizedBy(
+            KClass::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(SOCKET_EVENT_INTERFACE)),
+            String::class.asClassName(),
+        )
 
         return PropertySpec.builder("eventNames", type)
             .initializer(
