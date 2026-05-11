@@ -11,7 +11,7 @@ private const val TURN_LIST_PATTERN = /*language=regexp*/ """$TURN_PATTERN(?:\s+
 
 private const val ORIGIN_PATTERN = /*language=regexp*/ """@\s*\((-?\d+),\s*(-?\d+)\)"""
 
-private val BKE_FORMAT = """^([bdpq<>])?\s*(CW|CCW)?\s*(?:$ORIGIN_PATTERN)?\s*[:\s]\s*($TURN_LIST_PATTERN)$""".toRegex()
+private val BKE_FORMAT = """^([bdpq<>])?\s*(CW|CCW)?\s*(?:$ORIGIN_PATTERN\s*:?)?\s*($TURN_LIST_PATTERN)$""".toRegex()
 
 object RectilinearStateBKETurnNotationParser : BoardParser {
     override suspend fun parse(notation: String) = notation.parseRectilinearStateBKETurnNotation()
