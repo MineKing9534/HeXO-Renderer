@@ -3,6 +3,7 @@ package de.mineking.hexo.api.leaderboard
 import de.mineking.hexo.api.InternalHexoApi
 import de.mineking.hexo.api.profile.ProfileId
 import de.mineking.hexo.api.profile.ProfileRepository
+import de.mineking.hexo.api.profile.ProfileStatistics
 import de.mineking.hexo.api.utils.Instant
 
 class Leaderboard(
@@ -22,8 +23,10 @@ class Leaderboard(
                         displayName = it.displayName,
                         image = it.image,
                         elo = it.elo,
-                        gamesPlayed = it.gamesPlayed,
-                        gamesWon = it.gamesWon,
+                        totalGames = ProfileStatistics.TotalGames(
+                            played = it.gamesPlayed,
+                            won = it.gamesWon,
+                        ),
                     )
                 },
             )
@@ -37,8 +40,7 @@ class LeaderboardEntry(
     val displayName: String,
     val image: String?,
     val elo: Int,
-    val gamesPlayed: Int,
-    val gamesWon: Int,
+    val totalGames: ProfileStatistics.TotalGames,
 ) {
     @OptIn(InternalHexoApi::class)
     suspend fun retrieveProfile() = repository.getProfile(profileId)

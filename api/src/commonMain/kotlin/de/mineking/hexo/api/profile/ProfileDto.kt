@@ -39,6 +39,8 @@ class ProfileStatistics(
     sealed interface GameStatistics {
         val played: Int
         val won: Int
+
+        val winRate get() = won.toDouble() / played
     }
 
     @Serializable

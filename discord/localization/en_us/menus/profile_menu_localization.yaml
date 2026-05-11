@@ -23,5 +23,5 @@ menu.profile:
     **Games Played:** ${stats.played}
     **Games Won:** ${stats.won}${
       if (stats.played == 0) ""
-      else " (${((stats.won.toDouble() / stats.played) * 100).toInt()}%)"
+      else " (${(stats.winRate * 100).toInt()}%)"
     }
