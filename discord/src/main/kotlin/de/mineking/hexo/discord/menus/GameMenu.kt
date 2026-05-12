@@ -16,6 +16,7 @@ import de.mineking.discord.ui.builder.components.message.actionRow
 import de.mineking.discord.ui.builder.components.message.button
 import de.mineking.discord.ui.builder.components.message.container
 import de.mineking.discord.ui.builder.components.message.link
+import de.mineking.discord.ui.builder.components.message.mediaGallery
 import de.mineking.discord.ui.builder.components.message.modalButton
 import de.mineking.discord.ui.builder.components.message.section
 import de.mineking.discord.ui.builder.components.message.separator
@@ -52,6 +53,7 @@ import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.discord.CustomEmoji
 import de.mineking.hexo.discord.HeXODiscordBot
 import de.mineking.hexo.discord.MessageColor
+import de.mineking.hexo.discord.asMediaGalleryItem
 import de.mineking.hexo.discord.effectiveLocale
 import de.mineking.hexo.discord.main
 import de.mineking.hexo.discord.renderAsComponent
@@ -124,7 +126,7 @@ fun UIManager.gameMenu(
                 +match.gameDetails(localization, locale)
 
                 +separator(spacing = Separator.Spacing.LARGE)
-                +board.renderAsComponent()
+                +mediaGallery(board.asMediaGalleryItem())
                 +separator(spacing = Separator.Spacing.LARGE)
             }
         }

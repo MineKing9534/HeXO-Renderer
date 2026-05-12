@@ -3,61 +3,34 @@ package de.mineking.hexo.discord
 import de.mineking.discord.localization.Locale
 import de.mineking.discord.localization.LocalizationFile
 import de.mineking.discord.localization.Localize
-import de.mineking.discord.ui.builder.codeBlock
-import de.mineking.discord.ui.builder.components.buildTextDisplay
-import de.mineking.discord.ui.builder.components.message.mediaGallery
-import de.mineking.discord.ui.builder.components.message.separator
-import de.mineking.discord.ui.builder.components.textDisplay
-import de.mineking.discord.ui.message.MessageComponent
-import de.mineking.discord.ui.message.createMessageComponent
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.render.renderToByteArray
 import net.dv8tion.jda.api.components.MessageTopLevelComponent
+import net.dv8tion.jda.api.components.mediagallery.MediaGallery
 import net.dv8tion.jda.api.components.mediagallery.MediaGalleryItem
 import net.dv8tion.jda.api.components.separator.Separator
+import net.dv8tion.jda.api.components.textdisplay.TextDisplay
 import net.dv8tion.jda.api.interactions.DiscordLocale
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback
 import net.dv8tion.jda.api.utils.FileUpload
-import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder
-import net.dv8tion.jda.api.utils.messages.MessageCreateData
+import kotlin.uuid.Uuid
 
 context(main: HeXODiscordBot)
-suspend fun Board.renderAsComponent(index: Int = 0) = mediaGallery(
-    MediaGalleryItem.fromFile(
-        FileUpload.fromData(main.boardRenderer.run { renderToByteArray() }, "hexo_board_$index.png"),
-    ),
+suspend fun Board.asMediaGalleryItem() = MediaGalleryItem.fromFile(
+    FileUpload.fromData(main.boardRenderer.run { renderToByteArray() }, "${Uuid.random()}.png"),
 )
 
-class MessageBuilder {
-    val components: List<MessageComponent<out MessageTopLevelComponent>>
-        field = mutableListOf<MessageComponent<out MessageTopLevelComponent>>()
+context(main: HeXODiscordBot)
+suspend fun IReplyCallback.replyRichHexoNotation(content: String) {
+    deferReply().queue()
 
-    operator fun MessageComponent<out MessageTopLevelComponent>.unaryPlus() {
-        components += this
+    val components = content.renderToComponents().layout()
+    if (components.filterIsInstance<MediaGallery>().isEmpty()) {
+        val errorMessage = renderAsComponent(MessageColor.Error, main.localization<RenderLocalization>().responseError(userLocale))
+        hook.editOriginalComponents(errorMessage).useComponentsV2().queue()
+    } else {
+        hook.editOriginalComponents(components).useComponentsV2().queue()
     }
-}
-
-inline fun <T> createHexoRenderResponse(
-    boards: List<T>,
-    render: MessageBuilder.(Int, T) -> Unit,
-) = MessageCreateBuilder()
-    .setComponents(
-        MessageBuilder().apply {
-            boards.forEachIndexed { index, item ->
-                render(index, item)
-            }
-        }.components.flatMap { it.renderAsComponent() },
-    )
-    .build()
-
-context(event: IReplyCallback, main: HeXODiscordBot)
-suspend fun String.renderRichHexoNotation(): MessageCreateData {
-    val segments = parseSegments()
-    if (segments.isEmpty()) {
-        event.respond(MessageColor.Error, main.localization<RenderLocalization>().responseError(event.userLocale))
-    }
-
-    return segments.render()
 }
 
 interface RenderLocalization : LocalizationFile {
@@ -65,78 +38,121 @@ interface RenderLocalization : LocalizationFile {
     fun responseError(@Locale locale: DiscordLocale): String
 }
 
+private fun List<MessageTopLevelComponent>.layout(): List<MessageTopLevelComponent> = fold(mutableListOf()) { result, current ->
+    val last = result.lastOrNull()
+    when (current) {
+        is TextDisplay if last is TextDisplay -> {
+            result[result.lastIndex] = TextDisplay.of(last.content + current.content)
+        }
+        is MediaGallery if last is MediaGallery -> {
+            result += Separator.createDivider(Separator.Spacing.LARGE)
+            result += current
+        }
+        else -> result += current
+    }
+
+    result
+}
+
+private class ComponentParserState {
+    val result = mutableListOf<MessageTopLevelComponent>()
+    val afterParagraph = mutableListOf<MediaGalleryItem>()
+    val temp = StringBuilder()
+    var position = 0
+
+    fun flush() {
+        if (temp.isNotBlank()) {
+            result += TextDisplay.of(temp.toString())
+            temp.clear()
+        }
+
+        if (afterParagraph.isNotEmpty()) {
+            result += MediaGallery.of(afterParagraph)
+            afterParagraph.clear()
+        }
+    }
+}
+
 context(main: HeXODiscordBot)
-private suspend fun List<Segment>.render(): MessageCreateData {
-    val renderedSegments = hashSetOf<Int>()
-    return createHexoRenderResponse(this) { index, segment ->
-        fun spacerIfNecessary() = createMessageComponent {
-            if (index - 1 in renderedSegments) {
-                +separator(invisible = true, spacing = Separator.Spacing.LARGE)
-            }
-        }
-
-        when (segment) {
-            is Segment.Text -> {
-                +spacerIfNecessary()
-                +textDisplay(segment.content)
-            }
-            is Segment.Code -> try {
-                +main.notationParser.parse(segment.content).renderAsComponent(index)
-                renderedSegments += index
-            } catch (_: IllegalArgumentException) {
-                +spacerIfNecessary()
-                +buildTextDisplay {
-                    +codeBlock(segment.language ?: "", segment.content)
-                }
-            }
-        }
-    }
-}
-
-private sealed interface Segment {
-    data class Text(val content: String) : Segment
-    data class Code(val content: String, val language: String?) : Segment
-}
-
-private const val FENCE = "```"
-
-private fun String.parseSegments(): List<Segment> {
+private suspend fun String.renderToComponents(): List<MessageTopLevelComponent> {
     if (isBlank()) return emptyList()
+    val state = ComponentParserState()
 
-    val out = mutableListOf<Segment>()
-    var pos = 0
-
-    while (true) {
-        val start = indexOf(FENCE, pos)
-        if (start == -1) {
-            substring(pos).takeIf { it.isNotBlank() }?.let {
-                out += Segment.Text(it)
-            }
-            return out
+    while (state.position < length) {
+        val type = SegmentParser.entries.firstOrNull {
+            startsWith(it.symbol, state.position)
         }
 
-        substring(pos, start).takeIf { it.isNotBlank() }?.let {
-            out += Segment.Text(it)
-        }
-
-        val openEnd = start + FENCE.length
-        val close = indexOf(FENCE, openEnd)
-        if (close == -1) {
-            out += Segment.Text(substring(start))
-            return out
-        }
-
-        val newline = indexOf('\n', openEnd).takeIf { it != -1 && it < close }
-        val (code, lang) =
-            if (newline == null) {
-                substring(openEnd, close) to null
-            } else {
-                val content = substring(newline + 1, close)
-                val lang = substring(openEnd, newline).ifBlank { null }
-                content to lang
-            }
-
-        out += Segment.Code(code, lang)
-        pos = close + FENCE.length
+        state.handle(this, type)
     }
+
+    state.flush()
+    return state.result
+}
+
+context(main: HeXODiscordBot)
+private suspend fun ComponentParserState.handle(str: String, type: SegmentParser?) {
+    if (type == null) {
+        val c = str[position]
+        temp.append(c)
+
+        if (c == '\n') flush()
+        position++
+    } else {
+        val start = position + type.symbol.length
+        val end = str.indexOf(type.symbol, start)
+
+        if (end == -1) {
+            temp.append(str[position++])
+        } else {
+            val content = str.substring(start, end)
+
+            if (type.keepAsText) {
+                temp.append("${type.symbol}$content${type.symbol}")
+            } else {
+                flush()
+            }
+
+            type.handle(content, this)
+            position = end + type.symbol.length
+        }
+    }
+}
+
+private enum class SegmentParser(val symbol: String, val keepAsText: Boolean) {
+    CodeBlock("```", keepAsText = false) {
+        context(main: HeXODiscordBot)
+        override suspend fun handle(content: String, state: ComponentParserState) {
+            val (code, lang) = content.decodeCodeAndLanguage()
+            state.result += try {
+                MediaGallery.of(main.notationParser.parse(code).asMediaGalleryItem())
+            } catch (_: IllegalArgumentException) {
+                TextDisplay.of("$symbol${lang?.let { "$it\n" } ?: ""}$code$symbol")
+            }
+        }
+
+        private fun String.decodeCodeAndLanguage(): Pair<String, String?> {
+            val newline = indexOf('\n')
+            return if (newline == -1) {
+                this to null
+            } else {
+                val code = substring(newline + 1)
+                val lang = substring(0, newline).ifBlank { null }
+                code to lang
+            }
+        }
+    },
+    Code("`", keepAsText = true) {
+        context(main: HeXODiscordBot)
+        override suspend fun handle(content: String, state: ComponentParserState) {
+            try {
+                state.afterParagraph += main.notationParser.parse(content).asMediaGalleryItem()
+            } catch (_: IllegalArgumentException) {
+            }
+        }
+    },
+    ;
+
+    context(main: HeXODiscordBot)
+    abstract suspend fun handle(content: String, state: ComponentParserState)
 }
