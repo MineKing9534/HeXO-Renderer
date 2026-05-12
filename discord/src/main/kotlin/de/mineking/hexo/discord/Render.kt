@@ -9,6 +9,7 @@ import de.mineking.discord.ui.builder.components.message.mediaGallery
 import de.mineking.discord.ui.builder.components.message.separator
 import de.mineking.discord.ui.builder.components.textDisplay
 import de.mineking.discord.ui.message.MessageComponent
+import de.mineking.discord.ui.message.createMessageComponent
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.render.renderToByteArray
 import net.dv8tion.jda.api.components.MessageTopLevelComponent
@@ -68,7 +69,7 @@ context(main: HeXODiscordBot)
 private suspend fun List<Segment>.render(): MessageCreateData {
     val renderedSegments = hashSetOf<Int>()
     return createHexoRenderResponse(this) { index, segment ->
-        fun appendSpacerIfNecessary() {
+        fun spacerIfNecessary() = createMessageComponent {
             if (index - 1 in renderedSegments) {
                 +separator(invisible = true, spacing = Separator.Spacing.LARGE)
             }
@@ -76,14 +77,14 @@ private suspend fun List<Segment>.render(): MessageCreateData {
 
         when (segment) {
             is Segment.Text -> {
-                appendSpacerIfNecessary()
+                +spacerIfNecessary()
                 +textDisplay(segment.content)
             }
             is Segment.Code -> try {
                 +main.notationParser.parse(segment.content).renderAsComponent(index)
                 renderedSegments += index
             } catch (_: IllegalArgumentException) {
-                appendSpacerIfNecessary()
+                +spacerIfNecessary()
                 +buildTextDisplay {
                     +codeBlock(segment.language ?: "", segment.content)
                 }
