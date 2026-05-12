@@ -5,7 +5,7 @@ menu.leaderboard:
     **`${entry.totalGames.played}`** Played, 
     **`${entry.totalGames.won}`** Won${
       if (entry.totalGames.played == 0) ""
-      else " (**`${(entry.totalGames.winRate * 100).toInt()}%`**)"
+      else " (**`${(entry.totalGames.winRate * 100).roundToInt()}%`**)"
     }, 
     **`${entry.elo}`** ELO
   reload.label: Reload

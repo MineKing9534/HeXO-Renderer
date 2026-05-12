@@ -40,6 +40,8 @@ discordLocalization {
 
     botPackage = "de.mineking.hexo.discord"
 
+    import("kotlin.math.roundToInt")
+
     import("de.mineking.hexo.api.utils.TimeControl")
     import("de.mineking.hexo.api.game.FinishedGame")
     import("de.mineking.hexo.api.game.GameFinishReason")
