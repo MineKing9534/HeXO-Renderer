@@ -12,8 +12,8 @@ import net.dv8tion.jda.api.entities.emoji.Emoji
 import java.util.concurrent.ConcurrentHashMap
 
 enum class CustomEmoji(val path: String) {
-    PlayerX("hexo_player_x"),
-    PlayerO("hexo_player_o"),
+    PlayerX("player_x"),
+    PlayerO("player_o"),
 
     SwitchOn("switch_on"),
     SwitchOff("switch_off"),
