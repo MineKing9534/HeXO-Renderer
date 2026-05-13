@@ -127,6 +127,7 @@ The following are equivalent:
 
 ### Other
 In addition to traditional HeXO notation, sandbox position links (like https://hexo.did.science/sandbox/i6z4ur1) are also considered valid "notation".
+You can optionally prefix sandbox position links with `#`, in which case the turn numbers will be rendered as well.
 
 ## Features
 ### Command `hexo`
