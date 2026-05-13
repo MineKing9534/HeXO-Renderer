@@ -23,4 +23,5 @@ include(":parse")
 include(":api")
 include(":api:processor")
 
-include(":discord")
+include(":discord:link")
+include(":discord:bot")

@@ -1,0 +1,27 @@
+menu.link:
+  link:
+    label: !<profile:Profile?> ${ if (profile == null) "Link" else "Unlink" }
+    title: Link your HeXO profile
+    explanation.content: >-
+      Linking your profile allows the bot to associate your discord account with your **[HeXO](https://hexo.did.science)** profile.
+      To link your profile, enter your **[HeXO](https://hexo.did.science)** profile **id** or **url** below. After verifying that the profile belongs to you, your profile will be linked.
+      You can remove that link later at any time.
+    inputs.url:
+        label: Profile URL
+        description: Your hexo.did.science profile id or url
+        placeholder: https://hexo.did.science/profile/69bdd10f3a92bf78e1b6d7a0
+
+  remove:
+    title: Unlink your HeXO profile
+    inputs.confirm:
+      label: Confirm Unlink
+      description: You can link your profile again later anytime you want!
+      options.value.label: I want to unlink my profile
+
+  title.content: '# HeXO Link Status'
+  status.content: !<profile:Profile?> >-
+    **Current link status:** ${
+        profile?.let {
+            "[${it.displayName}](${it.url})"
+        } ?: "*Not linked*"
+    }
