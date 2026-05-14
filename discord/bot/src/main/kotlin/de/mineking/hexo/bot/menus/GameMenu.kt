@@ -67,7 +67,6 @@ import net.dv8tion.jda.api.components.separator.Separator
 import net.dv8tion.jda.api.interactions.DiscordLocale
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback
 import kotlin.math.absoluteValue
-import kotlin.uuid.Uuid
 
 data class GameMenuParameter(val event: IReplyCallback, val id: GameId, val move: Int)
 private data class MatchData(val game: FinishedGame, val board: Board)
@@ -75,7 +74,7 @@ private data class MatchData(val game: FinishedGame, val board: Board)
 fun UIManager.gameMenu(
     gameRepository: FinishedGameRepository,
 ) = registerLocalizedMenu<GameMenuParameter, GameMenuLocalization>("game") { localization ->
-    var id by state(GameId(Uuid.NIL))
+    var id by state(GameId(""))
     val moveState = state(0)
     val showTurnNumber = state(false)
 

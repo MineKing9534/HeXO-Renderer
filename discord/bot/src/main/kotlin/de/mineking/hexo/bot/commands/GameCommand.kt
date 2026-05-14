@@ -2,19 +2,13 @@ package de.mineking.hexo.bot.commands
 
 import de.mineking.discord.commands.localizedSlashCommand
 import de.mineking.discord.commands.requiredStringOption
-import de.mineking.discord.localization.Locale
 import de.mineking.discord.localization.LocalizationFile
-import de.mineking.discord.localization.LocalizationParameter
-import de.mineking.discord.localization.Localize
 import de.mineking.discord.ui.message.MessageMenu
 import de.mineking.discord.ui.message.replyMenu
 import de.mineking.hexo.api.game.GameId
-import de.mineking.hexo.bot.finalErrorResponse
 import de.mineking.hexo.bot.menus.GameMenuParameter
-import net.dv8tion.jda.api.interactions.DiscordLocale
 import net.dv8tion.jda.api.interactions.IntegrationType
 import net.dv8tion.jda.api.interactions.InteractionContextType
-import kotlin.uuid.Uuid
 
 fun gameCommand(gameMenu: MessageMenu<GameMenuParameter, *>) = localizedSlashCommand<GameCommandLocalization>("game") { localization ->
     integrationTypes(IntegrationType.ALL)
@@ -23,19 +17,11 @@ fun gameCommand(gameMenu: MessageMenu<GameMenuParameter, *>) = localizedSlashCom
     val id = requiredStringOption("id")
 
     execute {
-        val id = id()
-        val parsed = try {
-            Uuid.parse(id.split("/").last())
-        } catch (_: IllegalArgumentException) {
-            finalErrorResponse(localization.responseErrorInvalidId(userLocale, id))
-        }
+        val id = id().split("/").last()
 
         deferReply().queue()
-        replyMenu(gameMenu, GameMenuParameter(event, GameId(parsed), Int.MAX_VALUE)).queue()
+        replyMenu(gameMenu, GameMenuParameter(event, GameId(id), Int.MAX_VALUE)).queue()
     }
 }
 
-interface GameCommandLocalization : LocalizationFile {
-    @Localize
-    fun responseErrorInvalidId(@Locale locale: DiscordLocale, @LocalizationParameter id: String): String
-}
+interface GameCommandLocalization : LocalizationFile

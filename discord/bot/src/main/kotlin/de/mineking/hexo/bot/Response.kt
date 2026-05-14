@@ -56,13 +56,17 @@ fun ICommandContext<*>.finalResponse(color: MessageColor, content: String, compo
     terminateCommand()
 }
 
-fun IReplyCallback.respond(color: MessageColor, content: String, component: SectionAccessoryComponent? = null) {
+fun IReplyCallback.respond(color: MessageColor, content: String, component: SectionAccessoryComponent? = null, forceNew: Boolean = false) {
     val rendered = renderAsComponent(color, content, component)
 
     if (isAcknowledged) {
-        hook.editOriginalComponents(rendered).setReplace(true).queue()
+        if (!forceNew) {
+            hook.editOriginalComponents(rendered).setReplace(true).queue()
+        } else {
+            hook.sendMessageComponents(rendered).setEphemeral(true).queue()
+        }
     } else {
-        if (this is IMessageEditCallback) {
+        if (this is IMessageEditCallback && !forceNew) {
             editComponents(rendered).setReplace(true).queue()
         } else {
             replyComponents(rendered).setEphemeral(true).queue()

@@ -1,6 +1,9 @@
 package de.mineking.hexo.bot.menus
 
+import de.mineking.discord.localization.Locale
 import de.mineking.discord.localization.LocalizationFile
+import de.mineking.discord.localization.LocalizationParameter
+import de.mineking.discord.localization.Localize
 import de.mineking.discord.ui.UIManager
 import de.mineking.discord.ui.builder.components.localizedTextDisplay
 import de.mineking.discord.ui.builder.components.message.ButtonColor
@@ -18,19 +21,24 @@ import de.mineking.discord.ui.modal.getValue
 import de.mineking.discord.ui.parameter
 import de.mineking.discord.ui.registerLocalizedMenu
 import de.mineking.discord.ui.renderValue
+import de.mineking.discord.ui.terminateRender
 import de.mineking.hexo.api.profile.ProfileId
 import de.mineking.hexo.api.profile.ProfileRepository
 import de.mineking.hexo.bot.CustomEmoji
+import de.mineking.hexo.bot.MessageColor
 import de.mineking.hexo.bot.main
+import de.mineking.hexo.bot.respond
 import de.mineking.hexo.bot.userId
 import de.mineking.hexo.link.AccountLinkRepository
 import net.dv8tion.jda.api.interactions.DiscordLocale
 import net.dv8tion.jda.api.interactions.callbacks.IModalCallback
 
+private val IMAGE_URL_PATTERN = """https://cdn\.discordapp\.com/avatars/(\d+)/.*\.(?:png|jpg|webp|gif)(?:\?size=\d+)?""".trimMargin().toRegex()
+
 fun UIManager.accountLinkMenu(
     linkRepository: AccountLinkRepository,
     profileRepository: ProfileRepository,
-) = registerLocalizedMenu<IModalCallback, AccountLinkMenuLocalization>("link") root@{
+) = registerLocalizedMenu<IModalCallback, AccountLinkMenuLocalization>("link") root@{ localization ->
     val event = parameter({ null }, { it }, { event })
     val locale = event?.userLocale
 
@@ -53,8 +61,17 @@ fun UIManager.accountLinkMenu(
             deferEdit().queue()
 
             val profileId = ProfileId(profileUrl.split("/").last())
-            val profile = profileRepository.getProfile(profileId) ?: TODO()
-            // TODO verify profile
+            val profile = profileRepository.getProfile(profileId)
+            if (profile == null) {
+                respond(MessageColor.Error, localization.responseErrorProfileNotFound(userLocale, profileId), forceNew = true)
+                terminateRender()
+            }
+
+            val match = profile.image?.let { IMAGE_URL_PATTERN.matchEntire(it) }
+            if (match?.groupValues[1] != user.id) {
+                respond(MessageColor.Error, localization.responseErrorProfileVerifyFailed(userLocale), forceNew = true)
+                terminateRender()
+            }
 
             linkRepository.createLink(user.userId, profile.id)
             switchMenu(this@root.menu)
@@ -86,4 +103,10 @@ fun UIManager.accountLinkMenu(
     }
 }
 
-interface AccountLinkMenuLocalization : LocalizationFile
+interface AccountLinkMenuLocalization : LocalizationFile {
+    @Localize
+    fun responseErrorProfileNotFound(@Locale locale: DiscordLocale, @LocalizationParameter id: ProfileId): String
+
+    @Localize
+    fun responseErrorProfileVerifyFailed(@Locale locale: DiscordLocale): String
+}

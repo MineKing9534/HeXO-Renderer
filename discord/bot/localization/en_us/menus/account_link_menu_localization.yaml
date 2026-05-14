@@ -1,3 +1,14 @@
+response.error:
+  profile.not.found: >-
+    ## Profile Not Found
+    
+    Profile with id **`${id.value}`** not found.
+
+  profile.verify.failed: >-
+    ## Verification Failed
+    
+    It doesn't seem like the linked profile belongs to you. Check that you linked the correct profile. If you think this is a mistake, please contact support.
+
 menu.link:
   link:
     label: !<profile:Profile?> ${ if (profile == null) "Link" else "Unlink" }

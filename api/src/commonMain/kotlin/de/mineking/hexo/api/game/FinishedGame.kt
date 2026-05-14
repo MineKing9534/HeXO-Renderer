@@ -13,7 +13,6 @@ import de.mineking.hexo.api.utils.Duration
 import de.mineking.hexo.core.CellOwner
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
-import kotlin.uuid.Uuid
 
 @JvmInline
 @Serializable
@@ -21,7 +20,7 @@ value class PlayerId(val value: String)
 
 @JvmInline
 @Serializable
-value class GameId(val value: Uuid)
+value class GameId(val value: String)
 
 class GameReference(
     private val repository: FinishedGameRepository,
