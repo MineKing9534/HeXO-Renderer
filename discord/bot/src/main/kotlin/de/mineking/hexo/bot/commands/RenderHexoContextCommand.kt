@@ -3,7 +3,7 @@ package de.mineking.hexo.bot.commands
 import de.mineking.discord.commands.localizedMessageCommand
 import de.mineking.discord.localization.LocalizationFile
 import de.mineking.hexo.bot.HeXODiscordBot
-import de.mineking.hexo.bot.replyRichHexoNotation
+import de.mineking.hexo.bot.utils.replyRichHexoNotation
 import net.dv8tion.jda.api.interactions.IntegrationType
 import net.dv8tion.jda.api.interactions.InteractionContextType
 

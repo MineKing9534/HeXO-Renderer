@@ -1,4 +1,4 @@
-package de.mineking.hexo.bot
+package de.mineking.hexo.bot.utils
 
 import de.mineking.discord.commands.CommandExecutor
 import de.mineking.discord.commands.CommandManager
@@ -18,6 +18,9 @@ import de.mineking.discord.ui.message.DefaultMessageMenuHandler
 import de.mineking.discord.ui.message.handleException
 import de.mineking.discord.ui.modal.DefaultModalHandler
 import de.mineking.discord.ui.modal.handleException
+import de.mineking.hexo.bot.localization
+import de.mineking.hexo.bot.logger
+import de.mineking.hexo.bot.main
 import net.dv8tion.jda.api.components.Component
 import net.dv8tion.jda.api.components.container.Container
 import net.dv8tion.jda.api.components.section.Section

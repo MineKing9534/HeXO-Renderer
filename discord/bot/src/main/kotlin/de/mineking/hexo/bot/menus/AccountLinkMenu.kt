@@ -28,10 +28,10 @@ import de.mineking.discord.ui.terminateRender
 import de.mineking.hexo.api.profile.ProfileId
 import de.mineking.hexo.api.profile.ProfileRepository
 import de.mineking.hexo.bot.CustomEmoji
-import de.mineking.hexo.bot.MessageColor
 import de.mineking.hexo.bot.main
-import de.mineking.hexo.bot.respond
 import de.mineking.hexo.bot.userId
+import de.mineking.hexo.bot.utils.MessageColor
+import de.mineking.hexo.bot.utils.respond
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.oauth2.DiscordOAuth2Client
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository

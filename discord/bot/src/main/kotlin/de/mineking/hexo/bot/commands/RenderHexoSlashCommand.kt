@@ -18,9 +18,9 @@ import de.mineking.discord.ui.parameter
 import de.mineking.discord.ui.registerLocalizedModal
 import de.mineking.discord.ui.render
 import de.mineking.hexo.bot.HeXODiscordBot
-import de.mineking.hexo.bot.asMediaGalleryItem
-import de.mineking.hexo.bot.finalErrorResponse
-import de.mineking.hexo.bot.replyRichHexoNotation
+import de.mineking.hexo.bot.utils.asMediaGalleryItem
+import de.mineking.hexo.bot.utils.finalErrorResponse
+import de.mineking.hexo.bot.utils.replyRichHexoNotation
 import net.dv8tion.jda.api.components.mediagallery.MediaGallery
 import net.dv8tion.jda.api.components.textinput.TextInputStyle
 import net.dv8tion.jda.api.interactions.DiscordLocale

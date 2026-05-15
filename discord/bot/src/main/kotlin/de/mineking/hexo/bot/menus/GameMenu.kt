@@ -51,12 +51,12 @@ import de.mineking.hexo.api.utils.TimeControl
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.bot.CustomEmoji
 import de.mineking.hexo.bot.HeXODiscordBot
-import de.mineking.hexo.bot.MessageColor
-import de.mineking.hexo.bot.asMediaGalleryItem
-import de.mineking.hexo.bot.effectiveLocale
 import de.mineking.hexo.bot.main
-import de.mineking.hexo.bot.renderAsComponent
-import de.mineking.hexo.bot.respond
+import de.mineking.hexo.bot.utils.MessageColor
+import de.mineking.hexo.bot.utils.asMediaGalleryItem
+import de.mineking.hexo.bot.utils.effectiveLocale
+import de.mineking.hexo.bot.utils.renderAsComponent
+import de.mineking.hexo.bot.utils.respond
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.render.RectilinearNotationType
 import de.mineking.hexo.render.renderRectilinearNotation

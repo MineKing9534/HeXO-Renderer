@@ -28,9 +28,9 @@ import de.mineking.discord.ui.state
 import de.mineking.discord.ui.terminateRender
 import de.mineking.hexo.api.profile.ProfileId
 import de.mineking.hexo.api.profile.ProfileRepository
-import de.mineking.hexo.bot.MessageColor
-import de.mineking.hexo.bot.effectiveLocale
-import de.mineking.hexo.bot.respond
+import de.mineking.hexo.bot.utils.MessageColor
+import de.mineking.hexo.bot.utils.effectiveLocale
+import de.mineking.hexo.bot.utils.respond
 import dev.freya02.jda.emojis.unicode.Emojis
 import net.dv8tion.jda.api.EmbedBuilder.ZERO_WIDTH_SPACE
 import net.dv8tion.jda.api.interactions.DiscordLocale

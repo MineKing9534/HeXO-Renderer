@@ -1,4 +1,4 @@
-package de.mineking.hexo.bot
+package de.mineking.hexo.bot.utils
 
 import de.mineking.hexo.api.asBoard
 import de.mineking.hexo.api.formation.FormationId

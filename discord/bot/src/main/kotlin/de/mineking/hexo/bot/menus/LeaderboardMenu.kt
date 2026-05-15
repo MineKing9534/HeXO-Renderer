@@ -32,7 +32,7 @@ import de.mineking.hexo.api.leaderboard.Leaderboard
 import de.mineking.hexo.api.leaderboard.LeaderboardEntry
 import de.mineking.hexo.api.leaderboard.LeaderboardRepository
 import de.mineking.hexo.api.profile.ProfileId
-import de.mineking.hexo.bot.effectiveLocale
+import de.mineking.hexo.bot.utils.effectiveLocale
 import dev.freya02.jda.emojis.unicode.Emojis
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
