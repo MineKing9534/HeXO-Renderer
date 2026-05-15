@@ -3,6 +3,7 @@ import de.mineking.discord.localization.gradle.import
 plugins {
     id("kotlin-jvm")
     id("application")
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.shadow)
 
     alias(libs.plugins.dtk.localization)
@@ -19,7 +20,10 @@ dependencies {
     implementation(projects.discord.link)
     runtimeOnly(libs.postgres)
 
+    implementation(libs.kotlin.serialization.properties)
+
     implementation(libs.kotlin.coroutines.core)
+    implementation(libs.bundles.ktor.server)
 
     implementation(libs.cache)
 

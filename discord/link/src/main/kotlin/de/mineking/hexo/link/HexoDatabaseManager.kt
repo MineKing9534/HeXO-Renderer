@@ -5,6 +5,7 @@ import de.mineking.hexo.link.database.DiscordUserTokensTable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
 
@@ -19,8 +20,8 @@ class HexoDatabaseManager(url: String) {
         }
     }
 
-    internal suspend fun <T> transaction(block: () -> T): T = withContext(Dispatchers.IO) {
-        transaction(database) {
+    internal suspend fun <T> transaction(block: suspend () -> T): T = withContext(Dispatchers.IO) {
+        suspendTransaction(database) {
             block()
         }
     }

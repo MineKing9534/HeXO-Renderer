@@ -11,7 +11,7 @@ response.error:
 
 menu.link:
   link:
-    label: !<profile:Profile?> ${ if (profile == null) "Link" else "Unlink" }
+    label: Link
     title: Link your HeXO profile
     explanation.content: >-
       Linking your profile allows the bot to associate your discord account with your **[HeXO](https://hexo.did.science)** profile.
@@ -22,17 +22,48 @@ menu.link:
         description: Your hexo.did.science profile id or url
         placeholder: https://hexo.did.science/profile/69bdd10f3a92bf78e1b6d7a0
 
-  remove:
+  unlink:
+    label: Unlink
     title: Unlink your HeXO profile
     inputs.confirm:
       label: Confirm Unlink
       description: You can link your profile again later anytime you want!
       options.value.label: I want to unlink my profile
 
-  title.content: '# HeXO Link Status'
-  status.content: !<profile:Profile?> >-
-    **Current link status:** ${
+  auth:
+    label: Authenticate
+    title: Authenticate Discord
+    description.content: !<url:String> |-
+      This discord bot allows server administrators to configure linked roles based on your **[HeXO](https://hexo.did.science)** profile.
+      To be able to update your accounts meta data, you have to authenticate the bot. To do so, use the following link:
+      
+      **$url**
+      
+      You can unauthorize the bot at any time, either in your discord settings or using the button in `/link` menu.
+
+      **NOTE:** If you unauthorize the bot in your discord settings, it may take a while for the bot to notice. While discord will immediately revoke all grated permissions, the menu might still show your account as authorized for a few minutes.
+
+  remove_auth:
+    label: Revoke
+    title: Revoke Discord Authentication
+    inputs.confirm:
+      label: Confirm Revoke
+      description: All stored credentials will be removed. You can authenticate the bot again later anytime you want!
+      options.value.label: I want to revoke my authentication
+
+
+  title.content: '# :link: HeXO Link Status'
+  link_status.content: !<profile:Profile?> >-
+    **Link status:** ${
         profile?.let {
             "[${it.displayName}](${it.url})"
         } ?: "*Not linked*"
     }
+  auth_status.content: !<isAuthenticated:Boolean> >-
+    **Authentication Status:** ${
+        if (isAuthenticated) "Authenticated"
+        else "Not Authenticated"
+    }
+
+  auth_explanation.content: >-
+    :warning: Your HeXO profile is connected, but your discord account is not authenticated. This step is required to allow the bot to modify your linked roles metadata.

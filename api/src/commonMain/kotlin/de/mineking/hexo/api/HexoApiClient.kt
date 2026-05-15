@@ -10,7 +10,6 @@ import io.ktor.client.HttpClientConfig
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
-import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
 import io.ktor.client.request.request
@@ -18,7 +17,6 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
-import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -61,10 +59,6 @@ fun createDefaultHttpClient(
     engine: HttpClientEngine = DefaultHttpEngine,
     config: HttpClientConfig<*>.() -> Unit = {},
 ) = HttpClient(engine) {
-    install(WebSockets) {
-        contentConverter = KotlinxWebsocketSerializationConverter(json)
-    }
-
     install(ContentNegotiation) {
         json(json)
     }

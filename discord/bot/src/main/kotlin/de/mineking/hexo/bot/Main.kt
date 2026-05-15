@@ -10,6 +10,7 @@ import de.mineking.discord.utils.await
 import de.mineking.discord.utils.listen
 import de.mineking.discord.withLocalization
 import de.mineking.hexo.api.HexoApiClient
+import de.mineking.hexo.api.HexoRepositories
 import de.mineking.hexo.api.caching.createCachingRepositories
 import de.mineking.hexo.bot.commands.accountLinkCommand
 import de.mineking.hexo.bot.commands.gameCommand
@@ -26,6 +27,8 @@ import de.mineking.hexo.bot.menus.profileMenu
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.DiscordUserId
 import de.mineking.hexo.link.HexoDatabaseManager
+import de.mineking.hexo.link.oauth2.DiscordOAuth2Client
+import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
 import de.mineking.hexo.parse.RectilinearStateBKETurnNotationParser
 import de.mineking.hexo.parse.cached
 import de.mineking.hexo.render.ImageBoardRenderer
@@ -47,20 +50,48 @@ internal val logger = KotlinLogging.logger {}
 fun main() {
     MessageRequest.setDefaultUseComponentsV2(true)
 
-    val token = System.getenv("TOKEN")
-        ?: error("Missing required 'TOKEN' environment variable!")
+    val config = Config.fromEnvironment()
 
-    val _ = HeXODiscordBot(token)
+    val client = HexoApiClient(socketIOOptions = null)
+    val discordOAuth2Client = config.oauth2?.let { DiscordOAuth2Client(it.clientId, it.clientSecret, it.redirectUri) }
+    val database = config.database?.let { HexoDatabaseManager(it.url) }
+
+    val discordUserAuthenticationRepository = when {
+        database != null && discordOAuth2Client != null -> DiscordUserAuthenticationRepository(database, discordOAuth2Client)
+        else -> null
+    }
+
+    val _ = HeXODiscordBot(
+        repositories = client.createCachingRepositories(),
+        accountLinkRepository = database?.let { AccountLinkRepository(database) },
+        discordUserAuthenticationRepository = discordUserAuthenticationRepository,
+        token = config.bot.token,
+    )
+
+    if (discordUserAuthenticationRepository != null) {
+        val server = HttpServer(1234, discordUserAuthenticationRepository)
+        server.start()
+    }
+
+    println("""
+     _    _     __   ______      ____        _          __ 
+    | |  | |    \ \ / / __ \    |  _ \      | |        /_ |
+    | |__| | ___ \ V / |  | |___| |_) | ___ | |_  __   _| |
+    |  __  |/ _ \ > <| |  | |___|  _ < / _ \| __| \ \ / / |
+    | |  | |  __// . \ |__| |   | |_) | (_) | |_   \ V /| |
+    |_|  |_|\___/_/ \_\____/    |____/ \___/ \__|   \_/ |_|
+    
+    """.trimIndent())
 }
 
 val Manager.main get() = manager.bot as HeXODiscordBot
 
-class HeXODiscordBot(token: String) {
-    private val client = HexoApiClient(socketIOOptions = null)
-    private val repositories = client.createCachingRepositories()
-
-    private val database = HexoDatabaseManager("jdbc:postgresql://localhost:5432/hexo?user=hexo&password=hexo")
-
+class HeXODiscordBot(
+    private val repositories: HexoRepositories,
+    private val accountLinkRepository: AccountLinkRepository?,
+    private val discordUserAuthenticationRepository: DiscordUserAuthenticationRepository?,
+    token: String,
+) {
     val jda = JDABuilder.createLight(token)
         .setStatus(OnlineStatus.ONLINE)
         .setActivity(Activity.playing("HeXO"))
@@ -88,7 +119,9 @@ class HeXODiscordBot(token: String) {
             gameMenu = gameMenu(repositories.finishedGames)
             profileMenu = profileMenu(repositories.profiles)
             leaderboardMenu = leaderboardMenu(repositories.leaderboard, profileMenu)
-            accountLinkMenu = accountLinkMenu(AccountLinkRepository(database), repositories.profiles)
+            if (discordUserAuthenticationRepository != null && accountLinkRepository != null) {
+                accountLinkMenu = accountLinkMenu(discordUserAuthenticationRepository, accountLinkRepository, repositories.profiles)
+            }
         }
         .withCommandManager {
             localize()
@@ -101,7 +134,9 @@ class HeXODiscordBot(token: String) {
             +leaderboardCommand(leaderboardMenu)
             +profileCommand(profileMenu)
 
-            +accountLinkCommand(accountLinkMenu)
+            if (::accountLinkMenu.isInitialized) {
+                +accountLinkCommand(accountLinkMenu)
+            }
 
             updateCommands().queue()
         }
