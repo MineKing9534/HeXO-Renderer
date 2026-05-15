@@ -13,7 +13,7 @@ class SandboxFormationOrNotationParser(
     private val positionLinkPattern = """^(#?)https?://hexo\.did\.science/sandbox/([a-zA-Z0-9]{7})$""".toRegex()
 
     override suspend fun parse(notation: String): Board {
-        val match = positionLinkPattern.matchEntire(notation)
+        val match = positionLinkPattern.matchEntire(notation.trim())
         return if (match != null) {
             val showTurnNumbers = match.groupValues[1].isNotEmpty()
             val id = FormationId(match.groupValues[2])
