@@ -9,6 +9,7 @@ import kotlinx.serialization.properties.decodeFromStringMap
 data class Config(
     val bot: DiscordBotConfig,
     val oauth2: DiscordOAuth2Config? = null,
+    val server: ServerConfig? = null,
     val database: DatabaseConfig? = null,
 ) {
     companion object {
@@ -26,7 +27,12 @@ data class DiscordBotConfig(
 data class DiscordOAuth2Config(
     val clientId: String,
     val clientSecret: String,
-    val redirectUri: String,
+)
+
+@Serializable
+data class ServerConfig(
+    val port: Int,
+    val url: String,
 )
 
 @Serializable

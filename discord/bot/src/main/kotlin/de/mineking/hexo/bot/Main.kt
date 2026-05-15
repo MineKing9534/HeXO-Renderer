@@ -24,8 +24,10 @@ import de.mineking.hexo.bot.menus.accountLinkMenu
 import de.mineking.hexo.bot.menus.gameMenu
 import de.mineking.hexo.bot.menus.leaderboardMenu
 import de.mineking.hexo.bot.menus.profileMenu
+import de.mineking.hexo.bot.utils.LinkedRolesUpdateService
 import de.mineking.hexo.bot.utils.SandboxFormationOrNotationParser
 import de.mineking.hexo.bot.utils.installErrorHandling
+import de.mineking.hexo.bot.utils.updateLinkedRoleMetadata
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.DiscordUserId
 import de.mineking.hexo.link.HexoDatabaseManager
@@ -37,6 +39,7 @@ import de.mineking.hexo.render.ImageBoardRenderer
 import de.mineking.hexo.render.cached
 import dev.freya02.jda.emojis.unicode.Emojis
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.OnlineStatus
@@ -55,23 +58,45 @@ fun main() {
     val config = Config.fromEnvironment()
 
     val client = HexoApiClient(socketIOOptions = null)
-    val discordOAuth2Client = config.oauth2?.let { DiscordOAuth2Client(it.clientId, it.clientSecret, it.redirectUri) }
+    val repositories = client.createCachingRepositories()
+
     val database = config.database?.let { HexoDatabaseManager(it.url) }
+    val discordOAuth2Client = when {
+        config.oauth2 != null && config.server != null ->
+            DiscordOAuth2Client(config.oauth2.clientId, config.oauth2.clientSecret, "${config.server.url}/oauth2/callback")
+        else -> null
+    }
 
     val discordUserAuthenticationRepository = when {
         database != null && discordOAuth2Client != null -> DiscordUserAuthenticationRepository(database, discordOAuth2Client)
         else -> null
     }
 
+    val accountLinkRepository = database?.let { AccountLinkRepository(database) }
+
+    val linkedRolesUpdateService = when {
+        accountLinkRepository != null && discordUserAuthenticationRepository != null -> LinkedRolesUpdateService(
+            accountLinkRepository = accountLinkRepository,
+            discordUserAuthenticationRepository = discordUserAuthenticationRepository,
+            profileRepository = repositories.profiles,
+        )
+        else -> null
+    }
+
     val _ = HeXODiscordBot(
-        repositories = client.createCachingRepositories(),
-        accountLinkRepository = database?.let { AccountLinkRepository(database) },
+        repositories = repositories,
+        accountLinkRepository = accountLinkRepository,
         discordUserAuthenticationRepository = discordUserAuthenticationRepository,
+        linkedRolesUrl = if (linkedRolesUpdateService != null && config.server != null) "${config.server.url}/linked-roles" else null,
         token = config.bot.token,
     )
 
-    if (discordUserAuthenticationRepository != null) {
-        val server = HttpServer(1234, discordUserAuthenticationRepository)
+    if (discordUserAuthenticationRepository != null && config.server != null) {
+        val server = HttpServer(
+            discordUserAuthenticationRepository = discordUserAuthenticationRepository,
+            linkedRolesUpdateService = linkedRolesUpdateService,
+            port = config.server.port,
+        )
         server.start()
     }
 
@@ -92,6 +117,7 @@ class HeXODiscordBot(
     private val repositories: HexoRepositories,
     private val accountLinkRepository: AccountLinkRepository?,
     private val discordUserAuthenticationRepository: DiscordUserAuthenticationRepository?,
+    val linkedRolesUrl: String?,
     token: String,
 ) {
     val jda = JDABuilder.createLight(token)
@@ -107,10 +133,10 @@ class HeXODiscordBot(
     ).cached()
     val boardRenderer = ImageBoardRenderer.Default.cached()
 
-    lateinit var gameMenu: MessageMenu<GameMenuParameter, *> private set
-    lateinit var profileMenu: MessageMenu<ProfileMenuParameter, *> private set
-    lateinit var leaderboardMenu: MessageMenu<Interaction, *> private set
-    lateinit var accountLinkMenu: MessageMenu<IModalCallback, *> private set
+    private lateinit var gameMenu: MessageMenu<GameMenuParameter, *>
+    private lateinit var profileMenu: MessageMenu<ProfileMenuParameter, *>
+    private lateinit var leaderboardMenu: MessageMenu<Interaction, *>
+    private lateinit var accountLinkMenu: MessageMenu<IModalCallback, *>
 
     val dtk = discordToolKit(jda, this)
         .withLocalization<_, DefaultLocalizationManager>()
@@ -122,7 +148,11 @@ class HeXODiscordBot(
             profileMenu = profileMenu(repositories.profiles)
             leaderboardMenu = leaderboardMenu(repositories.leaderboard, profileMenu)
             if (discordUserAuthenticationRepository != null && accountLinkRepository != null) {
-                accountLinkMenu = accountLinkMenu(discordUserAuthenticationRepository, accountLinkRepository, repositories.profiles)
+                accountLinkMenu = accountLinkMenu(
+                    discordAuthRepository = discordUserAuthenticationRepository,
+                    accountLinkRepository = accountLinkRepository,
+                    profileRepository = repositories.profiles,
+                )
             }
         }
         .withCommandManager {
@@ -145,6 +175,13 @@ class HeXODiscordBot(
         .build()
 
     init {
+        if (linkedRolesUrl != null) {
+            logger.info { "Updating linked roles metadata..." }
+            runBlocking {
+                dtk.updateLinkedRoleMetadata()
+            }
+        }
+
         jda.registerMessageDeleteListener()
     }
 }

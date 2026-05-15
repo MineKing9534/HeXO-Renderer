@@ -33,9 +33,7 @@ import de.mineking.hexo.bot.userId
 import de.mineking.hexo.bot.utils.MessageColor
 import de.mineking.hexo.bot.utils.respond
 import de.mineking.hexo.link.AccountLinkRepository
-import de.mineking.hexo.link.oauth2.DiscordOAuth2Client
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
-import de.mineking.hexo.link.oauth2.Scope
 import dev.freya02.jda.emojis.unicode.Emojis
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -49,17 +47,17 @@ private val IMAGE_URL_PATTERN = """https://cdn\.discordapp\.com/avatars/(\d+)/.*
 
 fun UIManager.accountLinkMenu(
     discordAuthRepository: DiscordUserAuthenticationRepository,
-    linkRepository: AccountLinkRepository,
+    accountLinkRepository: AccountLinkRepository,
     profileRepository: ProfileRepository,
 ) = registerLocalizedMenu<IModalCallback, AccountLinkMenuLocalization>("link") { localization ->
     localizeForUser()
 
     // Creating separate components for each and conditionally rendering them avoids having to query the state again in
     // component handlers to figure out which menu to show
-    val linkModalButton = register(linkModalButton(profileRepository, linkRepository, localization))
-    val unlinkConfirmModalButton = register(unlinkConfirmModalButton(linkRepository))
+    val linkModalButton = register(linkModalButton(profileRepository, accountLinkRepository, localization))
+    val unlinkConfirmModalButton = register(unlinkConfirmModalButton(accountLinkRepository))
 
-    val authModalButton = register(authModalButton(discordAuthRepository.discordOAuth2Client))
+    val authModalButton = register(authModalButton())
     val authRemoveConfirmModalButton = register(authRemoveConfirmModalButton(discordAuthRepository))
 
     // Define this *after* the submenus, so that this is not executed for submenu renders
@@ -67,7 +65,7 @@ fun UIManager.accountLinkMenu(
     val (profile, isAuthenticated) = renderValue {
         coroutineScope {
             val profile = async {
-                val profileId = linkRepository.getHexoProfile(event!!.user.userId)
+                val profileId = accountLinkRepository.getHexoProfile(event!!.user.userId)
                 profileId?.let { profileRepository.getProfile(profileId) }
             }
 
@@ -144,7 +142,7 @@ private fun MessageMenuConfig<*, *>.unlinkConfirmModalButton(linkRepository: Acc
     linkRepository.removeLinkedProfile(user.userId)
 }
 
-private fun MessageMenuConfig<out Interaction, *>.authModalButton(client: DiscordOAuth2Client) = modalButton(
+private fun MessageMenuConfig<out Interaction, *>.authModalButton() = modalButton(
     "auth",
     color = ButtonColor.GREEN,
     emoji = Emojis.LOCK,
@@ -153,7 +151,7 @@ private fun MessageMenuConfig<out Interaction, *>.authModalButton(client: Discor
         // Therefore, we reimplement the localizedTextDisplay here and bind the parameter in there
         +createSharedLayoutComponent { config, _ ->
             config.currentLocalizationConfig!!.apply {
-                bindParameter("url", client.generateAuthorizationUrl(Scope.Identify, Scope.RoleConnectionsWrite))
+                bindParameter("url", config.menu.manager.main.linkedRolesUrl)
             }
             TextDisplay.of(config.menu.manager.localization.readLocalizedString(config, null, "description", DEFAULT_LABEL, "content")!!)
         }

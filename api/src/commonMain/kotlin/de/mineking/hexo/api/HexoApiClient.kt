@@ -4,6 +4,7 @@ import de.mineking.hexo.api.socket.SocketIOClient
 import de.mineking.hexo.api.socket.SocketIOOptions
 import de.mineking.hexo.api.utils.EntityRequesterFactory
 import de.mineking.hexo.api.utils.logRequestErrors
+import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
@@ -37,7 +38,7 @@ private val json = Json {
 }
 
 class HexoApiClient(
-    internal val coroutineScope: CoroutineScope = createCoroutineScope(),
+    internal val coroutineScope: CoroutineScope = createCoroutineScope(logger),
     private val host: String = HEXO_WEBSITE,
     socketIOOptions: SocketIOOptions? = SocketIOOptions.createDefault(host),
     private val httpClient: HttpClient = createDefaultHttpClient(),
@@ -71,7 +72,7 @@ fun createDefaultHttpClient(
     config()
 }
 
-fun createCoroutineScope(dispatcher: CoroutineDispatcher = DefaultCoroutineDispatcher): CoroutineScope {
+fun createCoroutineScope(logger: KLogger, dispatcher: CoroutineDispatcher = DefaultCoroutineDispatcher): CoroutineScope {
     val parent = SupervisorJob()
     return CoroutineScope(dispatcher + parent + CoroutineExceptionHandler { _, throwable ->
         logger.error(throwable) { "Uncaught exception from coroutine" }

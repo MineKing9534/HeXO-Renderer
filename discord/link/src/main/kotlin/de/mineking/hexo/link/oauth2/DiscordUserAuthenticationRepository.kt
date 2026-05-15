@@ -11,7 +11,7 @@ import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.update
-import org.jetbrains.exposed.v1.jdbc.upsertReturning
+import org.jetbrains.exposed.v1.jdbc.upsert
 
 class DiscordUserAuthenticationRepository(
     val database: HexoDatabaseManager,
@@ -27,20 +27,22 @@ class DiscordUserAuthenticationRepository(
         ),
     )
 
-    suspend fun authenticateUser(code: String): OAuth2Tokens? {
+    suspend fun authenticateUser(code: String): DiscordUserId? {
         val token = discordOAuth2Client.getUserTokens(code) ?: return null
         require(Scope.Identify in token.data.scopes)
 
         val id = discordOAuth2Client.getCurrentUserId(token)
-        return database.transaction {
-            DiscordUserTokensTable.upsertReturning {
+        database.transaction {
+            val _ = DiscordUserTokensTable.upsert {
                 it[this.id] = id
                 it[this.accessToken] = token.data.accessToken
                 it[this.refreshToken] = token.data.refreshToken
                 it[this.expiresAt] = token.data.expiresAt
                 it[this.scopes] = token.data.scopes
-            }.first().mapToTokens()
+            }
         }
+
+        return id
     }
 
     suspend fun getAuthenticationStatus(discordUserId: DiscordUserId) = database.transaction {
@@ -50,27 +52,32 @@ class DiscordUserAuthenticationRepository(
             .firstOrNull() != null
     }
 
-    suspend fun getUserTokens(discordUserId: DiscordUserId) = database.transaction {
-        val tokens = DiscordUserTokensTable
-            .selectAll()
-            .where(DiscordUserTokensTable.id eq discordUserId)
-            .firstOrNull()
-            ?.mapToTokens()
+    suspend fun getUserTokens(discordUserId: DiscordUserId): OAuth2Tokens? {
+        val tokens = database.transaction {
+            DiscordUserTokensTable
+                .selectAll()
+                .where(DiscordUserTokensTable.id eq discordUserId)
+                .firstOrNull()
+                ?.mapToTokens()
+        }
 
-        if (tokens?.isExpired() != true) return@transaction tokens
+        if (tokens?.isExpired() != true) return tokens
         val updated = tokens.refresh()
-        if (updated == null) {
-            DiscordUserTokensTable.deleteWhere { DiscordUserTokensTable.id eq discordUserId }
-            return@transaction null
-        }
 
-        DiscordUserTokensTable.update(where = { DiscordUserTokensTable.id eq discordUserId }) {
-            it[this.accessToken] = updated.data.accessToken
-            it[this.refreshToken] = updated.data.refreshToken
-            it[this.expiresAt] = updated.data.expiresAt
-        }
+        return database.transaction {
+            if (updated == null) {
+                DiscordUserTokensTable.deleteWhere { DiscordUserTokensTable.id eq discordUserId }
+                null
+            } else {
+                DiscordUserTokensTable.update(where = { DiscordUserTokensTable.id eq discordUserId }) {
+                    it[this.accessToken] = updated.data.accessToken
+                    it[this.refreshToken] = updated.data.refreshToken
+                    it[this.expiresAt] = updated.data.expiresAt
+                }
 
-        updated
+                updated
+            }
+        }
     }
 
     @IgnorableReturnValue
