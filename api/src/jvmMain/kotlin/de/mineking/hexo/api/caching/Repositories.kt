@@ -3,6 +3,7 @@ package de.mineking.hexo.api.caching
 import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.RepositoryWrapper
 import de.mineking.hexo.api.createRepositories
+import de.mineking.hexo.api.formation.FormationRepository
 import de.mineking.hexo.api.game.FinishedGameRepository
 import de.mineking.hexo.api.leaderboard.LeaderboardRepository
 import de.mineking.hexo.api.profile.ProfileRepository
@@ -15,6 +16,7 @@ class CachingRepositoryWrapper : RepositoryWrapper {
     override fun LeaderboardRepository.wrap(): LeaderboardRepository = CachingLeaderboardRepository(this)
     override fun FinishedGameRepository.wrap(): FinishedGameRepository = CachingFinishedGameRepository(this, DEFAULT_CACHE_SIZE)
     override fun TournamentRepository.wrap(): TournamentRepository = CachingTournamentRepository(this, DEFAULT_CACHE_SIZE)
+    override fun FormationRepository.wrap(): FormationRepository = CachingFormationRepository(this, DEFAULT_CACHE_SIZE)
 }
 
 fun HexoApiClient.createCachingRepositories() = createRepositories(CachingRepositoryWrapper())

@@ -7,6 +7,14 @@ import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.times
 import de.mineking.hexo.core.CellOwner
 
+private const val MOVE_PATTERN = /*language=regexp*/ """[A-Z](?:[0-5]\.)?\d+"""
+private const val TURN_PATTERN = /*language=regexp*/ """[xo]\s+$MOVE_PATTERN\s+$MOVE_PATTERN"""
+private const val TURN_LIST_PATTERN = /*language=regexp*/ """$TURN_PATTERN(?:\s+$TURN_PATTERN)*"""
+
+private const val ORIGIN_PATTERN = /*language=regexp*/ """@\s*\((-?\d+),\s*(-?\d+)\)"""
+
+private val BKE_FORMAT = """^([bdpq<>])?\s*(CW|CCW)?\s*(?:$ORIGIN_PATTERN\s*:?)?\s*($TURN_LIST_PATTERN)$""".toRegex()
+
 enum class Chirality(val symbol: String) {
     Clockwise("CW"),
     CounterClockwise("CCW"),
@@ -19,12 +27,13 @@ enum class Chirality(val symbol: String) {
 }
 
 object BKENotationParser : BoardParser {
-    override suspend fun parse(notation: String) = notation.parseBKENotation()
+    override suspend fun parse(notation: String) = notation.parseBKENotationOrNull(implicitOrigin = true)
+        ?: throw IllegalArgumentException("Invalid BKE notation")
 }
 
 fun String.parseBKENotation(
-    origin: CellCoordinate? = null,
-    zeroOffsetLine: Direction = Direction.Right,
+    origin: CellCoordinate?,
+    zeroOffsetLine: Direction,
     chirality: Chirality = Chirality.Clockwise,
 ): Board {
     val turns = parseBKETurns()
@@ -54,6 +63,24 @@ fun String.parseBKENotation(
 
     return board
 }
+
+fun String.parseBKENotationOrNull(implicitOrigin: Boolean): Board? {
+    val match = BKE_FORMAT.matchEntire(this) ?: return null
+
+    val (_, zeroOffsetLineSymbol, chiralitySymbol, originQ, originR, content) = match.groupValues
+    val zeroOffsetLine = if (zeroOffsetLineSymbol.isNotEmpty()) Direction.fromSymbol(zeroOffsetLineSymbol) else Direction.TopRight
+    val chirality = if (chiralitySymbol.isNotEmpty()) Chirality.fromSymbol(chiralitySymbol) else Chirality.Clockwise
+    val origin = if (implicitOrigin) {
+        require(originR.isEmpty()) { "Origin cannot be specified in BKE with implicit origin" }
+        null
+    } else {
+        if (originR.isNotEmpty()) CellCoordinate(originQ.toInt(), originR.toInt()) else CellCoordinate.Zero
+    }
+
+    return content.parseBKENotation(origin, zeroOffsetLine, chirality)
+}
+
+private operator fun <T> List<T>.component6() = get(5)
 
 private data class RingOffset(
     val ring: Int,

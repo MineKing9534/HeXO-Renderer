@@ -18,16 +18,16 @@ import de.mineking.discord.ui.parameter
 import de.mineking.discord.ui.registerLocalizedModal
 import de.mineking.discord.ui.render
 import de.mineking.hexo.discord.HeXODiscordBot
-import de.mineking.hexo.discord.createHexoRenderResponse
+import de.mineking.hexo.discord.asMediaGalleryItem
 import de.mineking.hexo.discord.finalErrorResponse
-import de.mineking.hexo.discord.renderAsComponent
-import de.mineking.hexo.discord.renderRichHexoNotation
+import de.mineking.hexo.discord.replyRichHexoNotation
+import net.dv8tion.jda.api.components.mediagallery.MediaGallery
 import net.dv8tion.jda.api.components.textinput.TextInputStyle
 import net.dv8tion.jda.api.interactions.DiscordLocale
 import net.dv8tion.jda.api.interactions.IntegrationType
 import net.dv8tion.jda.api.interactions.Interaction
 import net.dv8tion.jda.api.interactions.InteractionContextType
-import net.dv8tion.jda.api.utils.messages.MessageEditData
+import net.dv8tion.jda.api.utils.messages.MessageEditBuilder
 
 context(main: HeXODiscordBot)
 fun renderHexoSlashCommand(): SlashCommand = { parent ->
@@ -45,8 +45,7 @@ private fun UIManager.renderHexoModal() = registerLocalizedModal<Interaction, Re
     val content by +textInput("input", style = TextInputStyle.PARAGRAPH).withLocalizedLabel()
 
     execute {
-        deferReply().queue()
-        hook.editOriginal(MessageEditData.fromCreateData(content.renderRichHexoNotation())).queue()
+        replyRichHexoNotation(content)
     }
 }
 
@@ -72,11 +71,10 @@ private fun renderHexoCommandImpl(
             }
 
             hook.editOriginal(
-                MessageEditData.fromCreateData(
-                    createHexoRenderResponse(listOf(board)) { _, board ->
-                        +main.boardRenderer.run { board.renderAsComponent() }
-                    },
-                ),
+                MessageEditBuilder()
+                    .setReplace(true)
+                    .setComponents(main.boardRenderer.run { MediaGallery.of(board.asMediaGalleryItem()) })
+                    .build(),
             ).queue()
         }
     }

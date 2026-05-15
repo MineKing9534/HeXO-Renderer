@@ -1,5 +1,7 @@
 package de.mineking.hexo.api
 
+import de.mineking.hexo.api.formation.FormationRepository
+import de.mineking.hexo.api.formation.FormationRepositoryImpl
 import de.mineking.hexo.api.game.FinishedGameRepository
 import de.mineking.hexo.api.game.FinishedGameRepositoryImpl
 import de.mineking.hexo.api.leaderboard.LeaderboardRepository
@@ -14,6 +16,7 @@ data class HexoRepositories(
     val leaderboard: LeaderboardRepository,
     val finishedGames: FinishedGameRepository,
     val tournaments: TournamentRepository,
+    val formations: FormationRepository,
 )
 
 interface RepositoryWrapper {
@@ -21,6 +24,7 @@ interface RepositoryWrapper {
     fun LeaderboardRepository.wrap(): LeaderboardRepository
     fun FinishedGameRepository.wrap(): FinishedGameRepository
     fun TournamentRepository.wrap(): TournamentRepository
+    fun FormationRepository.wrap(): FormationRepository
 
     companion object {
         val Default = object : RepositoryWrapper {
@@ -28,6 +32,7 @@ interface RepositoryWrapper {
             override fun LeaderboardRepository.wrap() = this
             override fun FinishedGameRepository.wrap() = this
             override fun TournamentRepository.wrap() = this
+            override fun FormationRepository.wrap() = this
         }
     }
 }
@@ -49,11 +54,13 @@ fun HexoApiClient.createRepositories(wrapper: RepositoryWrapper = RepositoryWrap
         profileRepository = profileRepository,
         finishedGameRepository = finishedGameRepository,
     ).wrap()
+    val formationRepository = FormationRepositoryImpl(client = this@createRepositories).wrap()
 
     HexoRepositories(
         profiles = profileRepository,
         leaderboard = leaderboardRepository,
         finishedGames = finishedGameRepository,
         tournaments = tournamentRepository,
+        formations = formationRepository,
     )
 }

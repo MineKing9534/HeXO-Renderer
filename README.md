@@ -15,6 +15,7 @@ Add HeXO Renderer to your server or user account: [Invite HeXO Renderer](https:/
       * [Custom Labels](#custom-labels)
     * [BKE Notation](#bke-notation)
     * [Combined](#combined)
+    * [Other](#other)
   * [Features](#features)
     * [Command `hexo`](#command-hexo)
     * [Message command](#message-command)
@@ -124,14 +125,24 @@ The following are equivalent:
 
 ![example combined](assets/example_combined.png)
 
+### Other
+In addition to traditional HeXO notation, sandbox position links (like https://hexo.did.science/sandbox/i6z4ur1) are also considered valid "notation".
+You can optionally prefix sandbox position links with `#`, in which case the turn numbers will be rendered as well.
+
 ## Features
 ### Command `hexo`
-Accepts HeXO notation as parameter and renders it as image. Example usage:
+Accepts HeXO notation as parameter and renders it as image. 
+If no parameter is provided, a modal is opened that allows you to enter more complex input that can contain both raw text and HeXO notation.
+See [Message command](#message-command) for more details.
+
+Example usage:
 
 ![example slash command](assets/example_slash_command.png)
 
 ### Message command
 It is also possible to render notation in existing messages. To do so, right-click the message and select `Apps > HeXO Renderer > Render HeXO notation in message`:
+Any valid HeXO notation inside code blocks (triple backticks: `` ``` ``) will be rendered as image that will be put in the resulting message instead of the code block.
+You can also use inline code segments (single backticks: `` ` ``) with HeXO notation in parts of your message. These segments will not be removed and the rendered image is put after the current paragraph.
 
 ![example message command](assets/example_message_command.png)
 
