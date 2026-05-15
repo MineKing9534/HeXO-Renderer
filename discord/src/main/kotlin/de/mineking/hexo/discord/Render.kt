@@ -75,7 +75,14 @@ private class ComponentParserState {
 
 context(main: HeXODiscordBot)
 private suspend fun String.renderToComponents(): List<MessageTopLevelComponent> {
-    if (isBlank()) return emptyList()
+    val state = internalRender()
+    state.flush()
+
+    return state.result
+}
+
+context(main: HeXODiscordBot)
+private suspend fun String.internalRender(): ComponentParserState {
     val state = ComponentParserState()
 
     while (state.position < length) {
@@ -86,8 +93,7 @@ private suspend fun String.renderToComponents(): List<MessageTopLevelComponent> 
         state.handle(this, type)
     }
 
-    state.flush()
-    return state.result
+    return state
 }
 
 context(main: HeXODiscordBot)
@@ -148,6 +154,23 @@ private enum class SegmentParser(val symbol: String, val keepAsText: Boolean) {
             try {
                 state.afterParagraph += main.notationParser.parse(content).asMediaGalleryItem()
             } catch (_: IllegalArgumentException) {
+            }
+        }
+    },
+    Spoiler("||", keepAsText = false) {
+        context(main: HeXODiscordBot)
+        override suspend fun handle(content: String, state: ComponentParserState) {
+            val innerState = content.internalRender()
+            if (innerState.temp.isNotEmpty()) {
+                state.temp.append("$symbol${innerState.temp}$symbol")
+            }
+
+            state.afterParagraph += innerState.afterParagraph.map { it.withSpoiler(true) }
+            state.result += innerState.result.map {
+                when (it) {
+                    is MediaGallery -> it.withItems(it.items.map { item -> item.withSpoiler(true) })
+                    else -> it
+                }
             }
         }
     },
