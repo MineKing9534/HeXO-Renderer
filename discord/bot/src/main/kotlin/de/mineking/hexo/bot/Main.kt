@@ -78,6 +78,7 @@ fun main() {
         accountLinkRepository != null && discordUserAuthenticationRepository != null -> LinkedRolesUpdateService(
             accountLinkRepository = accountLinkRepository,
             discordUserAuthenticationRepository = discordUserAuthenticationRepository,
+            finishedGameRepository = repositories.finishedGames,
             profileRepository = repositories.profiles,
         )
         else -> null

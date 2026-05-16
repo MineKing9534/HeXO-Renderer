@@ -130,7 +130,10 @@ private fun MessageMenuConfig<*, *>.linkModalButton(
         terminateRender()
     }
 
-    linkRepository.createLink(user.userId, profile.id)
+    if (!linkRepository.createLink(user.userId, profile.id)) {
+        respond(MessageColor.Error, localization.responseErrorProfileLinkFailed(userLocale), forceNew = true)
+        terminateRender()
+    }
 }
 
 private fun MessageMenuConfig<*, *>.unlinkConfirmModalButton(linkRepository: AccountLinkRepository) = modalButton(
@@ -176,4 +179,7 @@ interface AccountLinkMenuLocalization : LocalizationFile {
 
     @Localize
     fun responseErrorProfileVerifyFailed(@Locale locale: DiscordLocale): String
+
+    @Localize
+    fun responseErrorProfileLinkFailed(@Locale locale: DiscordLocale): String
 }

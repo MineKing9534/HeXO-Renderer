@@ -3,19 +3,25 @@ package de.mineking.hexo.bot.utils
 import de.mineking.discord.DiscordToolKit
 import de.mineking.discord.localization.LocalizationFile
 import de.mineking.hexo.api.createCoroutineScope
+import de.mineking.hexo.api.game.FinishedGameRepository
+import de.mineking.hexo.api.game.GameId
+import de.mineking.hexo.api.profile.Profile
+import de.mineking.hexo.api.profile.ProfileId
 import de.mineking.hexo.api.profile.ProfileRepository
 import de.mineking.hexo.api.utils.awaitBothOrNull
 import de.mineking.hexo.link.AccountLinkRepository
-import de.mineking.hexo.link.DiscordUserId
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
 import de.mineking.hexo.link.oauth2.LinkedRoleMetadataKey
 import de.mineking.hexo.link.oauth2.LinkedRoleMetadataType
+import de.mineking.hexo.link.oauth2.OAuth2Tokens
 import de.mineking.hexo.link.oauth2.bindValue
 import de.mineking.hexo.link.oauth2.updateLinkedRoleMetadata
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import kotlin.time.Duration.Companion.minutes
 
 private val RankKey = LinkedRoleMetadataKey("rank", LinkedRoleMetadataType.IntegerLessThanOrEqual)
 private val EloKey = LinkedRoleMetadataKey("elo", LinkedRoleMetadataType.IntegerGreaterThanOrEqual)
@@ -25,29 +31,69 @@ private val logger = KotlinLogging.logger {}
 class LinkedRolesUpdateService(
     private val accountLinkRepository: AccountLinkRepository,
     private val discordUserAuthenticationRepository: DiscordUserAuthenticationRepository,
+    private val finishedGameRepository: FinishedGameRepository,
     private val profileRepository: ProfileRepository,
 ) {
     private val coroutineScope = createCoroutineScope(logger)
     private val semaphore = Semaphore(10)
 
-    fun scheduleLinkedRoleDataUpdate(user: DiscordUserId) {
+    init {
         coroutineScope.launch {
-            semaphore.withPermit {
-                updateLinkedRoleData(user)
+            var lastSeenGame = GameId("")
+            while (true) {
+                @Suppress("TooGenericExceptionCaught")
+                try {
+                    val finishedGames = finishedGameRepository.getFinishedGames(1, 20, rated = true)
+                        .takeWhile { it.id != lastSeenGame }
+
+                    if (finishedGames.isNotEmpty()) {
+                        finishedGames
+                            .flatMapTo(mutableSetOf()) { it.players }
+                            .mapNotNull { it.profileId }
+                            .forEach { scheduleLinkedRoleDataUpdate(it) }
+
+                        lastSeenGame = finishedGames.first().id
+                    }
+                } catch (e: Exception) {
+                    logger.error(e) { "Exception while automatic linked roles update" }
+                }
+
+                delay(1.minutes)
             }
         }
     }
 
-    private suspend fun updateLinkedRoleData(user: DiscordUserId) {
-        val (profile, tokens) = awaitBothOrNull(
-            first = {
-                val linkedProfileId = accountLinkRepository.getHexoProfile(user) ?: return@awaitBothOrNull null
-                profileRepository.getProfile(linkedProfileId)
-            },
-            second = { discordUserAuthenticationRepository.getUserTokens(user) },
-        ) ?: return
+    fun scheduleLinkedRoleDataUpdate(tokens: OAuth2Tokens) {
+        coroutineScope.launch {
+            semaphore.withPermit {
+                val profileId = accountLinkRepository.getHexoProfile(tokens.id) ?: return@withPermit
+                val profile = profileRepository.getProfile(profileId) ?: return@withPermit
 
-        discordUserAuthenticationRepository.discordOAuth2Client.updateLinkedRoleMetadata(
+                updateLinkedRoleData(profile, tokens)
+            }
+        }
+    }
+
+    fun scheduleLinkedRoleDataUpdate(profile: ProfileId) {
+        coroutineScope.launch {
+            semaphore.withPermit {
+                val (profile, tokens) = awaitBothOrNull(
+                    first = { profileRepository.getProfile(profile) },
+                    second = {
+                        val user = accountLinkRepository.getDiscordProfile(profile) ?: return@awaitBothOrNull null
+                        discordUserAuthenticationRepository.getUserTokens(user)
+                    },
+                ) ?: return@withPermit
+
+                updateLinkedRoleData(profile, tokens)
+            }
+        }
+    }
+
+    private suspend fun updateLinkedRoleData(profile: Profile, tokens: OAuth2Tokens) {
+        logger.info { "Updating linked role data for (discord=${tokens.id.value},hexo=${profile.id.value})" }
+
+        discordUserAuthenticationRepository.discordOAuth2Client.updateLinkedRoleData(
             user = tokens,
             values = arrayOf(
                 RankKey.bindValue(profile.statistics.worldRank),

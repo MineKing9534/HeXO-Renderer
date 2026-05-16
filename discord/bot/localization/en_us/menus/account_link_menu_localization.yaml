@@ -9,6 +9,11 @@ response.error:
     
     It doesn't seem like the linked profile belongs to you. Check that you linked the correct profile. If you think this is a mistake, please contact support.
 
+  profile.link.failed: >-
+    ## Profile Link Failed
+    
+    Could not link the given profile to your account. Make sure you don't already have a another profile linked to your account!
+
 menu.link:
   link:
     label: Link

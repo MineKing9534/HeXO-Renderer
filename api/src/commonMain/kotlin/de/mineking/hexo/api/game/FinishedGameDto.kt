@@ -18,7 +18,8 @@ internal data class FinishedGameDto(
     @SerialName("gameResult") val result: GameResultDto,
     @SerialName("gameOptions") val options: GameOptions,
     val tournament: TournamentMatchSnapshotDto?,
-    val moves: List<MoveDto>,
+    val moves: List<MoveDto> = emptyList(),
+    val moveCount: Int,
 )
 
 @Serializable

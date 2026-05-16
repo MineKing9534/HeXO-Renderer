@@ -52,7 +52,7 @@ class DiscordOAuth2Client(
         parameters.append("state", state)
     }.buildString()
 
-    internal suspend fun getCurrentUserId(tokens: OAuth2Tokens): DiscordUserId {
+    private suspend fun getCurrentUserId(accessToken: String): DiscordUserId {
         @Serializable
         data class User(val id: DiscordUserId)
 
@@ -60,7 +60,7 @@ class DiscordOAuth2Client(
         data class Response(val user: User)
 
         val response = client.get("$BASE_URL/oauth2/@me") {
-            bearerAuth(tokens.data.accessToken)
+            bearerAuth(accessToken)
         }.body<Response>()
 
         return response.user.id
@@ -79,7 +79,9 @@ class DiscordOAuth2Client(
         }
 
         if (!response.status.isSuccess()) return null
-        return OAuth2Tokens(this, response.body())
+
+        val data = response.body<OAuth2TokensDto>()
+        return OAuth2Tokens(this, data, getCurrentUserId(data.accessToken))
     }
 
     internal suspend fun refreshToken(refreshToken: String): OAuth2Tokens? {
@@ -94,7 +96,9 @@ class DiscordOAuth2Client(
         }
 
         if (!response.status.isSuccess()) return null
-        return OAuth2Tokens(this, response.body())
+
+        val data = response.body<OAuth2TokensDto>()
+        return OAuth2Tokens(this, data, getCurrentUserId(data.accessToken))
     }
 
     internal suspend fun revokeToken(tokens: OAuth2Tokens) {
@@ -108,7 +112,7 @@ class DiscordOAuth2Client(
         }
     }
 
-    suspend fun updateLinkedRoleMetadata(user: OAuth2Tokens, vararg values: LinkedRoleMetadataValue<*>) {
+    suspend fun updateLinkedRoleData(user: OAuth2Tokens, vararg values: LinkedRoleMetadataValue<*>) {
         @Serializable
         data class Request(val metadata: Map<String, String>)
 

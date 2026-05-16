@@ -17,12 +17,20 @@ class AccountLinkRepository(private val database: HexoDatabaseManager) {
             ?.get(AccountLinkTable.linkedProfileId)
     }
 
+    suspend fun getDiscordProfile(profileId: ProfileId) = database.transaction {
+        AccountLinkTable
+            .select(AccountLinkTable.id)
+            .where(AccountLinkTable.linkedProfileId eq profileId)
+            .firstOrNull()
+            ?.get(AccountLinkTable.id)
+            ?.value
+    }
+
     @IgnorableReturnValue
     suspend fun removeLinkedProfile(discordUserId: DiscordUserId) = database.transaction {
         AccountLinkTable.deleteWhere { AccountLinkTable.id eq discordUserId } > 0
     }
 
-    @IgnorableReturnValue
     suspend fun createLink(discordUserId: DiscordUserId, linkedProfileId: ProfileId) = database.transaction {
         try {
             AccountLinkTable.upsert {

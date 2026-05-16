@@ -1,5 +1,6 @@
 package de.mineking.hexo.link.oauth2
 
+import de.mineking.hexo.link.DiscordUserId
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -15,6 +16,7 @@ import kotlin.time.Instant
 class OAuth2Tokens internal constructor(
     private val client: DiscordOAuth2Client,
     internal val data: OAuth2TokensDto,
+    val id: DiscordUserId,
 ) {
     internal fun isExpired() = data.expiresAt + 1.minutes < Clock.System.now()
 

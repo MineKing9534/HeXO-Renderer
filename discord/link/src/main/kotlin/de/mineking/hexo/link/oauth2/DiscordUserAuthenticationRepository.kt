@@ -25,16 +25,16 @@ class DiscordUserAuthenticationRepository(
             expiresAt = this[DiscordUserTokensTable.expiresAt],
             scopes = this[DiscordUserTokensTable.scopes],
         ),
+        id = this[DiscordUserTokensTable.id].value,
     )
 
-    suspend fun authenticateUser(code: String): DiscordUserId? {
+    suspend fun authenticateUser(code: String): OAuth2Tokens? {
         val token = discordOAuth2Client.getUserTokens(code) ?: return null
         require(Scope.Identify in token.data.scopes)
 
-        val id = discordOAuth2Client.getCurrentUserId(token)
         database.transaction {
             val _ = DiscordUserTokensTable.upsert {
-                it[this.id] = id
+                it[this.id] = token.id
                 it[this.accessToken] = token.data.accessToken
                 it[this.refreshToken] = token.data.refreshToken
                 it[this.expiresAt] = token.data.expiresAt
@@ -42,7 +42,7 @@ class DiscordUserAuthenticationRepository(
             }
         }
 
-        return id
+        return token
     }
 
     suspend fun getAuthenticationStatus(discordUserId: DiscordUserId) = database.transaction {

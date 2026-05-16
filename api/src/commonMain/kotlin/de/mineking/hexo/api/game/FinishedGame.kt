@@ -37,6 +37,7 @@ class FinishedGame(
     val options: GameOptions,
     val tournamentInfo: TournamentMatchSnapshot?,
     val moves: List<Move>,
+    val moveCount: Int,
     val players: List<Player>,
 ) {
     companion object {
@@ -95,6 +96,7 @@ class FinishedGame(
                 options = dto.options,
                 tournamentInfo = dto.tournament?.toTournamentMatchSnapshot(tournamentRepository),
                 moves = dto.moves.map { Move(playersById[it.playerId]!!, it.q, it.r) },
+                moveCount = dto.moveCount,
                 players = players,
             )
         }
