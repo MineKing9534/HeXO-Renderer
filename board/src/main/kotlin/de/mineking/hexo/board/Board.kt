@@ -3,7 +3,7 @@ package de.mineking.hexo.board
 import de.mineking.hexo.core.CellOwner
 import java.util.Objects
 
-class Board(initial: MutableMap<CellCoordinate, Cell> = mutableMapOf()) {
+class Board {
     companion object {
         private const val WIN_MIN_LENGTH = 6
         private val directions = listOf(
@@ -17,10 +17,18 @@ class Board(initial: MutableMap<CellCoordinate, Cell> = mutableMapOf()) {
         field = mutableListOf()
 
     val cells: Map<CellCoordinate, Cell>
-        field = initial
+        field = mutableMapOf()
 
     fun highlightLine(origin: CellCoordinate, direction: Direction, length: Int, color: CellOwner? = null) {
         highlightedLines += HighlightLine(origin, direction, length, color)
+    }
+
+    fun addHighlightLines(lines: List<HighlightLine>) {
+        highlightedLines += lines
+    }
+
+    fun addCells(cells: Map<CellCoordinate, Cell>) {
+        this.cells += cells
     }
 
     operator fun get(q: Int, r: Int) = get(CellCoordinate(q, r))
@@ -81,5 +89,9 @@ fun Board.merge(other: Board, overrideOwner: Boolean = false): Board {
             )
         }
     }
-    return Board(cells)
+    return Board().apply {
+        addCells(cells)
+        addHighlightLines(this@merge.highlightedLines)
+        addHighlightLines(other.highlightedLines)
+    }
 }

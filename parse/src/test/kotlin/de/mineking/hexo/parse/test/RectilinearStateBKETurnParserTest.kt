@@ -2,6 +2,8 @@ package de.mineking.hexo.parse.test
 
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.Direction
+import de.mineking.hexo.board.HighlightLine
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.parse.parseRectilinearStateBKETurnNotation
 import org.junit.jupiter.api.Test
@@ -24,6 +26,26 @@ class RectilinearStateBKETurnParserTest {
                 CellCoordinate(0, 2) to Cell(CellOwner.X, turn = 2, focussed = true),
             ),
             board.cells,
+        )
+    }
+
+    @Test
+    fun `test highlight lines`() {
+        val board = "X(>)x, > x A1 B1".parseRectilinearStateBKETurnNotation()
+        assertEquals(
+            mapOf(
+                CellCoordinate(0, 0) to Cell(CellOwner.X, highlighted = true),
+                CellCoordinate(1, 0) to Cell(CellOwner.X),
+                CellCoordinate(0, 1) to Cell(CellOwner.X, focussed = true, turn = 1),
+                CellCoordinate(1, 1) to Cell(CellOwner.X, focussed = true, turn = 1),
+            ),
+            board.cells,
+        )
+        assertEquals(
+            listOf(
+                HighlightLine(CellCoordinate.Zero, Direction.Right, 6, null),
+            ),
+            board.highlightedLines,
         )
     }
 }
