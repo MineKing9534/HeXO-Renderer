@@ -56,15 +56,17 @@ fun UIManager.leaderboardMenu(
     leaderboardRepository: LeaderboardRepository,
     profileMenu: MessageMenu<ProfileMenuParameter, *>,
 ) = registerLocalizedMenu<Interaction, LeaderboardMenuLocalization>("leaderboard") { localization ->
+    val reloadButton = register(button("reload", emoji = Emojis.RECYCLE) {
+        disableComponents(message).queue()
+        forceUpdate()
+    })
+
     val locale = parameter({ DiscordLocale.UNKNOWN }, { it.effectiveLocale }, { effectiveLocale })
     localize(locale)
 
     +container {
         +section(
-            accessory = button("reload", emoji = Emojis.RECYCLE) {
-                disableComponents(message).queue()
-                forceUpdate()
-            },
+            accessory = reloadButton,
             localizedTextDisplay("title"),
         )
         +separator(spacing = Separator.Spacing.LARGE)
