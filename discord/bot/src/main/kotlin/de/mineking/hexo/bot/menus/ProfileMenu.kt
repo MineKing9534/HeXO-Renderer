@@ -31,10 +31,14 @@ import de.mineking.hexo.api.profile.ProfileRepository
 import de.mineking.hexo.bot.utils.MessageColor
 import de.mineking.hexo.bot.utils.effectiveLocale
 import de.mineking.hexo.bot.utils.respond
+import de.mineking.hexo.link.AccountLinkRepository
 import dev.freya02.jda.emojis.unicode.Emojis
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import net.dv8tion.jda.api.EmbedBuilder.ZERO_WIDTH_SPACE
 import net.dv8tion.jda.api.interactions.DiscordLocale
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback
+import net.dv8tion.jda.api.utils.messages.MessageEditBuilder
 
 internal const val FALLBACK_IMAGE_URL = "https://cdn.discordapp.com/embed/avatars/0.png?size=128"
 
@@ -42,6 +46,7 @@ data class ProfileMenuParameter(val event: IReplyCallback, val id: ProfileId)
 
 fun UIManager.profileMenu(
     profileRepository: ProfileRepository,
+    accountLinkRepository: AccountLinkRepository?,
 ) = registerLocalizedMenu<ProfileMenuParameter, ProfileMenuLocalization>("profile") { localization ->
     var id by state(ProfileId(""))
     initialize {
@@ -58,8 +63,16 @@ fun UIManager.profileMenu(
         },
     )
 
+    message(MessageEditBuilder().setAllowedMentions(emptyList()))
+
     render {
-        val profile = profileRepository.getProfile(id)
+        val (profile, linkedAccount) = coroutineScope {
+            val profile = async { profileRepository.getProfile(id) }
+            val linkedAccount = async { accountLinkRepository?.getDiscordProfile(id) }
+
+            profile.await() to linkedAccount.await()
+        }
+
         val event = parameter({ error("") }, { it.event }, { event })
         if (profile == null) {
             event.respond(MessageColor.Error, localization.errorProfileNotFound(event.effectiveLocale, id))
@@ -81,9 +94,9 @@ fun UIManager.profileMenu(
                             else -> "[#${profile.statistics.worldRank}]"
                         }
                         append("$rank ")
-                        append(profile.displayName)
+                        append(linkedAccount?.asMention ?: profile.displayName)
 
-                        append(" ".repeat(10))
+                        append(" ".repeat(5))
                         append(ZERO_WIDTH_SPACE)
                     }
                 }

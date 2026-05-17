@@ -146,7 +146,7 @@ class HeXODiscordBot(
             installErrorHandling()
 
             gameMenu = gameMenu(repositories.finishedGames)
-            profileMenu = profileMenu(repositories.profiles)
+            profileMenu = profileMenu(repositories.profiles, accountLinkRepository)
             leaderboardMenu = leaderboardMenu(repositories.leaderboard, profileMenu)
             if (discordUserAuthenticationRepository != null && accountLinkRepository != null) {
                 accountLinkMenu = accountLinkMenu(
