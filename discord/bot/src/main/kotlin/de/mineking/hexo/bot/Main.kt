@@ -31,6 +31,7 @@ import de.mineking.hexo.bot.utils.updateLinkedRoleMetadata
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.DiscordUserId
 import de.mineking.hexo.link.HexoDatabaseManager
+import de.mineking.hexo.link.oauth2.AESTokenTransform
 import de.mineking.hexo.link.oauth2.DiscordOAuth2Client
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
 import de.mineking.hexo.parse.RectilinearStateBKETurnNotationParser
@@ -49,6 +50,8 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
 import net.dv8tion.jda.api.interactions.Interaction
 import net.dv8tion.jda.api.interactions.callbacks.IModalCallback
 import net.dv8tion.jda.api.utils.messages.MessageRequest
+import javax.crypto.spec.SecretKeySpec
+import kotlin.io.encoding.Base64
 
 internal val logger = KotlinLogging.logger {}
 
@@ -68,7 +71,11 @@ fun main() {
     }
 
     val discordUserAuthenticationRepository = when {
-        database != null && discordOAuth2Client != null -> DiscordUserAuthenticationRepository(database, discordOAuth2Client)
+        database != null && discordOAuth2Client != null -> DiscordUserAuthenticationRepository(
+            database = database,
+            discordOAuth2Client = discordOAuth2Client,
+            transform = AESTokenTransform(SecretKeySpec(Base64.decode(config.oauth2!!.encryptionKey), "AES")),
+        )
         else -> null
     }
 

@@ -6,6 +6,8 @@ import de.mineking.hexo.link.database.DiscordUserTokensTable
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.intLiteral
+import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
+import org.jetbrains.exposed.v1.core.statements.api.ExposedBlob
 import org.jetbrains.exposed.v1.jdbc.deleteReturning
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.select
@@ -16,17 +18,25 @@ import org.jetbrains.exposed.v1.jdbc.upsert
 class DiscordUserAuthenticationRepository(
     val database: HexoDatabaseManager,
     val discordOAuth2Client: DiscordOAuth2Client,
+    private val transform: TokenTransform,
 ) {
     private fun ResultRow.mapToTokens() = OAuth2Tokens(
         client = discordOAuth2Client,
         data = OAuth2TokensDto(
-            accessToken = this[DiscordUserTokensTable.accessToken],
-            refreshToken = this[DiscordUserTokensTable.refreshToken],
+            accessToken = transform.unwrap(this[DiscordUserTokensTable.accessToken].bytes),
+            refreshToken = transform.unwrap(this[DiscordUserTokensTable.refreshToken].bytes),
             expiresAt = this[DiscordUserTokensTable.expiresAt],
             scopes = this[DiscordUserTokensTable.scopes],
         ),
         id = this[DiscordUserTokensTable.id].value,
     )
+
+    private fun UpdateBuilder<*>.bindTokens(tokens: OAuth2Tokens) {
+        this[DiscordUserTokensTable.accessToken] = ExposedBlob(transform.wrap(tokens.data.accessToken))
+        this[DiscordUserTokensTable.refreshToken] = ExposedBlob(transform.wrap(tokens.data.refreshToken))
+        this[DiscordUserTokensTable.expiresAt] = tokens.data.expiresAt
+        this[DiscordUserTokensTable.scopes] = tokens.data.scopes
+    }
 
     suspend fun authenticateUser(code: String): OAuth2Tokens? {
         val token = discordOAuth2Client.getUserTokens(code) ?: return null
@@ -35,10 +45,7 @@ class DiscordUserAuthenticationRepository(
         database.transaction {
             val _ = DiscordUserTokensTable.upsert {
                 it[this.id] = token.id
-                it[this.accessToken] = token.data.accessToken
-                it[this.refreshToken] = token.data.refreshToken
-                it[this.expiresAt] = token.data.expiresAt
-                it[this.scopes] = token.data.scopes
+                it.bindTokens(token)
             }
         }
 
@@ -70,9 +77,7 @@ class DiscordUserAuthenticationRepository(
                 null
             } else {
                 DiscordUserTokensTable.update(where = { DiscordUserTokensTable.id eq discordUserId }) {
-                    it[this.accessToken] = updated.data.accessToken
-                    it[this.refreshToken] = updated.data.refreshToken
-                    it[this.expiresAt] = updated.data.expiresAt
+                    it.bindTokens(updated)
                 }
 
                 updated

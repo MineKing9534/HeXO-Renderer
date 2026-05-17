@@ -9,8 +9,8 @@ import org.jetbrains.exposed.v1.datetime.timestamp
 internal object DiscordUserTokensTable : IdTable<DiscordUserId>("discord_user_tokens") {
     override val id = long("discord_id").transform({ DiscordUserId(it) }, { it.value }).entityId()
 
-    val accessToken = text("access_token")
-    val refreshToken = text("refresh_token")
+    val accessToken = blob("access_token")
+    val refreshToken = blob("refresh_token")
     val expiresAt = timestamp("expires_at")
     val scopes = array("scopes", EnumerationNameColumnType(Scope::class, 20))
 

@@ -27,6 +27,7 @@ data class DiscordBotConfig(
 data class DiscordOAuth2Config(
     val clientId: String,
     val clientSecret: String,
+    val encryptionKey: String, // openssl rand -base64 32
 )
 
 @Serializable
