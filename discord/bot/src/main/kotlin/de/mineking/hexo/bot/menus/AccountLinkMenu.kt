@@ -25,6 +25,7 @@ import de.mineking.discord.ui.parameter
 import de.mineking.discord.ui.registerLocalizedMenu
 import de.mineking.discord.ui.renderValue
 import de.mineking.discord.ui.terminateRender
+import de.mineking.discord.utils.await
 import de.mineking.hexo.api.profile.ProfileId
 import de.mineking.hexo.api.profile.ProfileRepository
 import de.mineking.hexo.bot.CustomEmoji
@@ -58,7 +59,7 @@ fun UIManager.accountLinkMenu(
     val unlinkConfirmModalButton = register(unlinkConfirmModalButton(accountLinkRepository))
 
     val authModalButton = register(authModalButton())
-    val authRemoveConfirmModalButton = register(authRemoveConfirmModalButton(discordAuthRepository))
+    val authRemoveConfirmModalButton = register(authRemoveConfirmModalButton(localization, discordAuthRepository))
 
     // Define this *after* the submenus, so that this is not executed for submenu renders
     val event = parameter({ null }, { it }, { event })
@@ -164,12 +165,25 @@ private fun MessageMenuConfig<out Interaction, *>.authModalButton() = modalButto
 ) {
 }
 
-private fun MessageMenuConfig<*, *>.authRemoveConfirmModalButton(discordAuthRepository: DiscordUserAuthenticationRepository) = modalButton(
+private fun MessageMenuConfig<*, *>.authRemoveConfirmModalButton(
+    localization: AccountLinkMenuLocalization,
+    discordAuthRepository: DiscordUserAuthenticationRepository,
+) = modalButton(
     "remove_auth",
     color = ButtonColor.RED,
     emoji = Emojis.UNLOCK,
-    component = requiredCheckbox("confirm", description = null).withLocalizedLabel(),
+    component = createModalComponent {
+        +localizedTextDisplay("note")
+        +requiredCheckbox("confirm", description = null).withLocalizedLabel()
+
+        produce {}
+    },
 ) {
+    preventUpdate()
+    deferEdit().queue()
+    hook.deleteOriginal().await()
+    respond(MessageColor.Success, localization.responseSuccessRevoke(userLocale), forceNew = true)
+
     discordAuthRepository.removeUser(user.userId)
 }
 
@@ -182,4 +196,7 @@ interface AccountLinkMenuLocalization : LocalizationFile {
 
     @Localize
     fun responseErrorProfileLinkFailed(@Locale locale: DiscordLocale): String
+
+    @Localize
+    fun responseSuccessRevoke(@Locale locale: DiscordLocale): String
 }

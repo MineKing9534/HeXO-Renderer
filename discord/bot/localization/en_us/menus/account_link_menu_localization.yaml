@@ -1,18 +1,26 @@
-response.error:
-  profile.not.found: >-
-    ## Profile Not Found
-    
-    Profile with id **`${id.value}`** not found.
+response:
+  error:
+    profile.not.found: >-
+      ## Profile Not Found
+      
+      Profile with id **`${id.value}`** not found.
 
-  profile.verify.failed: >-
-    ## Verification Failed
-    
-    It doesn't seem like the linked profile belongs to you. Check that you linked the correct profile. If you think this is a mistake, please contact support.
+    profile.verify.failed: >-
+      ## Verification Failed
+      
+      It doesn't seem like the linked profile belongs to you. Check that you linked the correct profile. If you think this is a mistake, please contact support.
 
-  profile.link.failed: >-
-    ## Profile Link Failed
+    profile.link.failed: >-
+      ## Profile Link Failed
+      
+      Could not link the given profile to your account. Make sure you don't already have a another profile linked to your account!
+
+  success.revoke: |-
+    ## Authorization Revoked
     
-    Could not link the given profile to your account. Make sure you don't already have a another profile linked to your account!
+    Your discord authorization was successfully revoked. To be able to claim linked roles, you will have to authorize again.
+    
+    **TIP:** You can check your current authorization status by using `/link` in your DM's with the bot, or any server where it is installed.
 
 menu.link:
   link:
@@ -44,13 +52,15 @@ menu.link:
       
       **$url**
       
-      You can unauthorize the bot at any time, either in your discord settings or using the button in `/link` menu.
-
-      **NOTE:** If you unauthorize the bot in your discord settings, it may take a while for the bot to notice. While discord will immediately revoke all grated permissions, the menu might still show your account as authorized for a few minutes.
+      You can unauthorize the bot at any time using the button in `/link` menu.
 
   remove_auth:
     label: Revoke
-    title: Revoke Discord Authentication
+    title: Revoke Discord Authorization
+    note.content: |-
+      **NOTE:** If you have the app installed to your user, revoking the Discord authorization will also uninstall the application from your user apps. If you want to continue using it on servers where the bot isn't installed, you'll have to re-authenticate the user app.
+      If you don't have to application installed to your user, you can ignore this note.
+
     inputs.confirm:
       label: Confirm Revoke
       description: All stored credentials will be removed. You can authenticate the bot again later anytime you want!
