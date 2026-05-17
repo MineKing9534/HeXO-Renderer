@@ -93,13 +93,18 @@ class LinkedRolesUpdateService(
     private suspend fun updateLinkedRoleData(profile: Profile, tokens: OAuth2Tokens) {
         logger.info { "Updating linked role data for (discord=${tokens.id.value},hexo=${profile.id.value})" }
 
-        discordUserAuthenticationRepository.discordOAuth2Client.updateLinkedRoleData(
-            user = tokens,
-            values = arrayOf(
-                RankKey.bindValue(profile.statistics.worldRank),
-                EloKey.bindValue(profile.statistics.elo),
-            ),
-        )
+        @Suppress("TooGenericExceptionCaught")
+        try {
+            discordUserAuthenticationRepository.discordOAuth2Client.updateLinkedRoleData(
+                user = tokens,
+                values = arrayOf(
+                    RankKey.bindValue(profile.statistics.worldRank),
+                    EloKey.bindValue(profile.statistics.elo),
+                ),
+            )
+        } catch (e: Exception) {
+            logger.error(e) { "Exception while updating linked role data update" }
+        }
     }
 }
 

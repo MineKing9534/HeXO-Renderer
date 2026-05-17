@@ -18,7 +18,6 @@ import io.ktor.server.response.respondResource
 import io.ktor.server.routing.RoutingContext
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
-import io.ktor.server.util.getOrFail
 import java.security.SecureRandom
 import kotlin.time.Duration.Companion.minutes
 
@@ -69,8 +68,13 @@ class HttpServer(
     }
 
     private suspend fun RoutingContext.handleOAuth2Callback() {
-        val code = call.queryParameters.getOrFail("code")
-        val state = call.queryParameters.getOrFail("state")
+        val code = call.queryParameters["code"]
+        val state = call.queryParameters["state"]
+
+        if (code == null || state == null) {
+            call.respondResource("response/oauth2/failed.html")
+            return
+        }
 
         if (!stateManager.verifyState(state)) {
             call.respond(HttpStatusCode.Unauthorized, "Invalid State")

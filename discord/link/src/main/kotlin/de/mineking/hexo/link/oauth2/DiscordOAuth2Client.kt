@@ -12,6 +12,7 @@ import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.URLBuilder
 import io.ktor.http.contentType
@@ -116,10 +117,14 @@ class DiscordOAuth2Client(
         @Serializable
         data class Request(val metadata: Map<String, String>)
 
-        client.put("$BASE_URL/users/@me/applications/$clientId/role-connection") {
+        val response = client.put("$BASE_URL/users/@me/applications/$clientId/role-connection") {
             val request = Request(values.associate { it.key.key to it.value.toString() })
             setBody(request)
             bearerAuth(user.data.accessToken)
+        }
+
+        if (!response.status.isSuccess()) {
+            error(response.bodyAsText())
         }
     }
 }
