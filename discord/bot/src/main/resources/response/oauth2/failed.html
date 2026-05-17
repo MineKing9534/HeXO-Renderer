@@ -1,29 +1,31 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HeXO: Authorization Failed</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>HeXO: Authorization Failed</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100 antialiased">
-  <main class="min-h-screen grid place-items-center px-4">
+<main class="min-h-screen grid place-items-center px-4">
     <section class="w-full max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-black/50">
-      <div class="h-1.5 bg-gradient-to-r from-rose-400 to-red-500"></div>
-      <div class="p-8">
-        <div class="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/15 ring-1 ring-rose-400/30">
-          <svg class="h-6 w-6 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m18 6-12 12"></path>
-            <path d="m6 6 12 12"></path>
-          </svg>
+        <div class="h-1.5 bg-gradient-to-r from-rose-400 to-red-500"></div>
+        <div class="p-8">
+            <div class="flex flex-row gap-4 mb-8 items-center">
+                <div class="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/15 ring-1 ring-rose-400/30">
+                    <svg class="h-6 w-6 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m18 6-12 12"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-semibold tracking-tight">Authorization Failed</h1>
+            </div>
+            <p class="mt-3 text-sm leading-6 text-slate-300">
+                We could not complete your Discord authorization. Please retry from the bot and make sure you finish the flow in one go.
+            </p>
+            <p class="mt-6 text-xs text-slate-500">HeXO Account Linking</p>
         </div>
-        <h1 class="text-2xl font-semibold tracking-tight">Authorization Failed</h1>
-        <p class="mt-3 text-sm leading-6 text-slate-300">
-          We could not complete your Discord authorization. Please retry from the bot and make sure you finish the flow in one go.
-        </p>
-        <p class="mt-6 text-xs text-slate-500">HeXO Account Linking</p>
-      </div>
     </section>
-  </main>
+</main>
 </body>
 </html>
