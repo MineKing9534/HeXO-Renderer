@@ -1,5 +1,7 @@
 package de.mineking.hexo.bot
 
+import com.github.benmanes.caffeine.cache.Caffeine
+import com.sksamuel.aedile.core.expireAfterWrite
 import de.mineking.hexo.bot.utils.LinkedRolesUpdateService
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
 import de.mineking.hexo.link.oauth2.Scope
@@ -17,11 +19,7 @@ import io.ktor.server.routing.RoutingContext
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.util.getOrFail
-import java.util.Base64
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
-import kotlin.random.Random
-import kotlin.time.Clock
+import java.security.SecureRandom
 import kotlin.time.Duration.Companion.minutes
 
 class HttpServer(
@@ -29,7 +27,7 @@ class HttpServer(
     private val linkedRolesUpdateService: LinkedRolesUpdateService?,
     port: Int,
 ) {
-    private val signer = OAuth2Signer(Random.nextBytes(32))
+    private val stateManager = StateManager()
     private val logger = KotlinLogging.logger {}
 
     private val server = embeddedServer(Netty, port = port) {
@@ -51,7 +49,7 @@ class HttpServer(
             get("/linked-roles") {
                 val url = discordUserAuthenticationRepository.discordOAuth2Client.generateAuthorizationUrl(
                     scopes = arrayOf(Scope.Identify, Scope.RoleConnectionsWrite),
-                    state = signer.generateState(),
+                    state = stateManager.getState(),
                 )
                 call.respondRedirect(url)
             }
@@ -74,7 +72,7 @@ class HttpServer(
         val code = call.queryParameters.getOrFail("code")
         val state = call.queryParameters.getOrFail("state")
 
-        if (!signer.verifyState(state)) {
+        if (!stateManager.verifyState(state)) {
             call.respond(HttpStatusCode.Unauthorized, "Invalid State")
             return
         }
@@ -90,32 +88,25 @@ class HttpServer(
     }
 }
 
-private class OAuth2Signer(secret: ByteArray) {
-    private val key = SecretKeySpec(secret, "HmacSHA256")
-    private val encoder = Base64.getUrlEncoder()
+private class StateManager {
+    private val random = SecureRandom()
 
-    fun generateState(): String {
-        val expiry = (Clock.System.now() + 10.minutes).epochSeconds
-        val nonce = encoder.encodeToString(Random.nextBytes(16))
-        val payload = "$expiry.$nonce"
-        val sign = payload.sign()
-        return "$payload.$sign"
+    private val cache = Caffeine.newBuilder()
+        .expireAfterWrite(5.minutes)
+        .build<String, Unit>()
+
+    fun getState(): String {
+        val bytes = ByteArray(16)
+        random.nextBytes(bytes)
+
+        val state = bytes.toHexString()
+        cache.put(state, Unit)
+        return state
     }
 
     fun verifyState(state: String): Boolean {
-        val parts = state.split(".")
-        if (parts.size != 3) return false
-
-        val (expiry, nonce, sign) = parts
-        val payload = "$expiry.$nonce"
-
-        if (payload.sign() != sign) return false
-        return Clock.System.now().epochSeconds <= expiry.toLong()
-    }
-
-    private fun String.sign(): String {
-        val mac = Mac.getInstance("HmacSHA256")
-        mac.init(key)
-        return encoder.encodeToString(mac.doFinal(toByteArray()))
+        val result = cache.getIfPresent(state) != null
+        cache.invalidate(state)
+        return result
     }
 }
