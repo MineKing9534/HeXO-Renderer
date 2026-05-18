@@ -9,7 +9,7 @@ menu.profile:
   stats.content: !<profile:Profile> |-
     **Member Since:** ${TimeFormat.DATE_SHORT.format(profile.registeredAt.toJavaInstant())}
     **Last Seen:** ${TimeFormat.RELATIVE.format(profile.lastActiveAt.toJavaInstant())}
-    **ELO:** ${profile.statistics.elo} (Highest ${profile.statistics.eloHistory.highestPoint.elo})
+    **ELO:** ${profile.statistics.elo}${ profile.statistics.eloHistory.highestPoint?.elo?.takeIf { it > profile.statistics.elo }?.let { " (Highest $it)" } ?: "" }
 
     ### :seedling: Overall Games
     ${menu_profile_stats_game(locale, profile.statistics.totalGames)}

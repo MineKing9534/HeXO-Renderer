@@ -118,7 +118,7 @@ class DiscordOAuth2Client(
         data class Request(val metadata: Map<String, String>)
 
         val response = client.put("$BASE_URL/users/@me/applications/$clientId/role-connection") {
-            val request = Request(values.associate { it.key.key to it.value.toString() })
+            val request = Request(values.filter { it.value != null }.associate { it.key.key to it.value.toString() })
             setBody(request)
             bearerAuth(user.data.accessToken)
         }

@@ -91,8 +91,10 @@ fun UIManager.profileMenu(
                             1 -> Emojis.FIRST_PLACE.formatted
                             2 -> Emojis.SECOND_PLACE.formatted
                             3 -> Emojis.THIRD_PLACE.formatted
+                            null -> "[:question:]"
                             else -> "[#${profile.statistics.worldRank}]"
                         }
+
                         append("$rank ")
                         append(linkedAccount?.asMention ?: profile.displayName)
 

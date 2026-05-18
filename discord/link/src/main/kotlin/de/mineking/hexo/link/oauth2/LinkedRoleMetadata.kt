@@ -27,8 +27,8 @@ sealed class LinkedRoleMetadataType<T : Any>(
 
 data class LinkedRoleMetadataKey<T : Any>(val key: String, val type: LinkedRoleMetadataType<T>)
 
-data class LinkedRoleMetadataValue<T : Any>(val key: LinkedRoleMetadataKey<T>, val value: T)
-fun <T : Any> LinkedRoleMetadataKey<T>.bindValue(value: T) = LinkedRoleMetadataValue(this, value)
+data class LinkedRoleMetadataValue<T : Any>(val key: LinkedRoleMetadataKey<T>, val value: T?)
+fun <T : Any> LinkedRoleMetadataKey<T>.bindValue(value: T?) = LinkedRoleMetadataValue(this, value)
 
 suspend inline fun <reified L : LocalizationFile> DiscordToolKit<*>.updateLinkedRoleMetadata(vararg data: LinkedRoleMetadataKey<*>) {
     val localization = localizationManager.read<L>()
