@@ -30,7 +30,6 @@ import kotlinx.serialization.json.Json
 annotation class InternalHexoApi
 
 private val logger = KotlinLogging.logger {}
-const val HEXO_WEBSITE = "https://hexo.did.science"
 
 private val json = Json {
     ignoreUnknownKeys = true
@@ -39,7 +38,7 @@ private val json = Json {
 
 class HexoApiClient(
     internal val coroutineScope: CoroutineScope = createCoroutineScope(logger),
-    private val host: String = HEXO_WEBSITE,
+    internal val host: String = "https://hexo.did.science",
     socketIOOptions: SocketIOOptions? = SocketIOOptions.createDefault(host),
     private val httpClient: HttpClient = createDefaultHttpClient(),
     internal val entityRequesterFactory: EntityRequesterFactory = EntityRequesterFactory.Debouncing(coroutineScope).logRequestErrors(),

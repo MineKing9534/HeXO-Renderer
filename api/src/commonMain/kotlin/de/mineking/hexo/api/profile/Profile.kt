@@ -1,6 +1,5 @@
 package de.mineking.hexo.api.profile
 
-import de.mineking.hexo.api.HEXO_WEBSITE
 import de.mineking.hexo.api.utils.Instant
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
@@ -11,14 +10,13 @@ value class ProfileId(val value: String)
 
 interface Profile {
     val id: ProfileId
+    val url: String
     val displayName: String
     val image: String?
     val registeredAt: Instant
     val lastActiveAt: Instant
 
     suspend fun retrieveStatistics(forceUpdate: Boolean = false): ProfileStatistics?
-
-    val url get() = "${HEXO_WEBSITE}/profile/${id.value}"
 }
 
 interface RichProfile : Profile {
@@ -30,6 +28,7 @@ internal class ProfileImpl(
     dto: ProfileDto,
 ) : Profile {
     override val id = dto.id
+    override val url = "${repository.client.host}/profiles/${id.value}"
     override val displayName = dto.username
     override val image = dto.image
     override val registeredAt = dto.registeredAt
