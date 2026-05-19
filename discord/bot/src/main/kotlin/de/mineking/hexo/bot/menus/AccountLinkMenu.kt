@@ -1,6 +1,5 @@
 package de.mineking.hexo.bot.menus
 
-import de.mineking.discord.localization.DEFAULT_LABEL
 import de.mineking.discord.localization.Locale
 import de.mineking.discord.localization.LocalizationFile
 import de.mineking.discord.localization.LocalizationParameter
@@ -15,8 +14,6 @@ import de.mineking.discord.ui.builder.components.message.separator
 import de.mineking.discord.ui.builder.components.modal.requiredCheckbox
 import de.mineking.discord.ui.builder.components.modal.textInput
 import de.mineking.discord.ui.builder.components.modal.withLocalizedLabel
-import de.mineking.discord.ui.createSharedLayoutComponent
-import de.mineking.discord.ui.currentLocalizationConfig
 import de.mineking.discord.ui.localizeForUser
 import de.mineking.discord.ui.message.MessageMenuConfig
 import de.mineking.discord.ui.modal.createModalComponent
@@ -32,6 +29,7 @@ import de.mineking.hexo.bot.CustomEmoji
 import de.mineking.hexo.bot.main
 import de.mineking.hexo.bot.userId
 import de.mineking.hexo.bot.utils.MessageColor
+import de.mineking.hexo.bot.utils.bindLocalizationParameter
 import de.mineking.hexo.bot.utils.respond
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
@@ -39,7 +37,6 @@ import dev.freya02.jda.emojis.unicode.Emojis
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import net.dv8tion.jda.api.components.separator.Separator
-import net.dv8tion.jda.api.components.textdisplay.TextDisplay
 import net.dv8tion.jda.api.interactions.DiscordLocale
 import net.dv8tion.jda.api.interactions.Interaction
 import net.dv8tion.jda.api.interactions.callbacks.IModalCallback
@@ -151,14 +148,8 @@ private fun MessageMenuConfig<out Interaction, *>.authModalButton() = modalButto
     color = ButtonColor.GREEN,
     emoji = Emojis.LOCK,
     component = createModalComponent {
-        // We cannot normally configure the localization in modalButton menus (the modalButton function doesn't expose an API for that)
-        // Therefore, we reimplement the localizedTextDisplay here and bind the parameter in there
-        +createSharedLayoutComponent { config, _ ->
-            config.currentLocalizationConfig!!.apply {
-                bindParameter("url", config.menu.manager.main.linkedRolesUrl)
-            }
-            TextDisplay.of(config.menu.manager.localization.readLocalizedString(config, null, "description", DEFAULT_LABEL, "content")!!)
-        }
+        bindLocalizationParameter("url") { this@authModalButton.menu.manager.main.linkedRolesUrl }
+        +localizedTextDisplay("description")
 
         produce {}
     },
