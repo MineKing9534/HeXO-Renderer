@@ -68,7 +68,7 @@ menu.link:
 
 
   title.content: '# :link: HeXO Link Status'
-  link_status.content: !<profile:Profile?> >-
+  link_status.content: !<profile:RichProfile?> >-
     **Link status:** ${
         profile?.let {
             "[${it.displayName}](${it.url})"

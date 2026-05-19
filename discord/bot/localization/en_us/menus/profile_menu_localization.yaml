@@ -6,7 +6,7 @@ error:
 menu.profile:
   view.label: View in Browser
   reload.label: Reload
-  stats.content: !<profile:Profile> |-
+  stats.content: !<profile:RichProfile> |-
     **Member Since:** ${TimeFormat.DATE_SHORT.format(profile.registeredAt.toJavaInstant())}
     **Last Seen:** ${TimeFormat.RELATIVE.format(profile.lastActiveAt.toJavaInstant())}
     **ELO:** ${profile.statistics.elo}${ profile.statistics.eloHistory.highestPoint?.elo?.takeIf { it > profile.statistics.elo }?.let { " (Highest $it)" } ?: "" }

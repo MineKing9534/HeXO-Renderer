@@ -5,9 +5,9 @@ import de.mineking.discord.localization.LocalizationFile
 import de.mineking.hexo.api.createCoroutineScope
 import de.mineking.hexo.api.game.FinishedGameRepository
 import de.mineking.hexo.api.game.GameId
-import de.mineking.hexo.api.profile.Profile
 import de.mineking.hexo.api.profile.ProfileId
 import de.mineking.hexo.api.profile.ProfileRepository
+import de.mineking.hexo.api.profile.RichProfile
 import de.mineking.hexo.api.utils.awaitBothOrNull
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
@@ -90,7 +90,7 @@ class LinkedRolesUpdateService(
         }
     }
 
-    private suspend fun updateLinkedRoleData(profile: Profile, tokens: OAuth2Tokens) {
+    private suspend fun updateLinkedRoleData(profile: RichProfile, tokens: OAuth2Tokens) {
         logger.info { "Updating linked role data for (discord=${tokens.id.value},hexo=${profile.id.value})" }
 
         @Suppress("TooGenericExceptionCaught")

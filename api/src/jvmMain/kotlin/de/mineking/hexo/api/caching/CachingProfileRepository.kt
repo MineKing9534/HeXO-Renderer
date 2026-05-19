@@ -6,13 +6,24 @@ import com.sksamuel.aedile.core.expireAfterWrite
 import de.mineking.hexo.api.profile.Profile
 import de.mineking.hexo.api.profile.ProfileId
 import de.mineking.hexo.api.profile.ProfileRepository
+import de.mineking.hexo.api.profile.RichProfile
 import kotlin.time.Duration.Companion.minutes
 
 internal class CachingProfileRepository(val delegate: ProfileRepository, cacheSize: Long) : ProfileRepository {
     private val cache = Caffeine.newBuilder()
         .expireAfterWrite(3.minutes)
         .maximumSize(cacheSize)
-        .asCache<ProfileId, Profile>()
+        .asCache<ProfileId, RichProfile>()
 
-    override suspend fun getProfile(id: ProfileId) = cache.getOrNull(id) { delegate.getProfile(it) }
+    private val profileListCache = Caffeine.newBuilder()
+        .expireAfterWrite(10.minutes)
+        .maximumSize(cacheSize)
+        .asCache<String, List<Profile>>()
+
+    override suspend fun getProfile(id: ProfileId) = cache
+        .getOrNull(id) { delegate.getProfile(it) }
+
+    override suspend fun getProfilesByName(name: String) = profileListCache
+        .getOrNull(name) { delegate.getProfilesByName(it) }
+        ?: emptyList()
 }

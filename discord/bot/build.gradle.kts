@@ -51,7 +51,7 @@ discordLocalization {
     import("de.mineking.hexo.api.utils.TimeControl")
     import("de.mineking.hexo.api.game.FinishedGame")
     import("de.mineking.hexo.api.game.GameFinishReason")
-    import("de.mineking.hexo.api.profile.Profile")
+    import("de.mineking.hexo.api.profile.RichProfile")
 
     import("kotlin.time.toJavaInstant")
     import("net.dv8tion.jda.api.utils.TimeFormat")

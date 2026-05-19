@@ -3,33 +3,50 @@ package de.mineking.hexo.api.profile
 import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.utils.awaitBothOrNull
 import io.ktor.client.call.body
+import io.ktor.client.request.parameter
 import io.ktor.http.isSuccess
+import kotlinx.serialization.Serializable
 
 interface ProfileRepository {
-    suspend fun getProfile(id: ProfileId): Profile?
+    suspend fun getProfile(id: ProfileId): RichProfile?
+
+    suspend fun getProfilesByName(name: String): List<Profile>
 }
 
 internal class ProfileRepositoryImpl(private val client: HexoApiClient) : ProfileRepository {
-    private val requester = client.entityRequesterFactory.createEntityRequester<ProfileId, ProfileDto> {
-        val response = client.request("/profiles/${it.value}")
+    private val statisticsRequester = client.entityRequesterFactory.createEntityRequester<ProfileId, ProfileStatistics> { id ->
+        val response = client.request("/profiles/${id.value}/statistics")
 
         if (!response.status.isSuccess()) return@createEntityRequester null
-        response.body()
+        response.body<ProfileStatistics>()
     }
 
-    private val statisticsRequester = client.entityRequesterFactory.createEntityRequester<ProfileId, ProfileStatistics> {
-        val response = client.request("/profiles/${it.value}/statistics")
-
-        if (!response.status.isSuccess()) return@createEntityRequester null
-        response.body()
-    }
-
-    override suspend fun getProfile(id: ProfileId): Profile? {
+    private val requester = client.entityRequesterFactory.createEntityRequester<ProfileId, RichProfile> { id ->
         val (profile, statistics) = awaitBothOrNull(
-            first = { requester.fetch(id) },
-            second = { statisticsRequester.fetch(id) },
-        ) ?: return null
+            first = { client.request("/profiles/${id.value}").takeIf { it.status.isSuccess() }?.body<ProfileDto>() },
+            second = { getProfileStatistics(id) },
+        ) ?: return@createEntityRequester null
 
-        return Profile.of(profile, statistics)
+        RichProfileImpl(this@ProfileRepositoryImpl, profile, statistics)
     }
+
+    private val searchRequester = client.entityRequesterFactory.createEntityRequester<String, List<Profile>> { name ->
+        val response = client.request("/users/search") {
+            parameter("q", name)
+        }
+
+        @Serializable
+        data class Response(val users: List<ProfileDto>)
+
+        if (!response.status.isSuccess()) return@createEntityRequester null
+        response.body<Response>().users.map {
+            ProfileImpl(this@ProfileRepositoryImpl, it)
+        }
+    }
+
+    internal suspend fun getProfileStatistics(id: ProfileId) = statisticsRequester.fetch(id)
+
+    override suspend fun getProfile(id: ProfileId) = requester.fetch(id)
+
+    override suspend fun getProfilesByName(name: String) = searchRequester.fetch(name) ?: emptyList()
 }
