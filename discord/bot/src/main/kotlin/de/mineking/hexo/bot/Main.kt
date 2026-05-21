@@ -172,7 +172,7 @@ class HeXODiscordBot(
 
             +gameCommand(gameMenu)
             +leaderboardCommand(leaderboardMenu)
-            +profileCommand(profileMenu)
+            +profileCommand(accountLinkRepository, repositories.profiles, profileMenu)
 
             if (::accountLinkMenu.isInitialized) {
                 +accountLinkCommand(accountLinkMenu)
