@@ -12,19 +12,10 @@ enum class RectilinearNotationType(
     val rowSeparator: String,
 ) {
     Compact("", "/") {
-        private val regex = "\\.{2,}".toPattern()
+        private val regex = "\\.{2,}".toRegex()
 
-        override fun String.postprocess(): String {
-            val result = StringBuilder()
-            val matcher = regex.matcher(this)
-
-            while (matcher.find()) {
-                val value = matcher.group()
-                matcher.appendReplacement(result, if (value.length == 2) "-" else value.length.toString())
-            }
-            matcher.appendTail(result)
-
-            return result.toString()
+        override fun String.postprocess() = regex.replace(this) {
+            if (it.value.length == 2) "-" else it.value.length.toString()
         }
     },
     Multiline(" ", "\n"),
