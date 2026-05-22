@@ -6,7 +6,7 @@ import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.HighlightLine
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.parse.parseRectilinearStateBKETurnNotation
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class RectilinearStateBKETurnParserTest {

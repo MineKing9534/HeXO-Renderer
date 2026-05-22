@@ -1,7 +1,6 @@
 package de.mineking.hexo.board
 
 import de.mineking.hexo.core.CellOwner
-import java.util.Objects
 
 class Board {
     companion object {
@@ -39,8 +38,12 @@ class Board {
         cells[coordinate] = cell
     }
 
-    override fun hashCode() = Objects.hash(cells, highlightedLines)
     override fun equals(other: Any?) = other is Board && cells == other.cells && highlightedLines == other.highlightedLines
+    override fun hashCode(): Int {
+        var result = highlightedLines.hashCode()
+        result = 31 * result + cells.hashCode()
+        return result
+    }
 
     fun findWinningRows(): List<List<Pair<CellCoordinate, Cell>>> {
         val rows = mutableListOf<List<Pair<CellCoordinate, Cell>>>()
@@ -94,4 +97,18 @@ fun Board.merge(other: Board, overrideOwner: Boolean = false): Board {
         addHighlightLines(this@merge.highlightedLines)
         addHighlightLines(other.highlightedLines)
     }
+}
+
+@IgnorableReturnValue
+private fun <K, V> MutableMap<K, V>.merge(key: K, value: V, merge: (V, V) -> V?): V? {
+    val old = this[key]
+    val new = if (old == null) value else merge(old, value)
+
+    if (new == null) {
+        this -= key
+    } else {
+        this[key] = new
+    }
+
+    return new
 }

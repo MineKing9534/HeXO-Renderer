@@ -4,10 +4,6 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import com.sksamuel.aedile.core.asCache
 import de.mineking.hexo.board.Board
 
-interface BoardParser {
-    suspend fun parse(notation: String): Board
-}
-
 fun BoardParser.cached(cacheSize: Long = 4): BoardParser = when (this) {
     is CachingBoardParser -> this
     else -> CachingBoardParser(this, cacheSize)

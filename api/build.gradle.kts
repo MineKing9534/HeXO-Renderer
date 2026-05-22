@@ -14,10 +14,6 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-detekt {
-    source = files("src/commonMain/kotlin", "src/jsMain/kotlin", "src/jvmMain/kotlin")
-}
-
 dependencies {
     kspCommonMainMetadata(projects.api.processor)
 }
