@@ -13,6 +13,9 @@ interface ProfileRepository {
     suspend fun getProfilesByName(name: String): List<Profile>
 }
 
+suspend fun ProfileRepository.getProfileByName(name: String) = getProfilesByName(name)
+    .firstOrNull { it.displayName.equals(name, ignoreCase = true) }
+
 internal class ProfileRepositoryImpl(internal val client: HexoApiClient) : ProfileRepository {
     private val statisticsRequester = client.entityRequesterFactory.createEntityRequester<ProfileId, ProfileStatistics> { id ->
         val response = client.request("/profiles/${id.value}/statistics")

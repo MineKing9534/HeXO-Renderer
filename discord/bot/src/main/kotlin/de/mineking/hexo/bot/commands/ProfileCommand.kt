@@ -12,6 +12,7 @@ import de.mineking.discord.ui.message.MessageMenu
 import de.mineking.discord.ui.message.replyMenu
 import de.mineking.hexo.api.profile.ProfileId
 import de.mineking.hexo.api.profile.ProfileRepository
+import de.mineking.hexo.api.profile.getProfileByName
 import de.mineking.hexo.bot.menus.ProfileMenuParameter
 import de.mineking.hexo.bot.userId
 import de.mineking.hexo.bot.utils.finalErrorResponse
@@ -56,9 +57,7 @@ private fun OptionConfig.profileIdOption(
     val profileIdMatch = profileIdPattern.matchEntire(input)
     when {
         profileIdMatch != null -> ProfileId(profileIdMatch.groupValues[1])
-        else -> profileRepository.getProfilesByName(input)
-            .firstOrNull { it.displayName.equals(input, ignoreCase = true) }
-            ?.id
+        else -> profileRepository.getProfileByName(input)?.id
     }
 }
 

@@ -25,6 +25,7 @@ import de.mineking.discord.ui.terminateRender
 import de.mineking.discord.utils.await
 import de.mineking.hexo.api.profile.ProfileId
 import de.mineking.hexo.api.profile.ProfileRepository
+import de.mineking.hexo.api.profile.getProfileByName
 import de.mineking.hexo.bot.CustomEmoji
 import de.mineking.hexo.bot.main
 import de.mineking.hexo.bot.userId
@@ -98,7 +99,7 @@ fun UIManager.accountLinkMenu(
     }
 }
 
-private fun MessageMenuConfig<*, *>.linkModalButton(
+private fun MessageMenuConfig<out Interaction, *>.linkModalButton(
     profileRepository: ProfileRepository,
     linkRepository: AccountLinkRepository,
     localization: AccountLinkMenuLocalization,
@@ -108,7 +109,10 @@ private fun MessageMenuConfig<*, *>.linkModalButton(
     emoji = menu.manager.main.emojiManager[CustomEmoji.Link],
     component = createModalComponent {
         +localizedTextDisplay("explanation")
-        val profileUrl by +textInput("url").withLocalizedLabel()
+
+        val event = this@linkModalButton.parameter({ null }, { it }, { event })
+        val candidate = event?.user?.name?.let { profileRepository.getProfileByName(it) }
+        val profileUrl by +textInput("url", value = candidate?.url).withLocalizedLabel()
 
         produce { profileUrl }
     },
