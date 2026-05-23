@@ -31,7 +31,7 @@ fun profileCommand(
     integrationTypes(IntegrationType.ALL)
     interactionContextTypes(InteractionContextType.ALL)
 
-    val id = profileIdOption(accountLinkRepository, profileRepository, "id")
+    val id = profileIdOption(accountLinkRepository, profileRepository, "name")
 
     execute {
         val id = id() ?: finalErrorResponse(localization.responseErrorNotFoundGeneric(userLocale))
