@@ -28,7 +28,7 @@ internal class ProfileImpl(
     dto: ProfileDto,
 ) : Profile {
     override val id = dto.id
-    override val url = "${repository.client.host}/profiles/${id.value}"
+    override val url = "${repository.client.host}/profile/${id.value}"
     override val displayName = dto.username
     override val image = dto.image
     override val registeredAt = dto.registeredAt
