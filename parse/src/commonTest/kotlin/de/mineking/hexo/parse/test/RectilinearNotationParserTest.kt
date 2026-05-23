@@ -3,6 +3,7 @@ package de.mineking.hexo.parse.test
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.Direction
+import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.HighlightLine
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.parse.parseRectilinearNotation
@@ -127,7 +128,7 @@ class RectilinearNotationParserTest {
 
     @Test
     fun `parse with label on empty row`() {
-        val e = assertFailsWith<IllegalArgumentException> {
+        val e = assertFailsWith<HexoNotationException> {
             val _ = " x/[a]".parseRectilinearNotation()
         }
 
@@ -136,7 +137,7 @@ class RectilinearNotationParserTest {
 
     @Test
     fun `parse with unterminated label at eof`() {
-        val e = assertFailsWith<IllegalArgumentException> {
+        val e = assertFailsWith<HexoNotationException> {
             val _ = "x.[ab".parseRectilinearNotation()
         }
         assertEquals("Unterminated symbol at end of input", e.message)

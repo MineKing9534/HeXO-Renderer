@@ -81,7 +81,7 @@ fun Board.merge(other: Board, overrideOwner: Boolean = false): Board {
     val cells = cells.toMutableMap()
     other.cells.forEach { (coordinate, cell) ->
         cells.merge(coordinate, cell) { old, new ->
-            require(overrideOwner || old.owner == null || new.owner == null) {
+            requireHexo(overrideOwner || old.owner == null || new.owner == null) {
                 "At $coordinate: Owner override is disabled but both cells have an owner defined"
             }
             Cell(

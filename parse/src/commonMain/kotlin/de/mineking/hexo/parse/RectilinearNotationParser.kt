@@ -4,8 +4,10 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.Direction
+import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.minus
 import de.mineking.hexo.board.plus
+import de.mineking.hexo.board.requireHexo
 import de.mineking.hexo.board.times
 import de.mineking.hexo.core.CellOwner
 
@@ -24,8 +26,8 @@ fun String.parseRectilinearNotation(): Board {
         state = state.handleChar(ch, offset, cursor, buffer)
     }
 
-    require(buffer.isEmpty()) { "Unterminated symbol at end of input" }
-    require(board.cells.values.any { it.owner != null }) { "Cannot parse an empty board" }
+    requireHexo(buffer.isEmpty()) { "Unterminated symbol at end of input" }
+    requireHexo(board.cells.values.any { it.owner != null }) { "Cannot parse an empty board" }
     return board
 }
 
@@ -55,7 +57,7 @@ private enum class ParserState {
                 'o', 'O' -> configureCurrent { owner = CellOwner.O }
                 '.', '!' -> {}
                 '-' -> step()
-                else -> throw IllegalArgumentException("Unexpected character `$ch` at offset $offset")
+                else -> throw HexoNotationException("Unexpected character `$ch` at offset $offset")
             }
 
             if (ch.isUpperCase() || ch == '!') {
@@ -81,7 +83,7 @@ private enum class ParserState {
     Label {
         override fun handleChar(ch: Char, offset: Int, cursor: Cursor, buffer: StringBuilder): ParserState {
             if (ch == ']') {
-                require(buffer.length <= 3) { "Labels can be at most 3 characters long!" }
+                requireHexo(buffer.length <= 3) { "Labels can be at most 3 characters long!" }
                 cursor.configurePrevious { label = buffer.toString() }
                 buffer.clear()
 
@@ -109,7 +111,7 @@ private enum class ParserState {
 
         private fun Cursor.highlightLine(notation: String) {
             val match = pattern.matchEntire(notation)
-            require(match != null) { "Invalid line highlight notation, use `[b,d,p,q,<,>]<length>?[x,o]?`" }
+            requireHexo(match != null) { "Invalid line highlight notation, use `[b,d,p,q,<,>]<length>?[x,o]?`" }
 
             val direction = Direction.fromSymbol(match.groupValues[1])
             val length = match.groupValues[2].takeIf { it.isNotEmpty() }?.toInt() ?: 6
@@ -143,7 +145,7 @@ private class Cursor(private val board: Board) {
     }
 
     fun configurePrevious(block: Cell.() -> Unit) {
-        require(position.q >= 1) { "This operations requires a cell in the current row!" }
+        requireHexo(position.q >= 1) { "This operations requires a cell in the current row!" }
         board[position - STEP_DIRECTION].block()
     }
 

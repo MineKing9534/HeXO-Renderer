@@ -1,6 +1,7 @@
 package de.mineking.hexo.parse
 
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.merge
 
 object RectilinearStateBKETurnNotationParser : BoardParser {
@@ -17,7 +18,7 @@ fun String.parseRectilinearStateBKETurnNotation(): Board {
 
         val originalState = rectilinear.parseRectilinearNotation()
         val additionalMoves = bke.parseBKENotationOrNull(implicitOrigin = false)
-            ?: throw IllegalArgumentException("Invalid BKE notation format, use `[b,d,p,q,<,>][CW,CCW]? ...`")
+            ?: throw HexoNotationException("Invalid BKE notation format, use `[b,d,p,q,<,>][CW,CCW]? ...`")
 
         originalState.merge(additionalMoves)
     }

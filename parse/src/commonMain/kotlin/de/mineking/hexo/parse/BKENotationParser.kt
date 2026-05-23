@@ -3,7 +3,9 @@ package de.mineking.hexo.parse
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.Direction
+import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.plus
+import de.mineking.hexo.board.requireHexo
 import de.mineking.hexo.board.times
 import de.mineking.hexo.core.CellOwner
 
@@ -22,13 +24,13 @@ enum class Chirality(val symbol: String) {
 
     companion object {
         fun fromSymbol(symbol: String) = entries.firstOrNull { it.symbol == symbol }
-            ?: throw IllegalArgumentException("Unknown symbol: $symbol. Valid symbols are ${entries.joinToString { "`${it.symbol}`" }}")
+            ?: throw HexoNotationException("Unknown symbol: $symbol. Valid symbols are ${entries.joinToString { "`${it.symbol}`" }}")
     }
 }
 
 object BKENotationParser : BoardParser {
     override suspend fun parse(notation: String) = notation.parseBKENotationOrNull(implicitOrigin = true)
-        ?: throw IllegalArgumentException("Invalid BKE notation")
+        ?: throw HexoNotationException("Invalid BKE notation")
 }
 
 fun String.parseBKENotation(
@@ -71,7 +73,7 @@ fun String.parseBKENotationOrNull(implicitOrigin: Boolean): Board? {
     val zeroOffsetLine = if (zeroOffsetLineSymbol.isNotEmpty()) Direction.fromSymbol(zeroOffsetLineSymbol) else Direction.TopRight
     val chirality = if (chiralitySymbol.isNotEmpty()) Chirality.fromSymbol(chiralitySymbol) else Chirality.Clockwise
     val origin = if (implicitOrigin) {
-        require(originR.isEmpty()) { "Origin cannot be specified in BKE with implicit origin" }
+        requireHexo(originR.isEmpty()) { "Origin cannot be specified in BKE with implicit origin" }
         null
     } else {
         if (originR.isNotEmpty()) CellCoordinate(originQ.toInt(), originR.toInt()) else CellCoordinate.Zero
@@ -95,7 +97,7 @@ private data class Turn(
 
 private fun String.parseBKETurns(): List<Turn> {
     val parts = trim().split(Regex("\\s+"))
-    require(parts.isNotEmpty() && parts.size % 3 == 0) {
+    requireHexo(parts.isNotEmpty() && parts.size % 3 == 0) {
         "BKE turns have to be space separated blocks of the format `[x|o] [A-Z]<offset> [A-Z]<offset>`"
     }
 
@@ -113,24 +115,26 @@ private fun String.parseBKETurns(): List<Turn> {
 private fun String.parsePlayer() = when (this) {
     "o" -> CellOwner.O
     "x" -> CellOwner.X
-    else -> throw IllegalArgumentException("Invalid player `$this`")
+    else -> throw HexoNotationException("Invalid player `$this`")
 }
 
 private fun String.parseRingOffset(): RingOffset {
-    require(length >= 2) { "Invalid bke move `$this`, has to be in format `[A-Z]<offset>`" }
-    val ring = first().also { require(it in 'A'..'Z') } - 'A' + 1
+    requireHexo(length >= 2) { "Invalid bke move `$this`, has to be in format `[A-Z]<offset>`" }
+    val ring = first().also {
+        requireHexo(it in 'A'..'Z') { "Invalid ring `$it`" }
+    } - 'A' + 1
 
     val offset = drop(1).let {
         val parts = it.split(".")
         if (parts.size == 1) {
             it.toInt()
         } else {
-            require(parts.size == 2) { "Invalid bke move `$this`, has to be in format `[A-Z]<offset>`" }
+            requireHexo(parts.size == 2) { "Invalid bke move `$this`, has to be in format `[A-Z]<offset>`" }
             val (sector, offset) = parts
             sector.toInt() * ring + offset.toInt()
         }
     }
-    require(offset >= 0 && offset < 6 * ring) { "Invalid offset $offset for ring $ring. Offset has to be be in 0..<${6 * ring}" }
+    requireHexo(offset >= 0 && offset < 6 * ring) { "Invalid offset $offset for ring $ring. Offset has to be be in 0..<${6 * ring}" }
 
     return RingOffset(ring, offset)
 }
