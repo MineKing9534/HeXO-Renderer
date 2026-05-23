@@ -13,6 +13,7 @@ import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.sqrt
 
+@IgnorableReturnValue
 fun <R : RenderingContext> Board.render(
     layoutRadius: Double,
     focusWinningRows: Boolean = true,

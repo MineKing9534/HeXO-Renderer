@@ -1,6 +1,7 @@
 package de.mineking.hexo.render.image
 
 import de.mineking.hexo.board.Board
+import java.awt.AlphaComposite
 import java.awt.BasicStroke
 import java.awt.Font
 import java.awt.Graphics2D
@@ -49,28 +50,24 @@ fun Board.renderToImage(
 class AwtRenderingContext(private val graphics: Graphics2D) : RenderingContext {
     companion object {
         private val BOLD_FONT = Font.createFont(Font.TRUETYPE_FONT, javaClass.getResourceAsStream("/fonts/open-sans.extrabold.ttf"))
+        const val TEXT_MARGIN_ALPHA = 0.2f
     }
 
     private val clip = Area(Rectangle(Int.MIN_VALUE / 2, Int.MIN_VALUE / 2, Int.MAX_VALUE, Int.MAX_VALUE))
+    private val textMargins = Area()
 
     override fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke?) {
         val segment = Line2D.Double(from.x, from.y, to.x, to.y)
 
-        val innerStroke = BasicStroke(stroke.width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND).createStrokedShape(segment)
-        val inner = Area(innerStroke).apply { intersect(clip) }
-
-        graphics.color = stroke.color.awt
-        graphics.fill(inner)
+        val inner = segment.stroke(stroke.width)
+        drawLinePart(inner, stroke.color)
 
         if (outline != null) {
-            val outerStroke = BasicStroke(stroke.width + outline.width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND).createStrokedShape(segment)
-            val ring = Area(outerStroke).apply {
+            val ring = segment.stroke(stroke.width + outline.width).apply {
                 subtract(inner)
-                intersect(clip)
             }
 
-            graphics.color = outline.color.awt
-            graphics.fill(ring)
+            drawLinePart(ring, outline.color)
         }
     }
 
@@ -101,13 +98,34 @@ class AwtRenderingContext(private val graphics: Graphics2D) : RenderingContext {
         val margin = BasicStroke(fontSize / 6, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND).createStrokedShape(shape)
 
         clip.subtract(Area(shape))
-        clip.subtract(Area(margin))
+        textMargins.add(Area(margin).apply {
+            subtract(Area(shape))
+        })
 
         if (color != null) {
             graphics.color = color.awt
             graphics.fill(shape)
         }
     }
+
+    private fun drawLinePart(shape: Area, color: Color) {
+        val visible = Area(shape).apply { intersect(clip) }
+        val margin = Area(visible).apply { intersect(textMargins) }
+        visible.subtract(margin)
+
+        graphics.color = color.awt
+        graphics.fill(visible)
+
+        val composite = graphics.composite
+        graphics.composite = AlphaComposite.SrcOver.derive(TEXT_MARGIN_ALPHA)
+
+        graphics.fill(margin)
+        graphics.composite = composite
+    }
+
+    private fun Line2D.Double.stroke(width: Float) = Area(
+        BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND).createStrokedShape(this),
+    )
 
     private fun Polygon.toShape(): Shape {
         val path = Path2D.Double()
