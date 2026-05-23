@@ -4,7 +4,7 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.core.CellOwner
-import de.mineking.hexo.render.renderToImage
+import de.mineking.hexo.render.image.renderToImage
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 import kotlin.test.Test
