@@ -7,6 +7,7 @@ import de.mineking.discord.commands.map
 import de.mineking.discord.commands.nullableStringOption
 import de.mineking.discord.localization.Locale
 import de.mineking.discord.localization.LocalizationFile
+import de.mineking.discord.localization.LocalizationParameter
 import de.mineking.discord.localization.Localize
 import de.mineking.discord.ui.message.MessageMenu
 import de.mineking.discord.ui.message.replyMenu
@@ -17,6 +18,7 @@ import de.mineking.hexo.bot.menus.ProfileMenuParameter
 import de.mineking.hexo.bot.userId
 import de.mineking.hexo.bot.utils.finalErrorResponse
 import de.mineking.hexo.link.AccountLinkRepository
+import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.interactions.DiscordLocale
 import net.dv8tion.jda.api.interactions.IntegrationType
 import net.dv8tion.jda.api.interactions.InteractionContextType
@@ -32,7 +34,7 @@ fun profileCommand(
     val id = profileIdOption(accountLinkRepository, profileRepository, "id")
 
     execute {
-        val id = id() ?: finalErrorResponse(localization.responseErrorNotFound(userLocale))
+        val id = id() ?: finalErrorResponse(localization.responseErrorNotFoundGeneric(userLocale))
 
         deferReply().queue()
         replyMenu(profileMenu, ProfileMenuParameter(event, id)).queue()
@@ -63,5 +65,8 @@ private fun OptionConfig.profileIdOption(
 
 interface ProfileCommandLocalization : LocalizationFile {
     @Localize
-    fun responseErrorNotFound(@Locale locale: DiscordLocale): String
+    fun responseErrorNotFoundGeneric(@Locale locale: DiscordLocale): String
+
+    @Localize
+    fun responseErrorNotFoundUser(@Locale locale: DiscordLocale, @LocalizationParameter user: User): String
 }

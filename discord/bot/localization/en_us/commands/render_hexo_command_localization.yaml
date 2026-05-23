@@ -1,7 +1,9 @@
-command.hexo:
-  description: Renders the given Rectilinear HeXO notation
-  options:
-    input.description: The Rectilinear HeXO notation to render
+command:
+  renderMessage.description: Render HeXO notation in message
+  hexo:
+    description: Renders the given Rectilinear HeXO notation
+    options:
+      input.description: The Rectilinear HeXO notation to render
 
 response.error: |-
   ## Failed to parse the given input

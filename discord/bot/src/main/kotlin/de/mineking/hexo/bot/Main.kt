@@ -16,7 +16,8 @@ import de.mineking.hexo.bot.commands.accountLinkCommand
 import de.mineking.hexo.bot.commands.gameCommand
 import de.mineking.hexo.bot.commands.leaderboardCommand
 import de.mineking.hexo.bot.commands.profileCommand
-import de.mineking.hexo.bot.commands.renderHexoContextCommand
+import de.mineking.hexo.bot.commands.profileUserCommand
+import de.mineking.hexo.bot.commands.renderHexoMessageCommand
 import de.mineking.hexo.bot.commands.renderHexoSlashCommand
 import de.mineking.hexo.bot.menus.GameMenuParameter
 import de.mineking.hexo.bot.menus.ProfileMenuParameter
@@ -167,12 +168,16 @@ class HeXODiscordBot(
             localize()
             installErrorHandling()
 
-            +renderHexoContextCommand()
+            +renderHexoMessageCommand()
             +renderHexoSlashCommand()
 
             +gameCommand(gameMenu)
             +leaderboardCommand(leaderboardMenu)
+
             +profileCommand(accountLinkRepository, repositories.profiles, profileMenu)
+            if (accountLinkRepository != null) {
+                +profileUserCommand(accountLinkRepository, profileMenu)
+            }
 
             if (::accountLinkMenu.isInitialized) {
                 +accountLinkCommand(accountLinkMenu)

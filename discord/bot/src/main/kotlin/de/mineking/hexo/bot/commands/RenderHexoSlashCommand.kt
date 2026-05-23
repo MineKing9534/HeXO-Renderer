@@ -36,7 +36,7 @@ fun renderHexoSlashCommand(): SlashCommand = { parent ->
 }
 
 context(main: HeXODiscordBot)
-private fun UIManager.renderHexoModal() = registerLocalizedModal<Interaction, RenderHexoSlashCommandLocalization>("hexo") {
+private fun UIManager.renderHexoModal() = registerLocalizedModal<Interaction, RenderHexoCommandLocalization>("hexo") {
     render {
         val interaction = parameter({ error("") }, { it }, { this })
         localize(interaction.userLocale)
@@ -52,7 +52,7 @@ private fun UIManager.renderHexoModal() = registerLocalizedModal<Interaction, Re
 context(main: HeXODiscordBot)
 private fun renderHexoCommandImpl(
     modal: ModalMenu<Interaction, *>,
-) = localizedSlashCommand<RenderHexoSlashCommandLocalization>("hexo") { localization ->
+) = localizedSlashCommand<RenderHexoCommandLocalization>("hexo") { localization ->
     integrationTypes(IntegrationType.ALL)
     interactionContextTypes(InteractionContextType.ALL)
 
@@ -80,7 +80,7 @@ private fun renderHexoCommandImpl(
     }
 }
 
-interface RenderHexoSlashCommandLocalization : LocalizationFile {
+interface RenderHexoCommandLocalization : LocalizationFile {
     @Localize
     fun responseError(@Locale locale: DiscordLocale, @LocalizationParameter input: String, @LocalizationParameter message: String?): String
 }
