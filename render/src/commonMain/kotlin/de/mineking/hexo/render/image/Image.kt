@@ -5,11 +5,11 @@ import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.HighlightLine
 import de.mineking.hexo.board.end
-import kotlin.math.ceil
+import kotlin.math.abs
 import kotlin.math.cos
-import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 
@@ -21,7 +21,8 @@ fun <R : RenderingContext> Board.render(
     renderingContext: (BoundingBox) -> R,
 ): R {
     val size = RenderSize(layoutRadius)
-    val boundingBox = findBoundingBox(size)
+    val visibleCoordinates = findVisibleCoordinates()
+    val boundingBox = findBoundingBox(size, visibleCoordinates)
     val renderingContext = renderingContext(boundingBox)
     val renderer = InternalBoardRenderer(
         renderingContext,
@@ -38,7 +39,7 @@ fun <R : RenderingContext> Board.render(
                 emptyList()
             }
 
-        for (position in boundingBox.findVisibleCoordinates(size)) {
+        for (position in visibleCoordinates) {
             val cell = cells[position]?.let { it.copy(focussed = it.focussed || position in winningCells) } ?: Cell()
             renderer.drawCell(position, cell)
         }
@@ -58,32 +59,73 @@ data class BoundingBox(
     val maxY: Double,
 )
 
-private fun BoundingBox.findVisibleCoordinates(size: RenderSize) = sequence {
-    val horizontalStep = size.layoutRadius * RenderSize.sqrt3
-    val verticalStep = size.layoutRadius * 1.5
+data class BoardRenderLayout(
+    val layoutRadius: Double,
+    val boundingBox: BoundingBox,
+) {
+    fun toCoordinate(point: Point): CellCoordinate {
+        val x = point.x + boundingBox.minX
+        val y = point.y + boundingBox.minY
+        val r = y / (layoutRadius * 1.5)
+        val q = x / (layoutRadius * RenderSize.sqrt3) - r / 2.0
 
-    val minR = floor(minY / verticalStep).toInt() - 1
-    val maxR = ceil(maxY / verticalStep).toInt() + 1
+        return roundAxial(q, r)
+    }
 
-    for (r in minR..maxR) {
-        val rOffset = r / 2.0
-        val minQ = floor(minX / horizontalStep - rOffset).toInt() - 1
-        val maxQ = ceil(maxX / horizontalStep - rOffset).toInt() + 1
+    private fun roundAxial(q: Double, r: Double): CellCoordinate {
+        var roundedQ = q.roundToInt()
+        val roundedS = (-q - r).roundToInt()
+        var roundedR = r.roundToInt()
 
-        for (q in minQ..maxQ) {
-            yield(CellCoordinate(q, r))
+        val qDiff = abs(roundedQ - q)
+        val sDiff = abs(roundedS - (-q - r))
+        val rDiff = abs(roundedR - r)
+
+        when {
+            qDiff > sDiff && qDiff > rDiff -> roundedQ = -roundedS - roundedR
+            rDiff > sDiff -> roundedR = -roundedQ - roundedS
+        }
+
+        return CellCoordinate(roundedQ, roundedR)
+    }
+}
+
+fun Board.createRenderLayout(layoutRadius: Double): BoardRenderLayout {
+    val size = RenderSize(layoutRadius)
+    return BoardRenderLayout(layoutRadius, findBoundingBox(size, findVisibleCoordinates()))
+}
+
+private const val VISIBLE_DISTANCE = 8
+
+private fun Board.findVisibleCoordinates(): Set<CellCoordinate> {
+    val occupied = cells
+        .filterValues { it.owner != null }
+        .keys
+        .ifEmpty { setOf(CellCoordinate.Zero) }
+
+    return buildSet {
+        for (origin in occupied) {
+            for (dq in -VISIBLE_DISTANCE + 1 until VISIBLE_DISTANCE) {
+                for (dr in -VISIBLE_DISTANCE + 1 until VISIBLE_DISTANCE) {
+                    val coordinate = CellCoordinate(origin.q + dq, origin.r + dr)
+                    if (origin.distanceTo(coordinate) < VISIBLE_DISTANCE) {
+                        add(coordinate)
+                    }
+                }
+            }
         }
     }
 }
 
-private fun Board.findBoundingBox(size: RenderSize): BoundingBox {
+private fun Board.findBoundingBox(size: RenderSize, visibleCoordinates: Set<CellCoordinate>): BoundingBox {
     var minX = Double.POSITIVE_INFINITY
     var maxX = Double.NEGATIVE_INFINITY
     var minY = Double.POSITIVE_INFINITY
     var maxY = Double.NEGATIVE_INFINITY
 
     val endPoints = highlightedLines.flatMap { listOf(it.start, it.end) }
-    for (position in cells.keys + endPoints) {
+    val positions = visibleCoordinates + cells.keys + endPoints
+    for (position in positions.ifEmpty { listOf(CellCoordinate.Zero) }) {
         val center = size.run { position.toPixel() }
         val hex = center.createHex(size.layoutRadius)
 
@@ -101,6 +143,11 @@ private fun Board.findBoundingBox(size: RenderSize): BoundingBox {
         minY = minY,
         maxY = maxY,
     )
+}
+
+private fun CellCoordinate.distanceTo(other: CellCoordinate): Int {
+    val ds = (q + r) - (other.q + other.r)
+    return maxOf(abs(q - other.q), abs(r - other.r), abs(ds))
 }
 
 private class RenderSize(val layoutRadius: Double) {

@@ -77,6 +77,11 @@ class Board {
     }
 }
 
+fun Board.clone() = Board().apply {
+    addHighlightLines(this@clone.highlightedLines)
+    addCells(this@clone.cells.mapValues { (_, cell) -> cell.copy() })
+}
+
 fun Board.merge(other: Board, overrideOwner: Boolean = false): Board {
     val cells = cells.toMutableMap()
     other.cells.forEach { (coordinate, cell) ->

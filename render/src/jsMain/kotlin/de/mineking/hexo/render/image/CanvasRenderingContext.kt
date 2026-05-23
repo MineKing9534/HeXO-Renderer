@@ -1,5 +1,6 @@
 package de.mineking.hexo.render.image
 
+import de.mineking.hexo.board.Board
 import kotlinx.browser.document
 import org.w3c.dom.ALPHABETIC
 import org.w3c.dom.BUTT
@@ -13,9 +14,36 @@ import org.w3c.dom.LEFT
 import org.w3c.dom.MITER
 import org.w3c.dom.ROUND
 
+fun interface CanvasFont {
+    fun getFont(size: Float): String
+}
+val DefaultCanvasFont = CanvasFont { "800 ${it}px system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif" }
+
+fun HTMLCanvasElement.drawBoard(
+    board: Board,
+    layoutRadius: Double,
+    padding: Int,
+    offsetX: Double = 0.0,
+    offsetY: Double = 0.0,
+    focusWinningRows: Boolean = true,
+    theme: Theme = BasicTheme.Default,
+    font: CanvasFont = DefaultCanvasFont,
+) {
+    board.render(layoutRadius, focusWinningRows, theme) {
+        val context = getContext("2d") as CanvasRenderingContext2D
+
+        context.setTransform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+        context.fillStyle = theme.backgroundColor.css
+        context.fillRect(0.0, 0.0, width.toDouble(), height.toDouble())
+        context.translate(padding.toDouble() + offsetX, padding.toDouble() + offsetY)
+
+        CanvasRenderingContext(context, font)
+    }
+}
+
 class CanvasRenderingContext(
     val canvas: CanvasRenderingContext2D,
-    val font: (Float) -> String = { "800 ${it}px \"Open Sans\", Arial, sans-serif" },
+    val font: CanvasFont = DefaultCanvasFont,
 ) : RenderingContext {
     private data class TextExclusion(
         val text: String,
@@ -72,7 +100,7 @@ class CanvasRenderingContext(
     }
 
     override fun drawString(point: Point, text: String, fontSize: Float, color: Color?) {
-        val font = font(fontSize)
+        val font = font.getFont(fontSize)
 
         canvas.font = font
         canvas.textAlign = CanvasTextAlign.LEFT
