@@ -1,6 +1,5 @@
 package de.mineking.hexo.render.image
 
-import de.mineking.hexo.board.Board
 import kotlinx.browser.document
 import org.w3c.dom.ALPHABETIC
 import org.w3c.dom.BUTT
@@ -20,24 +19,21 @@ fun interface CanvasFont {
 val DefaultCanvasFont = CanvasFont { "800 ${it}px system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif" }
 
 fun HTMLCanvasElement.drawBoard(
-    board: Board,
-    layoutRadius: Double,
+    layout: BoardRenderLayout,
     padding: Int,
     offset: Point = Point.Zero,
     focusWinningRows: Boolean = true,
     theme: Theme = BasicTheme.Default,
     font: CanvasFont = DefaultCanvasFont,
 ) {
-    board.render(layoutRadius, focusWinningRows, theme) {
-        val context = getContext("2d") as CanvasRenderingContext2D
+    val context = getContext("2d") as CanvasRenderingContext2D
 
-        context.setTransform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
-        context.fillStyle = theme.backgroundColor.css
-        context.fillRect(0.0, 0.0, width.toDouble(), height.toDouble())
-        context.translate(padding.toDouble() + offset.x, padding.toDouble() + offset.y)
+    context.setTransform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+    context.fillStyle = theme.backgroundColor.css
+    context.fillRect(0.0, 0.0, width.toDouble(), height.toDouble())
+    context.translate(padding.toDouble() + offset.x, padding.toDouble() + offset.y)
 
-        CanvasRenderingContext(context, font)
-    }
+    CanvasRenderingContext(context, font).drawBoard(layout, focusWinningRows, theme)
 }
 
 class CanvasRenderingContext(
@@ -118,10 +114,6 @@ class CanvasRenderingContext(
             canvas.fillStyle = color.css
             canvas.fillText(text, textX, textY)
         }
-    }
-
-    override fun close() {
-        // Nothing to do
     }
 
     private fun CanvasRenderingContext2D.strokeSegment(from: Point, to: Point) {

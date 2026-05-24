@@ -24,27 +24,27 @@ fun Board.renderToImage(
 ): BufferedImage {
     require(cells.isNotEmpty())
 
-    return render(layoutRadius, focusWinningRows, theme) { boundingBox ->
-        val width = ceil(boundingBox.maxX - boundingBox.minX + 2 * padding).toInt()
-        val height = ceil(boundingBox.maxY - boundingBox.minY + 2 * padding).toInt()
+    val layout = createRenderLayout(layoutRadius, BoardRenderBounds.Compact)
+    val width = ceil(layout.boundingBox.maxX - layout.boundingBox.minX + 2 * padding).toInt()
+    val height = ceil(layout.boundingBox.maxY - layout.boundingBox.minY + 2 * padding).toInt()
 
-        val image = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
-        val graphics = image.createGraphics()
+    val image = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+    val graphics = image.createGraphics()
 
-        graphics.color = theme.backgroundColor.awt
-        graphics.fillRect(0, 0, width, height)
+    graphics.color = theme.backgroundColor.awt
+    graphics.fillRect(0, 0, width, height)
 
-        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-        graphics.translate(padding, padding)
+    graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+    graphics.translate(padding, padding)
 
-        object : RenderingContext by AwtRenderingContext(graphics) {
-            val image = image
+    val context = AwtRenderingContext(graphics)
+    try {
+        context.drawBoard(layout, focusWinningRows, theme)
+    } finally {
+        graphics.dispose()
+    }
 
-            override fun close() {
-                graphics.dispose()
-            }
-        }
-    }.image
+    return image
 }
 
 class AwtRenderingContext(private val graphics: Graphics2D) : RenderingContext {
@@ -140,10 +140,6 @@ class AwtRenderingContext(private val graphics: Graphics2D) : RenderingContext {
 
         path.closePath()
         return path
-    }
-
-    override fun close() {
-        // It is the responsibility of the code that created the graphics object to dispose it
     }
 }
 

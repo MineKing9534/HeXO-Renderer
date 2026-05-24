@@ -10,6 +10,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.render.image.BoardRenderBounds
 import de.mineking.hexo.render.image.BoardRenderLayout
 import de.mineking.hexo.render.image.center
 import de.mineking.hexo.render.image.createRenderLayout
@@ -50,15 +51,15 @@ fun Board(
     var dragging by remember { mutableStateOf(false) }
 
     val zoom = viewport?.zoom ?: 0.2
-    val layout = remember(board, zoom) { board.createRenderLayout(BOARD_LAYOUT_RADIUS * zoom) }
+    val layout = remember(board, zoom) { board.createRenderLayout(BOARD_LAYOUT_RADIUS * zoom, BoardRenderBounds.IncludeSurroundings) }
     val effectiveViewport = viewport ?: BoardViewport(zoom = zoom, center = layout.boundingBox.center / zoom)
 
     fun redraw() {
-        element?.drawBoard(board, effectiveViewport, layout)
+        element?.drawBoard(layout, effectiveViewport)
     }
 
     ResizeHandler(element) { redraw() }
-    LaunchedEffect(board, effectiveViewport, layout) { redraw() }
+    LaunchedEffect(effectiveViewport, layout) { redraw() }
 
     BoardInteractions(
         element = element,
@@ -101,13 +102,12 @@ private external class ResizeObserver(@Suppress("unused") callback: () -> Unit) 
     fun disconnect()
 }
 
-private fun HTMLCanvasElement.drawBoard(board: Board, viewport: BoardViewport, layout: BoardRenderLayout) {
+private fun HTMLCanvasElement.drawBoard(layout: BoardRenderLayout, viewport: BoardViewport) {
     width = clientWidth
     height = clientHeight
 
     drawBoard(
-        board = board,
-        layoutRadius = BOARD_LAYOUT_RADIUS * viewport.zoom,
+        layout = layout,
         padding = BOARD_RENDER_PADDING,
         offset = viewport.offset(this) + layout.boundingBox.topLeft,
     )

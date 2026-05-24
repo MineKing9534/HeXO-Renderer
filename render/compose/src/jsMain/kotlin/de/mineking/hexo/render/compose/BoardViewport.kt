@@ -212,7 +212,7 @@ private class BoardEventListeners(
 
         val canvasTopLeft = Point(rect.left + BOARD_RENDER_PADDING, rect.top + BOARD_RENDER_PADDING)
         val point = position - canvasTopLeft - viewport.offset(canvas) - renderLayout.boundingBox.topLeft
-        return renderLayout.toCoordinate(point)
+        return renderLayout.run { point.toCoordinate() }
     }
 
     private fun MouseEvent.position() = Point(clientX.toDouble(), clientY.toDouble())
