@@ -23,8 +23,7 @@ fun HTMLCanvasElement.drawBoard(
     board: Board,
     layoutRadius: Double,
     padding: Int,
-    offsetX: Double = 0.0,
-    offsetY: Double = 0.0,
+    offset: Point = Point.Zero,
     focusWinningRows: Boolean = true,
     theme: Theme = BasicTheme.Default,
     font: CanvasFont = DefaultCanvasFont,
@@ -35,7 +34,7 @@ fun HTMLCanvasElement.drawBoard(
         context.setTransform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
         context.fillStyle = theme.backgroundColor.css
         context.fillRect(0.0, 0.0, width.toDouble(), height.toDouble())
-        context.translate(padding.toDouble() + offsetX, padding.toDouble() + offsetY)
+        context.translate(padding.toDouble() + offset.x, padding.toDouble() + offset.y)
 
         CanvasRenderingContext(context, font)
     }

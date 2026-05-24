@@ -7,6 +7,11 @@ import androidx.compose.runtime.rememberUpdatedState
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.render.image.BoardRenderLayout
 import de.mineking.hexo.render.image.Point
+import de.mineking.hexo.render.image.div
+import de.mineking.hexo.render.image.minus
+import de.mineking.hexo.render.image.plus
+import de.mineking.hexo.render.image.times
+import de.mineking.hexo.render.image.topLeft
 import kotlinx.browser.window
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.Event
@@ -22,33 +27,24 @@ private const val PRIMARY_BUTTON = 0
 private const val PRIMARY_BUTTON_MASK = 1
 private const val ZOOM_STEP = 1.1
 
-data class BoardViewport(
-    val zoom: Double = 0.4,
-    val centerX: Double = 0.0,
-    val centerY: Double = 0.0,
-) {
-    internal fun pan(deltaX: Double, deltaY: Double) = copy(
-        centerX = centerX - deltaX / zoom,
-        centerY = centerY - deltaY / zoom,
-    )
+data class BoardViewport(val zoom: Double, val center: Point) {
+    internal fun pan(delta: Point) = copy(center = center - delta / zoom)
 
-    internal fun zoomAt(value: Double, anchorX: Double, anchorY: Double, canvas: HTMLCanvasElement): BoardViewport {
+    internal fun zoomAt(value: Double, anchor: Point, canvas: HTMLCanvasElement): BoardViewport {
         val newZoom = value.coerceIn(MIN_ZOOM, MAX_ZOOM)
-        val oldCanvasX = centerX + (anchorX - canvas.clientWidth / 2.0) / zoom
-        val oldCanvasY = centerY + (anchorY - canvas.clientHeight / 2.0) / zoom
 
+        val anchorOffset = anchor - Point(canvas.clientWidth / 2.0, canvas.clientHeight / 2.0)
         return copy(
             zoom = newZoom,
-            centerX = oldCanvasX - (anchorX - canvas.clientWidth / 2.0) / newZoom,
-            centerY = oldCanvasY - (anchorY - canvas.clientHeight / 2.0) / newZoom,
+            center = center + (anchorOffset / zoom) - (anchorOffset / newZoom),
         )
     }
 
-    internal fun offsetX(canvas: HTMLCanvasElement) = canvas.clientWidth / 2.0 - BOARD_RENDER_PADDING - centerX * zoom
-    internal fun offsetY(canvas: HTMLCanvasElement) = canvas.clientHeight / 2.0 - BOARD_RENDER_PADDING - centerY * zoom
+    internal fun offset(canvas: HTMLCanvasElement) = Point(
+        canvas.clientWidth / 2.0 - BOARD_RENDER_PADDING,
+        canvas.clientHeight / 2.0 - BOARD_RENDER_PADDING,
+    ) - center * zoom
 }
-
-internal data class DragPosition(val clientX: Double, val clientY: Double)
 
 @Composable
 internal fun BoardInteractions(
@@ -100,7 +96,7 @@ private class BoardEventListeners(
     private val renderLayout by renderLayout
     private var viewport by viewport.withSetter(onViewportChange)
 
-    private var dragPosition: DragPosition? = null
+    private var dragPosition: Point? = null
     private var suppressNextClick = false
 
     private fun pointerDown(event: Event) {
@@ -167,13 +163,10 @@ private class BoardEventListeners(
         onDraggingChange(false)
     }
 
-    private fun dragTo(position: DragPosition) {
+    private fun dragTo(position: Point) {
         val lastPosition = dragPosition ?: return
 
-        viewport = viewport.pan(
-            deltaX = position.clientX - lastPosition.clientX,
-            deltaY = position.clientY - lastPosition.clientY,
-        )
+        viewport = viewport.pan(position - lastPosition)
 
         suppressNextClick = true
         dragPosition = position
@@ -209,22 +202,19 @@ private class BoardEventListeners(
 
         viewport = viewport.zoomAt(
             value = viewport.zoom * if (event.deltaY < 0) ZOOM_STEP else 1 / ZOOM_STEP,
-            anchorX = position.clientX - rect.left,
-            anchorY = position.clientY - rect.top,
+            anchor = position - Point(rect.left, rect.top),
             canvas = canvas,
         )
     }
 
-    private fun cellAt(position: DragPosition): CellCoordinate {
+    private fun cellAt(position: Point): CellCoordinate {
         val rect = canvas.getBoundingClientRect()
-        val point = Point(
-            x = position.clientX - rect.left - BOARD_RENDER_PADDING - viewport.offsetX(canvas) - renderLayout.boundingBox.minX,
-            y = position.clientY - rect.top - BOARD_RENDER_PADDING - viewport.offsetY(canvas) - renderLayout.boundingBox.minY,
-        )
 
+        val canvasTopLeft = Point(rect.left + BOARD_RENDER_PADDING, rect.top + BOARD_RENDER_PADDING)
+        val point = position - canvasTopLeft - viewport.offset(canvas) - renderLayout.boundingBox.topLeft
         return renderLayout.toCoordinate(point)
     }
 
-    private fun MouseEvent.position() = DragPosition(clientX.toDouble(), clientY.toDouble())
+    private fun MouseEvent.position() = Point(clientX.toDouble(), clientY.toDouble())
     private fun MouseEvent.primaryButtonPressed() = (buttons.toInt() and PRIMARY_BUTTON_MASK) != 0
 }

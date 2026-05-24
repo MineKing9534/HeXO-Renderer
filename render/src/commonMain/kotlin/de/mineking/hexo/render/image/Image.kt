@@ -59,6 +59,13 @@ data class BoundingBox(
     val maxY: Double,
 )
 
+val BoundingBox.center get() = Point(
+    (maxX + minX) / 2,
+    (maxY + minY) / 2,
+)
+
+val BoundingBox.topLeft get() = Point(minX, minY)
+
 data class BoardRenderLayout(
     val layoutRadius: Double,
     val boundingBox: BoundingBox,

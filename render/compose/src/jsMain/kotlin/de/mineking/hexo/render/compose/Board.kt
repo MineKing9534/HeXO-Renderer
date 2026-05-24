@@ -6,12 +6,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.render.image.BoardRenderLayout
+import de.mineking.hexo.render.image.center
 import de.mineking.hexo.render.image.createRenderLayout
+import de.mineking.hexo.render.image.div
 import de.mineking.hexo.render.image.drawBoard
+import de.mineking.hexo.render.image.plus
+import de.mineking.hexo.render.image.topLeft
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Canvas
@@ -28,14 +33,14 @@ fun Board(
     onCellClick: ((CellCoordinate) -> Unit)? = null,
     content: ContentBuilder<HTMLCanvasElement>? = null,
 ) {
-    var viewport by remember { mutableStateOf(BoardViewport()) }
+    var viewport by remember { mutableStateOf<BoardViewport?>(null) }
     Board(board, viewport, { viewport = it }, attrs, onCellClick, content)
 }
 
 @Composable
 fun Board(
     board: Board,
-    viewport: BoardViewport,
+    viewport: BoardViewport?,
     onViewportChange: (BoardViewport) -> Unit,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
     onCellClick: ((CellCoordinate) -> Unit)? = null,
@@ -43,19 +48,22 @@ fun Board(
 ) {
     var element by remember { mutableStateOf<HTMLCanvasElement?>(null) }
     var dragging by remember { mutableStateOf(false) }
-    val layout = remember(board, viewport.zoom) { board.createRenderLayout(BOARD_LAYOUT_RADIUS * viewport.zoom) }
+
+    val zoom = viewport?.zoom ?: 0.2
+    val layout = remember(board, zoom) { board.createRenderLayout(BOARD_LAYOUT_RADIUS * zoom) }
+    val effectiveViewport = viewport ?: BoardViewport(zoom = zoom, center = layout.boundingBox.center / zoom)
 
     fun redraw() {
-        element?.drawBoard(board, viewport, layout)
+        element?.drawBoard(board, effectiveViewport, layout)
     }
 
     ResizeHandler(element) { redraw() }
-    LaunchedEffect(board, viewport) { redraw() }
+    LaunchedEffect(board, effectiveViewport, layout) { redraw() }
 
     BoardInteractions(
         element = element,
         renderLayout = { layout },
-        viewport = { viewport },
+        viewport = { effectiveViewport },
         onViewportChange = onViewportChange,
         onDraggingChange = { dragging = it },
         onCellClick = { onCellClick?.invoke(it) },
@@ -75,9 +83,11 @@ fun Board(
 
 @Composable
 private fun ResizeHandler(element: HTMLCanvasElement?, onResize: () -> Unit) {
+    val onResize by rememberUpdatedState(onResize)
+
     DisposableEffect(element) {
         val canvas = element ?: return@DisposableEffect onDispose {}
-        val observer = ResizeObserver(onResize)
+        val observer = ResizeObserver { onResize() }
 
         observer.observe(canvas)
         onDispose {
@@ -99,7 +109,6 @@ private fun HTMLCanvasElement.drawBoard(board: Board, viewport: BoardViewport, l
         board = board,
         layoutRadius = BOARD_LAYOUT_RADIUS * viewport.zoom,
         padding = BOARD_RENDER_PADDING,
-        offsetX = viewport.offsetX(this) + layout.boundingBox.minX,
-        offsetY = viewport.offsetY(this) + layout.boundingBox.minY,
+        offset = viewport.offset(this) + layout.boundingBox.topLeft,
     )
 }

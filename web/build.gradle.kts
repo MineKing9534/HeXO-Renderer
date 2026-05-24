@@ -32,8 +32,10 @@ kotlin {
             implementation(projects.render.compose)
 
             implementation(projects.parse)
+            implementation(projects.api)
 
             implementation(compose.html.core)
+            implementation(compose.html.svg)
             implementation(compose.runtime)
 
             implementation(npm("tailwindcss", "^4.3.0"))
