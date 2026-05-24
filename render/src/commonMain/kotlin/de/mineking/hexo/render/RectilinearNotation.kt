@@ -3,8 +3,8 @@ package de.mineking.hexo.render
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.HighlightLine
 import de.mineking.hexo.core.CellOwner
-import kotlin.math.max
 import kotlin.math.min
 
 enum class RectilinearNotationType(
@@ -28,62 +28,77 @@ class RectilinearNotationBoardRenderer(val type: RectilinearNotationType) : Boar
     override suspend fun Board.render() = renderRectilinearNotation(type)
 }
 
-fun Board.renderRectilinearNotation(type: RectilinearNotationType) = buildString {
-    val winningCells = findWinningRows().flatten().map { it.first }.toSet()
-    val lines = cells.entries
-        .filter { (_, cell) -> cell.owner != null || cell.highlighted || cell.label.isNotBlank() }
+fun Board.renderRectilinearNotation(type: RectilinearNotationType): String {
+    val highlightLines = highlightedLines.groupBy { it.start }
+    val renderCells = (highlightLines.keys.associateWith { Cell() } + cells)
+        .filter { (coordinate, cell) -> coordinate in highlightLines || cell.shouldRender() }
+
+    if (renderCells.isEmpty()) return ""
+
+    val rows = renderCells.entries
         .groupBy { (coordinate, _) -> coordinate.r }
-        .mapValues { (_, cells) ->
-            val line = cells.associate { (coordinate, cell) -> coordinate.q to cell }
-            val size = cells.boardSize { (coordinate, _) -> coordinate }
-            line to size
+        .mapValues { (_, cells) -> cells.associate { (coordinate, cell) -> coordinate.q to cell } }
+
+    val minQ = renderCells.keys.minOf { it.q }
+    val minR = rows.keys.min()
+    val maxR = rows.keys.max()
+
+    return buildString {
+        for (r in minR..maxR) {
+            rows[r]?.let { row ->
+                append(type.columnSeparator.repeat(r - minR))
+                appendRow(r, row, minQ, highlightLines, type)
+            }
+
+            if (r < maxR) {
+                append(type.rowSeparator)
+            }
         }
+    }.let { type.run { it.postprocess() } }
+}
 
-    val minQ = lines.values.minOf { (_, size) -> size.minQ }
-    val minR = lines.keys.min()
-    val maxR = lines.keys.max()
+private fun Cell.shouldRender() = owner != null || highlighted || label.isNotBlank()
 
-    (minR..maxR).forEachIndexed { i, r ->
-        val (line, size) = lines[r] ?: run {
-            append(type.rowSeparator)
-            return@forEachIndexed
+private fun StringBuilder.appendRow(
+    r: Int,
+    row: Map<Int, Cell>,
+    minQ: Int,
+    highlightLines: Map<CellCoordinate, List<HighlightLine>>,
+    type: RectilinearNotationType,
+) {
+    val maxQ = row.keys.max()
+
+    for (q in min(minQ, row.keys.min())..maxQ) {
+        val coordinate = CellCoordinate(q, r)
+        appendCell(row[q])
+        highlightLines[coordinate]?.forEach { append(it.render()) }
+
+        if (q < maxQ) {
+            append(type.columnSeparator)
         }
-
-        append(type.columnSeparator.repeat(i))
-        for (q in min(minQ, size.minQ)..size.maxQ) {
-            appendCell(line[q]?.let { it.copy(focussed = it.focussed || CellCoordinate(q, r) in winningCells) })
-            if (q < size.maxQ) append(type.columnSeparator)
-        }
-
-        if (r < maxR) append(type.rowSeparator)
     }
-}.let { type.run { it.postprocess() } }
+}
+
+private fun HighlightLine.render(): String {
+    val owner = when (color) {
+        CellOwner.X -> "x"
+        CellOwner.O -> "o"
+        null -> ""
+    }
+
+    return "(${direction.symbol}$length$owner)"
+}
 
 private fun StringBuilder.appendCell(cell: Cell?) {
-    val highlight = cell != null && cell.highlighted
+    val highlighted = cell?.highlighted == true
 
     append(when (cell?.owner) {
-        CellOwner.X -> if (highlight) "X" else "x"
-        CellOwner.O -> if (highlight) "O" else "o"
-        null -> if (highlight) "!" else "."
+        CellOwner.X -> if (highlighted) "X" else "x"
+        CellOwner.O -> if (highlighted) "O" else "o"
+        null -> if (highlighted) "!" else "."
     })
 
     if (!cell?.label.isNullOrBlank()) {
         append("[${cell.label}]")
     }
-}
-
-private data class BoardSize(val minQ: Int, val maxQ: Int)
-
-private fun <T> Collection<T>.boardSize(extractor: (T) -> CellCoordinate): BoardSize {
-    var minQ = Int.MAX_VALUE
-    var maxQ = Int.MIN_VALUE
-
-    forEach {
-        val (q) = extractor(it)
-        minQ = min(minQ, q)
-        maxQ = max(maxQ, q)
-    }
-
-    return BoardSize(minQ, maxQ)
 }

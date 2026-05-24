@@ -27,7 +27,6 @@ fun String.parseRectilinearNotation(): Board {
     }
 
     requireHexo(buffer.isEmpty()) { "Unterminated symbol at end of input" }
-    requireHexo(board.cells.values.any { it.owner != null }) { "Cannot parse an empty board" }
     return board
 }
 

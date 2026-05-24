@@ -2,6 +2,7 @@ package de.mineking.hexo.render.image
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.distanceTo
 import de.mineking.hexo.board.end
 import kotlin.math.abs
 import kotlin.math.max
@@ -131,9 +132,4 @@ internal fun Board.findVisibleCoordinates(): Set<CellCoordinate> {
             }
         }
     }
-}
-
-private fun CellCoordinate.distanceTo(other: CellCoordinate): Int {
-    val ds = (q + r) - (other.q + other.r)
-    return maxOf(abs(q - other.q), abs(r - other.r), abs(ds))
 }

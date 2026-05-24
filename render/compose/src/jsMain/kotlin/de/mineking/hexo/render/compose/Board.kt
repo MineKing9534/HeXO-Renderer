@@ -32,10 +32,11 @@ fun Board(
     board: Board,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
     onCellClick: ((CellCoordinate) -> Unit)? = null,
+    onBoardRightClick: ((BoardRightClickEvent) -> Unit)? = null,
     content: ContentBuilder<HTMLCanvasElement>? = null,
 ) {
     var viewport by remember { mutableStateOf<BoardViewport?>(null) }
-    Board(board, viewport, { viewport = it }, attrs, onCellClick, content)
+    Board(board, viewport, { viewport = it }, attrs, onCellClick, onBoardRightClick, content)
 }
 
 @Composable
@@ -45,6 +46,7 @@ fun Board(
     onViewportChange: (BoardViewport) -> Unit,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
     onCellClick: ((CellCoordinate) -> Unit)? = null,
+    onBoardRightClick: ((BoardRightClickEvent) -> Unit)? = null,
     content: ContentBuilder<HTMLCanvasElement>? = null,
 ) {
     var element by remember { mutableStateOf<HTMLCanvasElement?>(null) }
@@ -68,6 +70,7 @@ fun Board(
         onViewportChange = onViewportChange,
         onDraggingChange = { dragging = it },
         onCellClick = { onCellClick?.invoke(it) },
+        onBoardRightClick = { onBoardRightClick?.invoke(it) },
     )
 
     Canvas({

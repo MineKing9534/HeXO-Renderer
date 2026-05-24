@@ -8,14 +8,16 @@ import androidx.compose.runtime.setValue
 import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.createRepositories
 import de.mineking.hexo.board.CellCoordinate
-import de.mineking.hexo.board.HexoNotationException
+import de.mineking.hexo.board.Direction
+import de.mineking.hexo.board.HighlightLine
 import de.mineking.hexo.board.clone
+import de.mineking.hexo.board.contains
+import de.mineking.hexo.board.distanceTo
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.parse.parseRectilinearStateBKETurnNotation
-import de.mineking.hexo.render.RectilinearNotationType
 import de.mineking.hexo.render.compose.Board
+import de.mineking.hexo.render.compose.BoardRightClickEvent
 import de.mineking.hexo.render.compose.BoardViewport
-import de.mineking.hexo.render.renderRectilinearNotation
 import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
@@ -43,48 +45,55 @@ private fun MainLayout(client: HexoApiClient) {
     var viewport by remember { mutableStateOf<BoardViewport?>(null) }
 
     var board by remember { mutableStateOf(notation.parseRectilinearStateBKETurnNotation()) }
-    var parseError by remember { mutableStateOf<String?>(null) }
+    var temporaryLine by remember { mutableStateOf<HighlightLine?>(null) }
 
-    fun updateNotation(value: String) {
-        notation = value
-
-        if (value.isBlank()) {
-            board = HexoBoard()
-            parseError = null
-            return
+    val transformedBoard = remember(board, temporaryLine) {
+        board.clone().apply {
+            val temporaryLine = temporaryLine
+            if (temporaryLine != null) highlightedLines += temporaryLine
         }
-
-        try {
-            board = value.parseRectilinearStateBKETurnNotation()
-            parseError = null
-        } catch (e: HexoNotationException) {
-            parseError = e.message
-        }
-    }
-
-    fun updateBoard(value: HexoBoard) {
-        board = value
-        notation = value.renderRectilinearNotation(RectilinearNotationType.Compact)
-        parseError = null
     }
 
     Div({
         classes("flex", "h-screen", "w-screen", "overflow-hidden", "bg-slate-950", "font-sans", "text-slate-100")
     }) {
-        BoardPane(board, viewport, onViewportChange = { viewport = it }, onCellClick = {
-            val updated = board.clone()
-            updated[it].owner = CellOwner.X
-            updateBoard(updated)
-        })
+        BoardPane(
+            board = transformedBoard,
+            viewport = viewport,
+            onViewportChange = { viewport = it },
+            onCellClick = {
+                val updated = board.clone()
+                updated[it].owner = CellOwner.X
+                board = updated
+            },
+            onBoardRightClick = { (from, to, final) ->
+                val updated = board.clone()
+                if (from == to && final) {
+                    if (!updated.removeHighlightLinesAt(to)) {
+                        updated[to].highlighted = !updated[to].highlighted
+                    }
+                    temporaryLine = null
+                } else {
+                    val (direction, length) = from.findClosestLineTo(to)
+                    if (final) {
+                        updated.highlightLine(from, direction, length)
+                        temporaryLine = null
+                    } else if (from != to) {
+                        temporaryLine = HighlightLine(from, direction, length, null)
+                    } else {
+                        temporaryLine = null
+                    }
+                }
+                board = updated
+            },
+        )
         Sidebar(
             formationRepository = repositories.formations,
             finishedGameRepository = repositories.finishedGames,
-            board = board,
-            notation = notation,
-            parseError = parseError,
-            onNotationChange = { cause, notation ->
-                updateNotation(notation)
-                if (cause == NotationUpdateCause.Import) {
+            board = transformedBoard,
+            onBoardChange = { cause, updated ->
+                board = updated
+                if (cause == BoardUpdateCause.Import) {
                     viewport = null
                 }
             },
@@ -98,6 +107,7 @@ private fun BoardPane(
     viewport: BoardViewport?,
     onViewportChange: (BoardViewport?) -> Unit,
     onCellClick: ((CellCoordinate) -> Unit)? = null,
+    onBoardRightClick: ((BoardRightClickEvent) -> Unit)? = null,
 ) {
     Div({ classes("min-w-0", "flex-1", "p-6") }) {
         Div({ classes("relative", "h-full", "overflow-hidden", "rounded-2xl", "border", "border-slate-800", "bg-slate-900", "shadow-2xl") }) {
@@ -106,6 +116,7 @@ private fun BoardPane(
                 viewport = viewport,
                 onViewportChange = onViewportChange,
                 onCellClick = onCellClick,
+                onBoardRightClick = onBoardRightClick,
                 attrs = {
                     attr("width", "1200")
                     attr("height", "900")
@@ -140,3 +151,32 @@ private fun BoardPane(
         }
     }
 }
+
+private fun CellCoordinate.findClosestLineTo(to: CellCoordinate): Pair<Direction, Int> {
+    val maxLength = distanceTo(to)
+
+    var bestDirection = Direction.Right
+    var bestLength = 0
+    var bestDistance = distanceTo(to)
+
+    for (direction in Direction.entries) {
+        for (length in 0..maxLength) {
+            val end = CellCoordinate(
+                q + direction.direction.q * length,
+                r + direction.direction.r * length,
+            )
+
+            val dist = end.distanceTo(to)
+
+            if (dist < bestDistance || (dist == bestDistance && length < bestLength)) {
+                bestDirection = direction
+                bestLength = length
+                bestDistance = dist
+            }
+        }
+    }
+
+    return bestDirection to (bestLength + 1).coerceAtMost(HighlightLine.MAX_LENGTH)
+}
+
+private fun HexoBoard.removeHighlightLinesAt(coordinate: CellCoordinate) = highlightedLines.removeAll { line -> coordinate in line }

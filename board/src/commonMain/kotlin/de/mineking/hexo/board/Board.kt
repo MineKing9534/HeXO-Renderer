@@ -12,18 +12,13 @@ class Board {
         )
     }
 
-    val highlightedLines: List<HighlightLine>
-        field = mutableListOf()
+    val highlightedLines = mutableListOf<HighlightLine>()
 
     val cells: Map<CellCoordinate, Cell>
         field = mutableMapOf()
 
     fun highlightLine(origin: CellCoordinate, direction: Direction, length: Int, color: CellOwner? = null) {
         highlightedLines += HighlightLine(origin, direction, length, color)
-    }
-
-    fun addHighlightLines(lines: List<HighlightLine>) {
-        highlightedLines += lines
     }
 
     fun addCells(cells: Map<CellCoordinate, Cell>) {
@@ -78,7 +73,7 @@ class Board {
 }
 
 fun Board.clone() = Board().apply {
-    addHighlightLines(this@clone.highlightedLines)
+    highlightedLines += this@clone.highlightedLines
     addCells(this@clone.cells.mapValues { (_, cell) -> cell.copy() })
 }
 
@@ -99,8 +94,8 @@ fun Board.merge(other: Board, overrideOwner: Boolean = false): Board {
     }
     return Board().apply {
         addCells(cells)
-        addHighlightLines(this@merge.highlightedLines)
-        addHighlightLines(other.highlightedLines)
+        highlightedLines += this@merge.highlightedLines
+        highlightedLines += other.highlightedLines
     }
 }
 

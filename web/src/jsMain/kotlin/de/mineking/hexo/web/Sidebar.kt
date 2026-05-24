@@ -2,6 +2,7 @@ package de.mineking.hexo.web
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -9,6 +10,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.web.events.SyntheticMouseEvent
 import de.mineking.hexo.api.formation.FormationRepository
 import de.mineking.hexo.api.game.FinishedGameRepository
+import de.mineking.hexo.board.HexoNotationException
+import de.mineking.hexo.parse.parseRectilinearStateBKETurnNotation
 import de.mineking.hexo.render.RectilinearNotationType
 import de.mineking.hexo.render.renderRectilinearNotation
 import kotlinx.browser.document
@@ -31,7 +34,7 @@ private const val MIN_SIDEBAR_WIDTH = 320
 private const val MAX_SIDEBAR_WIDTH = 560
 private const val GITHUB_URL = "https://github.com/MineKing9534/HeXO-Renderer"
 
-enum class NotationUpdateCause {
+enum class BoardUpdateCause {
     NotationInput,
     Import,
 }
@@ -41,9 +44,7 @@ fun Sidebar(
     formationRepository: FormationRepository,
     finishedGameRepository: FinishedGameRepository,
     board: HexoBoard,
-    notation: String,
-    parseError: String?,
-    onNotationChange: (NotationUpdateCause, String) -> Unit,
+    onBoardChange: (BoardUpdateCause, HexoBoard) -> Unit,
 ) {
     var width by remember { mutableStateOf(DEFAULT_SIDEBAR_WIDTH) }
     var resizing by remember { mutableStateOf(false) }
@@ -67,6 +68,14 @@ fun Sidebar(
         classes("relative", "flex", "shrink-0", "flex-col", "gap-8", "border-l", "border-slate-800", "bg-slate-900/80", "p-6", "shadow-2xl")
         attr("style", "width: ${width}px")
     }) {
+        var parseError by remember { mutableStateOf<String?>(null) }
+        var notation by remember { mutableStateOf("") }
+
+        LaunchedEffect(board) {
+            notation = board.renderRectilinearNotation(RectilinearNotationType.Compact)
+            parseError = null
+        }
+
         SidebarResizeHandle(resizing, ::startSidebarResize)
         SidebarHeader(parseError)
         NotationField(
@@ -74,7 +83,20 @@ fun Sidebar(
             finishedGameRepository = finishedGameRepository,
             notation = notation,
             parseError = parseError,
-            onChange = onNotationChange,
+            onChange = { cause, value ->
+                notation = value
+                if (value.isBlank()) {
+                    onBoardChange(cause, HexoBoard())
+                    return@NotationField
+                }
+
+                try {
+                    onBoardChange(cause, value.parseRectilinearStateBKETurnNotation())
+                    parseError = null
+                } catch (e: HexoNotationException) {
+                    parseError = e.message
+                }
+            },
         )
         SidebarNotationInfo(board, parseError)
 
@@ -164,7 +186,7 @@ private fun NotationField(
     finishedGameRepository: FinishedGameRepository,
     notation: String,
     parseError: String?,
-    onChange: (NotationUpdateCause, String) -> Unit,
+    onChange: (BoardUpdateCause, String) -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
     var importDialogOpen by remember { mutableStateOf(false) }
@@ -190,10 +212,13 @@ private fun NotationField(
         TextArea {
             value(notation)
             placeholder("Board notation")
-            onInput { onChange(NotationUpdateCause.NotationInput, it.value) }
+            onInput { onChange(BoardUpdateCause.NotationInput, it.value) }
             onFocus { focused = true }
             onBlur { focused = false }
-            classes("min-h-32", "w-full", "resize-y", "rounded-lg", "border-3", "p-3", "text-sm", "text-slate-100", "outline-none", "transition")
+            classes(
+                "min-h-32", "w-full", "resize-y", "rounded-lg", "border-3", "p-3", "text-sm", "text-slate-100",
+                "outline-none", "transition", "font-mono",
+            )
             when {
                 parseError != null -> classes("border-rose-400", "bg-slate-950")
                 focused -> classes("border-emerald-400", "bg-slate-800")
@@ -209,7 +234,7 @@ private fun NotationField(
             onClose = { importDialogOpen = false },
             onConfirm = {
                 importDialogOpen = false
-                onChange(NotationUpdateCause.Import, it.renderRectilinearNotation(RectilinearNotationType.Compact))
+                onChange(BoardUpdateCause.Import, it.renderRectilinearNotation(RectilinearNotationType.Compact))
             },
         )
     }
