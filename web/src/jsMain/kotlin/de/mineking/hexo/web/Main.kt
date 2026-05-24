@@ -16,10 +16,12 @@ import de.mineking.hexo.render.RectilinearNotationType
 import de.mineking.hexo.render.compose.Board
 import de.mineking.hexo.render.compose.BoardViewport
 import de.mineking.hexo.render.renderRectilinearNotation
+import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.renderComposable
+import org.w3c.dom.HTMLDivElement
 import de.mineking.hexo.board.Board as HexoBoard
 
 const val URL = "https://hexo.did.science"
@@ -111,9 +113,22 @@ private fun BoardPane(
                 },
             )
 
+            @Composable
+            fun Edge(attrs: AttrBuilderContext<HTMLDivElement>? = null) {
+                Div({
+                    classes("pointer-events-none", "absolute", "z-10", "from-slate-900", "via-transparent", "to-transparent")
+                    attrs?.invoke(this)
+                })
+            }
+
+            Edge { classes("inset-x-0", "top-0", "h-4", "bg-linear-to-b") }
+            Edge { classes("inset-x-0", "bottom-0", "h-4", "bg-linear-to-t") }
+            Edge { classes("inset-y-0", "left-0", "w-4", "bg-linear-to-r") }
+            Edge { classes("inset-y-0", "right-0", "w-4", "bg-linear-to-l") }
+
             Button({
                 classes(
-                    "absolute", "bottom-3", "right-3", "z-10", "grid", "place-items-center", "rounded-lg", "py-1", "px-4", "border",
+                    "absolute", "bottom-3", "right-3", "z-20", "grid", "place-items-center", "rounded-lg", "py-1", "px-4", "border",
                     "border-slate-700", "bg-slate-950", "text-slate-300", "shadow-lg", "transition", "hover:bg-slate-800", "hover:text-slate-100",
                 )
                 onClick {
