@@ -5,11 +5,13 @@ import kotlin.math.abs
 
 data class Cell(
     var owner: CellOwner? = null,
-    var highlighted: Boolean = false,
-    var focussed: Boolean = false,
+    var highlight: CellHighlight? = null,
+    var focused: Boolean = false,
     var turn: Int? = null,
     var label: String = "",
 )
+
+data class CellHighlight(val color: CellOwner?)
 
 data class CellCoordinate(val q: Int, val r: Int) {
     companion object {

@@ -24,7 +24,7 @@ fun RenderingContext.drawBoard(
         }
 
     for (position in layout.coordinates) {
-        val cell = layout.board.cells[position]?.let { it.copy(focussed = it.focussed || position in winningCells) } ?: Cell()
+        val cell = layout.board.cells[position]?.let { it.copy(focused = it.focused || position in winningCells) } ?: Cell()
         renderer.drawCell(position, cell)
     }
 
@@ -56,27 +56,11 @@ class InternalBoardRenderer(
     fun drawCell(position: CellCoordinate, cell: Cell) {
         val hex = position.createHex()
 
-        renderingContext.drawPolygon(hex, theme.run { cell.backgroundColor() })
+        val (backgroundColor, borderColor) = theme.run { cell.backgroundColor() }
+        renderingContext.drawPolygon(hex, backgroundColor, Stroke(borderColor, borderThickness))
 
-        fun drawHighlight(color: Theme.ElementColors) {
-            renderingContext.drawPolygon(
-                shape = hex,
-                color = color.backgroundColor,
-                outline = Stroke(color.borderColor, borderThickness * 3),
-            )
-        }
-
-        when {
-            cell.highlighted -> drawHighlight(theme.highlightColor)
-            cell.focussed -> drawHighlight(theme.focusColor)
-            else -> {
-                renderingContext.drawPolygon(
-                    shape = hex,
-                    color = null,
-                    outline = Stroke(theme.cellBorderColor, borderThickness),
-                )
-            }
-        }
+        val (highlightColor, highlightBorderColor) = theme.run { cell.highlightColor() }
+        renderingContext.drawPolygon(hex, highlightColor, Stroke(highlightBorderColor, borderThickness * 3))
 
         drawCellLabel(position, cell)
     }

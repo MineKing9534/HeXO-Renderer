@@ -1,6 +1,7 @@
 package de.mineking.hexo.render.test
 
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.parse.parseRectilinearNotation
 import de.mineking.hexo.render.RectilinearNotationType
@@ -38,9 +39,9 @@ class IntegrationTest {
         val board = Board()
         board[0, 0].apply {
             owner = CellOwner.X
-            highlighted = true
+            highlight = CellHighlight(null)
         }
-        board[1, 0].highlighted = true
+        board[1, 0].highlight = CellHighlight(null)
         board[3, 0].owner = CellOwner.X
         board[0, 1].owner = CellOwner.O
         board[2, 1].owner = CellOwner.O

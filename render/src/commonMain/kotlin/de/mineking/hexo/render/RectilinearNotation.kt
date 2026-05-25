@@ -57,7 +57,7 @@ fun Board.renderRectilinearNotation(type: RectilinearNotationType): String {
     }.let { type.run { it.postprocess() } }
 }
 
-private fun Cell.shouldRender() = owner != null || highlighted || label.isNotBlank()
+private fun Cell.shouldRender() = owner != null || highlight != null || label.isNotBlank()
 
 private fun StringBuilder.appendRow(
     r: Int,
@@ -90,15 +90,13 @@ private fun HighlightLine.render(): String {
 }
 
 private fun StringBuilder.appendCell(cell: Cell?) {
-    val highlighted = cell?.highlighted == true
-
-    append(when (cell?.owner) {
-        CellOwner.X -> if (highlighted) "X" else "x"
-        CellOwner.O -> if (highlighted) "O" else "o"
-        null -> if (highlighted) "!" else "."
-    })
+    append(cell?.owner?.symbol ?: ".")
 
     if (!cell?.label.isNullOrBlank()) {
         append("[${cell.label}]")
+    }
+
+    if (cell?.highlight != null) {
+        append("(${cell.highlight?.color?.symbol ?: "!"})")
     }
 }

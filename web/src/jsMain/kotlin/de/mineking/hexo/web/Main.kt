@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.createRepositories
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.HighlightLine
 import de.mineking.hexo.board.clone
@@ -24,6 +25,7 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.renderComposable
 import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.events.MouseEvent
 import de.mineking.hexo.board.Board as HexoBoard
 
 const val URL = "https://hexo.did.science"
@@ -66,25 +68,8 @@ private fun MainLayout(client: HexoApiClient) {
                 updated[it].owner = CellOwner.X
                 board = updated
             },
-            onBoardRightClick = { (from, to, final) ->
-                val updated = board.clone()
-                if (from == to && final) {
-                    if (!updated.removeHighlightLinesAt(to)) {
-                        updated[to].highlighted = !updated[to].highlighted
-                    }
-                    temporaryLine = null
-                } else {
-                    val (direction, length) = from.findClosestLineTo(to)
-                    if (final) {
-                        updated.highlightLine(from, direction, length)
-                        temporaryLine = null
-                    } else if (from != to) {
-                        temporaryLine = HighlightLine(from, direction, length, null)
-                    } else {
-                        temporaryLine = null
-                    }
-                }
-                board = updated
+            onBoardRightClick = { event ->
+                handleBoardRightClick(board, event, onTemporaryLineUpdate = { temporaryLine = it }, onBoardUpdate = { board = it })
             },
         )
         Sidebar(
@@ -101,13 +86,53 @@ private fun MainLayout(client: HexoApiClient) {
     }
 }
 
+private fun MouseEvent.handleBoardRightClick(
+    board: HexoBoard,
+    event: BoardRightClickEvent,
+    onTemporaryLineUpdate: (HighlightLine?) -> Unit,
+    onBoardUpdate: (HexoBoard) -> Unit,
+) {
+    val (from, to, final) = event
+
+    val updated = board.clone()
+    val color = when {
+        ctrlKey -> CellOwner.X
+        altKey -> CellOwner.O
+        else -> null
+    }
+
+    if (from == to && final) {
+        if (!updated.removeHighlightLinesAt(to)) {
+            if (updated[to].highlight != null) {
+                updated[to].highlight = null
+            } else {
+                updated[to].highlight = CellHighlight(color)
+            }
+        }
+        onTemporaryLineUpdate(null)
+    } else {
+        val (direction, length) = from.findClosestLineTo(to)
+        val line = HighlightLine(from, direction, length, color)
+
+        if (final) {
+            updated.highlightedLines += line
+            onTemporaryLineUpdate(null)
+        } else if (from != to) {
+            onTemporaryLineUpdate(line)
+        } else {
+            onTemporaryLineUpdate(null)
+        }
+    }
+    onBoardUpdate(updated)
+}
+
 @Composable
 private fun BoardPane(
     board: HexoBoard,
     viewport: BoardViewport?,
     onViewportChange: (BoardViewport?) -> Unit,
-    onCellClick: ((CellCoordinate) -> Unit)? = null,
-    onBoardRightClick: ((BoardRightClickEvent) -> Unit)? = null,
+    onCellClick: (MouseEvent.(CellCoordinate) -> Unit)? = null,
+    onBoardRightClick: (MouseEvent.(BoardRightClickEvent) -> Unit)? = null,
 ) {
     Div({ classes("min-w-0", "flex-1", "p-6") }) {
         Div({ classes("relative", "h-full", "overflow-hidden", "rounded-2xl", "border", "border-slate-800", "bg-slate-900", "shadow-2xl") }) {
@@ -179,4 +204,13 @@ private fun CellCoordinate.findClosestLineTo(to: CellCoordinate): Pair<Direction
     return bestDirection to (bestLength + 1).coerceAtMost(HighlightLine.MAX_LENGTH)
 }
 
-private fun HexoBoard.removeHighlightLinesAt(coordinate: CellCoordinate) = highlightedLines.removeAll { line -> coordinate in line }
+private fun HexoBoard.removeHighlightLinesAt(coordinate: CellCoordinate) = highlightedLines
+    .indexOfLast { line -> coordinate in line }
+    .let {
+        if (it == -1) {
+            return@let false
+        }
+
+        highlightedLines.removeAt(it)
+        true
+    }

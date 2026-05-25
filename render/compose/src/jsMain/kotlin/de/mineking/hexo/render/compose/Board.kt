@@ -27,6 +27,7 @@ import org.jetbrains.compose.web.dom.Canvas
 import org.jetbrains.compose.web.dom.ContentBuilder
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
+import org.w3c.dom.events.MouseEvent
 
 private const val BOARD_LAYOUT_RADIUS = 255.0
 private val cellHoverColor = Color.rgb(0x7dd3fc)
@@ -35,8 +36,8 @@ private val cellHoverColor = Color.rgb(0x7dd3fc)
 fun Board(
     board: Board,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
-    onCellClick: ((CellCoordinate) -> Unit)? = null,
-    onBoardRightClick: ((BoardRightClickEvent) -> Unit)? = null,
+    onCellClick: (MouseEvent.(CellCoordinate) -> Unit)? = null,
+    onBoardRightClick: (MouseEvent.(BoardRightClickEvent) -> Unit)? = null,
     content: ContentBuilder<HTMLCanvasElement>? = null,
 ) {
     var viewport by remember { mutableStateOf<BoardViewport?>(null) }
@@ -49,8 +50,8 @@ fun Board(
     viewport: BoardViewport?,
     onViewportChange: (BoardViewport) -> Unit,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
-    onCellClick: ((CellCoordinate) -> Unit)? = null,
-    onBoardRightClick: ((BoardRightClickEvent) -> Unit)? = null,
+    onCellClick: (MouseEvent.(CellCoordinate) -> Unit)? = null,
+    onBoardRightClick: (MouseEvent.(BoardRightClickEvent) -> Unit)? = null,
     content: ContentBuilder<HTMLCanvasElement>? = null,
 ) {
     var element by remember { mutableStateOf<HTMLCanvasElement?>(null) }
@@ -75,8 +76,8 @@ fun Board(
         onViewportChange = onViewportChange,
         onDraggingChange = { dragging = it },
         onCellHoverChange = { hoveredCell = it },
-        onCellClick = { onCellClick?.invoke(it) },
-        onBoardRightClick = { onBoardRightClick?.invoke(it) },
+        onCellClick = { onCellClick?.invoke(this, it) },
+        onBoardRightClick = { onBoardRightClick?.invoke(this, it) },
     )
 
     Canvas({
@@ -130,7 +131,7 @@ private fun HTMLCanvasElement.drawBoard(
         renderingContext.drawPolygon(
             shape = hoveredCell.createHex(),
             color = cellHoverColor.withAlpha(48),
-            outline = if (cell != null && (cell.highlighted || cell.focussed)) null else Stroke(cellHoverColor.withAlpha(140), 2f),
+            outline = if (cell != null && (cell.highlight != null || cell.focused)) null else Stroke(cellHoverColor.withAlpha(140), 2f),
         )
     }
 }

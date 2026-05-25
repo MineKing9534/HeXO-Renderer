@@ -55,7 +55,7 @@ fun String.parseBKENotation(
                 owner = player
                 turn = index + 1
 
-                focussed = index == turns.lastIndex
+                focused = index == turns.lastIndex
             }
         }
 

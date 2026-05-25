@@ -26,7 +26,7 @@ class Board {
     }
 
     operator fun get(q: Int, r: Int) = get(CellCoordinate(q, r))
-    operator fun get(coordinate: CellCoordinate) = cells.getOrPut(coordinate) { Cell(null, false) }
+    operator fun get(coordinate: CellCoordinate) = cells.getOrPut(coordinate) { Cell() }
 
     operator fun set(q: Int, r: Int, cell: Cell) = set(CellCoordinate(q, r), cell)
     operator fun set(coordinate: CellCoordinate, cell: Cell) {
@@ -86,8 +86,8 @@ fun Board.merge(other: Board, overrideOwner: Boolean = false): Board {
             }
             Cell(
                 new.owner ?: old.owner,
-                highlighted = old.highlighted || new.highlighted,
-                focussed = old.focussed || new.focussed,
+                highlight = old.highlight ?: new.highlight,
+                focused = old.focused || new.focused,
                 turn = new.turn ?: old.turn,
             )
         }

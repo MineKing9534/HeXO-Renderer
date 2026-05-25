@@ -59,8 +59,8 @@ internal fun BoardInteractions(
     onViewportChange: (BoardViewport) -> Unit,
     onDraggingChange: (Boolean) -> Unit,
     onCellHoverChange: (CellCoordinate?) -> Unit,
-    onCellClick: (CellCoordinate) -> Unit,
-    onBoardRightClick: (BoardRightClickEvent) -> Unit,
+    onCellClick: MouseEvent.(CellCoordinate) -> Unit,
+    onBoardRightClick: MouseEvent.(BoardRightClickEvent) -> Unit,
 ) {
     val onViewportChange by rememberUpdatedState(onViewportChange)
     val onDraggingChange by rememberUpdatedState(onDraggingChange)
@@ -103,14 +103,14 @@ private class BoardEventListeners(
     onViewportChange: (BoardViewport) -> Unit,
     private val onDraggingChange: (Boolean) -> Unit,
     private val onCellHoverChange: (CellCoordinate?) -> Unit,
-    private val onCellClick: (CellCoordinate) -> Unit,
-    private val onBoardRightClick: (BoardRightClickEvent) -> Unit,
+    private val onCellClick: MouseEvent.(CellCoordinate) -> Unit,
+    private val onBoardRightClick: MouseEvent.(BoardRightClickEvent) -> Unit,
 ) {
     private val renderLayout by renderLayout
     private var viewport by viewport.withSetter(onViewportChange)
 
-    private var rightClickStart: Point? = null
-    private var lastRightClickEnd: Point? = null
+    private var rightClickStart: MouseEvent? = null
+    private var lastRightClickEnd: CellCoordinate? = null
     private var lastDragPosition: Point? = null
         set(value) {
             val wasDragging = field != null
@@ -140,7 +140,7 @@ private class BoardEventListeners(
             }
 
             SECONDARY_BUTTON -> {
-                rightClickStart = event.position()
+                rightClickStart = event
                 lastRightClickEnd = null
             }
         }
@@ -175,7 +175,7 @@ private class BoardEventListeners(
             return
         }
 
-        onCellClick(cellAt(mouseEvent.position()))
+        event.onCellClick(cellAt(mouseEvent.position()))
     }
 
     private fun wheel(event: Event) {
@@ -221,11 +221,13 @@ private class BoardEventListeners(
     }
 
     private fun triggerRightClick(to: Point, final: Boolean) {
-        if (to == lastRightClickEnd && !final) return
-        val rightClickStart = rightClickStart ?: return
+        val start = rightClickStart ?: return
 
-        onBoardRightClick(BoardRightClickEvent(cellAt(rightClickStart), cellAt(to), final = final))
-        lastRightClickEnd = to
+        val end = cellAt(to)
+        if (end == lastRightClickEnd && !final) return
+
+        start.onBoardRightClick(BoardRightClickEvent(cellAt(start.position()), end, final = final))
+        lastRightClickEnd = end
     }
 
     private fun dragTo(position: Point) {

@@ -3,6 +3,7 @@ package de.mineking.hexo.parse
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.minus
@@ -35,7 +36,7 @@ private enum class ParserState {
         override fun handleChar(ch: Char, offset: Int, cursor: Cursor, buffer: StringBuilder): ParserState {
             return when {
                 ch.isDigit() -> GapDigits.handleChar(ch, offset, cursor, buffer)
-                ch == '(' -> LineHighlight
+                ch == '(' -> Highlight
                 ch == '[' -> Label
                 else -> {
                     cursor.handleNormalChar(ch, offset)
@@ -52,15 +53,11 @@ private enum class ParserState {
                     return
                 }
 
-                'x', 'X' -> configureCurrent { owner = CellOwner.X }
-                'o', 'O' -> configureCurrent { owner = CellOwner.O }
-                '.', '!' -> {}
+                'x' -> configureCurrent { owner = CellOwner.X }
+                'o' -> configureCurrent { owner = CellOwner.O }
+                '.' -> {}
                 '-' -> step()
                 else -> throw HexoNotationException("Unexpected character `$ch` at offset $offset")
-            }
-
-            if (ch.isUpperCase() || ch == '!') {
-                configureCurrent { highlighted = true }
             }
 
             step()
@@ -93,12 +90,12 @@ private enum class ParserState {
             }
         }
     },
-    LineHighlight {
-        private val pattern = """^([bdpq<>])\s*(\d*)\s*([xo]?)$""".toRegex()
+    Highlight {
+        private val pattern = """^\s*(?:([bdpq<>])\s*(\d*)\s*)?([xo!]?)\s*$""".toRegex()
 
         override fun handleChar(ch: Char, offset: Int, cursor: Cursor, buffer: StringBuilder): ParserState {
             if (ch == ')') {
-                cursor.highlightLine(buffer.toString())
+                cursor.highlight(buffer.toString())
                 buffer.clear()
 
                 return Normal
@@ -108,19 +105,25 @@ private enum class ParserState {
             }
         }
 
-        private fun Cursor.highlightLine(notation: String) {
+        private fun Cursor.highlight(notation: String) {
             val match = pattern.matchEntire(notation)
-            requireHexo(match != null) { "Invalid line highlight notation, use `[b,d,p,q,<,>]<length>?[x,o]?`" }
+            requireHexo(match != null) { "Invalid highlight notation, use `[b,d,p,q,<,>]?<length>?[x,o]?`" }
 
-            val direction = Direction.fromSymbol(match.groupValues[1])
-            val length = match.groupValues[2].takeIf { it.isNotEmpty() }?.toInt() ?: 6
             val color = when (match.groupValues[3]) {
                 "x" -> CellOwner.X
                 "o" -> CellOwner.O
                 else -> null
             }
 
-            highlightLine(previousPosition, direction, length, color)
+            if (match.groupValues[1].isNotBlank()) {
+                val direction = Direction.fromSymbol(match.groupValues[1])
+                val length = match.groupValues[2].takeIf { it.isNotEmpty() }?.toInt() ?: 6
+                highlightLine(previousPosition, direction, length, color)
+            } else {
+                configurePrevious {
+                    highlight = CellHighlight(color)
+                }
+            }
         }
     },
     ;

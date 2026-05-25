@@ -1,10 +1,10 @@
 package de.mineking.hexo.core
 
-enum class CellOwner {
-    X {
+enum class CellOwner(val symbol: String) {
+    X("x") {
         override val other get() = O
     },
-    O {
+    O("o") {
         override val other get() = X
     },
     ;

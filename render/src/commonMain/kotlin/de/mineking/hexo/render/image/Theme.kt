@@ -47,12 +47,11 @@ interface Theme {
     val borderThickness: Double
 
     val backgroundColor: Color
-    val cellBorderColor: Color
-    val highlightColor: ElementColors
-    val focusColor: ElementColors
 
     fun HighlightLine.color(): ElementColors
-    fun Cell.backgroundColor(): Color
+    fun Cell.backgroundColor(): ElementColors
+    fun Cell.highlightColor(): ElementColors
+
     fun Cell.labelColor(): Color
 }
 
@@ -60,17 +59,14 @@ class BasicTheme(
     override val gap: Double,
     override val borderThickness: Double,
     override val backgroundColor: Color,
-    override val cellBorderColor: Color,
-    highlightColor: Color,
-    focusColor: Color,
+    val cellBorderColor: Color,
+    val highlightColor: Color,
+    val focusColor: Color,
     val emptyCellBackgroundColor: Color,
     val emptyCellLabelColor: Color,
     val playerXColor: Color,
     val playerOColor: Color,
 ) : Theme {
-    override val highlightColor = Theme.ElementColors(highlightColor.withAlpha(48), highlightColor)
-    override val focusColor = Theme.ElementColors(focusColor.withAlpha(48), focusColor)
-
     private fun CellOwner?.color(default: Color, transform: (Color) -> Color = { it }) = when (this) {
         CellOwner.X -> transform(playerXColor)
         CellOwner.O -> transform(playerOColor)
@@ -78,10 +74,20 @@ class BasicTheme(
     }
 
     override fun HighlightLine.color() = Theme.ElementColors(
-        color.color(default = highlightColor.borderColor).withAlpha(220),
+        color.color(default = highlightColor).withAlpha(220),
         cellBorderColor.withAlpha(128),
     )
-    override fun Cell.backgroundColor() = owner.color(default = emptyCellBackgroundColor)
+    override fun Cell.backgroundColor() = Theme.ElementColors(owner.color(default = emptyCellBackgroundColor), cellBorderColor)
+    override fun Cell.highlightColor(): Theme.ElementColors {
+        val color = when {
+            highlight != null -> highlight?.color.color(default = highlightColor)
+            focused -> focusColor
+            else -> return Theme.ElementColors(Color.Transparent, Color.Transparent)
+        }
+
+        return Theme.ElementColors(color.withAlpha(48), color)
+    }
+
     override fun Cell.labelColor() = owner.color(default = emptyCellLabelColor) { it.darker() }
 
     companion object {

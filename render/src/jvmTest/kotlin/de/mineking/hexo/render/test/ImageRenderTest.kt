@@ -2,6 +2,7 @@ package de.mineking.hexo.render.test
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.render.image.renderToImage
@@ -16,11 +17,11 @@ class ImageRenderTest {
         val board = Board()
         board[0, 0].apply {
             owner = CellOwner.X
-            highlighted = true
+            highlight = CellHighlight(null)
         }
         board[3, 0].apply {
             owner = CellOwner.X
-            focussed = true
+            focused = true
         }
         board[0, 1].apply {
             owner = CellOwner.O
@@ -29,7 +30,7 @@ class ImageRenderTest {
         board[2, 1].owner = CellOwner.O
         board[0, 3].owner = CellOwner.X
         board[0, 4].apply {
-            highlighted = true
+            highlight = CellHighlight(null)
             label = "b"
         }
         board[-1, 4].label = "a"

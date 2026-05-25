@@ -2,6 +2,7 @@ package de.mineking.hexo.parse.test
 
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.HighlightLine
@@ -77,13 +78,13 @@ class RectilinearNotationParserTest {
 
     @Test
     fun `parse with cell highlight`() {
-        val board = "x X - ! O".parseRectilinearNotation()
+        val board = "x x(!) - .(!) o(!)".parseRectilinearNotation()
         assertEquals(
             mapOf(
                 CellCoordinate(0, 0) to Cell(CellOwner.X),
-                CellCoordinate(1, 0) to Cell(CellOwner.X, highlighted = true),
-                CellCoordinate(4, 0) to Cell(null, highlighted = true),
-                CellCoordinate(5, 0) to Cell(CellOwner.O, highlighted = true),
+                CellCoordinate(1, 0) to Cell(CellOwner.X, highlight = CellHighlight(null)),
+                CellCoordinate(4, 0) to Cell(null, highlight = CellHighlight(null)),
+                CellCoordinate(5, 0) to Cell(CellOwner.O, highlight = CellHighlight(null)),
             ),
             board.cells,
         )

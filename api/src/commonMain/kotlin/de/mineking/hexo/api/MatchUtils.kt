@@ -15,7 +15,7 @@ fun FinishedGame.asBoard(maxMoves: Int = moves.size, showTurnNumber: Boolean = f
         val turn = (it + 1) / 2
         if (showTurnNumber) cell.turn = turn
 
-        if (turn == maxMoves / 2) cell.focussed = true
+        if (turn == maxMoves / 2) cell.focused = true
     }
 }
 
@@ -27,6 +27,6 @@ fun Formation.asBoard(showTurnNumber: Boolean = false) = Board().apply {
         val turn = (index + 1) / 2
         if (showTurnNumber) cell.turn = turn
 
-        if (turn == gamePosition.cells.size / 2) cell.focussed = true
+        if (turn == gamePosition.cells.size / 2) cell.focused = true
     }
 }
