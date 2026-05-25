@@ -10,7 +10,7 @@ kotlin {
             testTask {
                 failOnNoDiscoveredTests = false
                 useKarma {
-                    useFirefox()
+                    useFirefoxHeadless()
                 }
             }
         }
