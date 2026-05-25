@@ -8,7 +8,7 @@ COPY buildSrc ./buildSrc
 
 COPY . .
 
-RUN --mount=type=cache,target=/home/gradle/.gradle \
+RUN --mount=type=cache,target=/home/gradle/.gradle,sharing=locked \
     ./gradlew --no-daemon :discord:bot:shadowJar
 
 FROM eclipse-temurin:21-jre-alpine
