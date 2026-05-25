@@ -12,4 +12,5 @@ internal class CachingFinishedGameRepository(val delegate: FinishedGameRepositor
         .asCache<GameId, FinishedGame>()
 
     override suspend fun getGame(id: GameId) = cache.getOrNull(id) { delegate.getGame(it) }
+    override suspend fun getFinishedGames(page: Int, pageSize: Int, rated: Boolean?) = delegate.getFinishedGames(page, pageSize, rated)
 }

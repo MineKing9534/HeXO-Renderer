@@ -1,6 +1,5 @@
 package de.mineking.hexo.api.game
 
-import de.mineking.hexo.api.HEXO_WEBSITE
 import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.InternalHexoApi
 import de.mineking.hexo.api.profile.ProfileId
@@ -13,7 +12,6 @@ import de.mineking.hexo.api.utils.Duration
 import de.mineking.hexo.core.CellOwner
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
-import kotlin.uuid.Uuid
 
 @JvmInline
 @Serializable
@@ -21,7 +19,7 @@ value class PlayerId(val value: String)
 
 @JvmInline
 @Serializable
-value class GameId(val value: Uuid)
+value class GameId(val value: String)
 
 class GameReference(
     private val repository: FinishedGameRepository,
@@ -34,10 +32,12 @@ class GameReference(
 class FinishedGame(
     @property:InternalHexoApi val client: HexoApiClient,
     val id: GameId,
+    val url: String,
     val result: GameResult,
     val options: GameOptions,
     val tournamentInfo: TournamentMatchSnapshot?,
     val moves: List<Move>,
+    val moveCount: Int,
     val players: List<Player>,
 ) {
     companion object {
@@ -68,9 +68,13 @@ class FinishedGame(
             )
         }.sortedBy { player -> moves.indexOfFirst { it.playerId == player.playerId } }
 
-        private fun TournamentMatchSnapshotDto.toTournamentMatchSnapshot(repository: () -> TournamentRepository) = TournamentMatchSnapshot(
+        private fun TournamentMatchSnapshotDto.toTournamentMatchSnapshot(
+            host: String,
+            repository: () -> TournamentRepository,
+        ) = TournamentMatchSnapshot(
             repository = repository,
             tournamentId = tournamentId,
+            tournamentUrl = "$host/tournaments/${tournamentId.value}",
             tournamentName = tournamentName,
             matchId = matchId,
             bracket = bracket,
@@ -92,16 +96,16 @@ class FinishedGame(
             return FinishedGame(
                 client = client,
                 id = dto.id,
+                url = "${client.host}/finished-games/${dto.id.value}",
                 result = GameResult(playersById[dto.result.winningPlayerId], dto.result.duration, dto.result.reason),
                 options = dto.options,
-                tournamentInfo = dto.tournament?.toTournamentMatchSnapshot(tournamentRepository),
+                tournamentInfo = dto.tournament?.toTournamentMatchSnapshot(client.host, tournamentRepository),
                 moves = dto.moves.map { Move(playersById[it.playerId]!!, it.q, it.r) },
+                moveCount = dto.moveCount,
                 players = players,
             )
         }
     }
-
-    val url get() = "${HEXO_WEBSITE}/games/${id.value}"
 }
 
 class Player(
@@ -124,6 +128,7 @@ fun Player.isGuest() = profileId == null
 class TournamentMatchSnapshot(
     private val repository: () -> TournamentRepository,
     val tournamentId: TournamentId,
+    val tournamentUrl: String,
     val tournamentName: String,
     val matchId: TournamentMatchId,
     val bracket: TournamentBracket,
@@ -132,8 +137,6 @@ class TournamentMatchSnapshot(
     val bestOf: Int,
     val currentGameNumber: Int,
 ) {
-    val tournamentUrl get() = "${HEXO_WEBSITE}/tournaments/${tournamentId.value}"
-
     @OptIn(InternalHexoApi::class)
     suspend fun retrieveTournament() = repository().getTournament(tournamentId)
 

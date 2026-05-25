@@ -1,6 +1,5 @@
 package de.mineking.hexo.api.profile
 
-import de.mineking.hexo.api.HEXO_WEBSITE
 import de.mineking.hexo.api.utils.Instant
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
@@ -9,26 +8,42 @@ import kotlin.jvm.JvmInline
 @Serializable
 value class ProfileId(val value: String)
 
-class Profile(
-    val id: ProfileId,
-    val displayName: String,
-    val image: String?,
-    val registeredAt: Instant,
-    val lastActiveAt: Instant,
-    val statistics: ProfileStatistics,
-) {
-    companion object {
-        internal fun of(dto: ProfileDto, statistics: ProfileStatistics): Profile {
-            return Profile(
-                id = dto.id,
-                displayName = dto.username,
-                image = dto.image,
-                registeredAt = dto.registeredAt,
-                lastActiveAt = dto.lastActiveAt,
-                statistics = statistics,
-            )
-        }
-    }
+interface Profile {
+    val id: ProfileId
+    val url: String
+    val displayName: String
+    val image: String?
+    val registeredAt: Instant
+    val lastActiveAt: Instant
 
-    val url get() = "${HEXO_WEBSITE}/profile/${id.value}"
+    suspend fun retrieveStatistics(forceUpdate: Boolean = false): ProfileStatistics?
+}
+
+interface RichProfile : Profile {
+    val statistics: ProfileStatistics
+}
+
+internal class ProfileImpl(
+    private val repository: ProfileRepositoryImpl,
+    dto: ProfileDto,
+) : Profile {
+    override val id = dto.id
+    override val url = "${repository.client.host}/profile/${id.value}"
+    override val displayName = dto.username
+    override val image = dto.image
+    override val registeredAt = dto.registeredAt
+    override val lastActiveAt = dto.lastActiveAt
+
+    override suspend fun retrieveStatistics(forceUpdate: Boolean) = repository.getProfileStatistics(id)
+}
+
+internal class RichProfileImpl(
+    private val repository: ProfileRepositoryImpl,
+    dto: ProfileDto,
+    override val statistics: ProfileStatistics,
+) : RichProfile, Profile by ProfileImpl(repository, dto) {
+    override suspend fun retrieveStatistics(forceUpdate: Boolean): ProfileStatistics? {
+        if (!forceUpdate) return statistics
+        return repository.getProfileStatistics(id)
+    }
 }

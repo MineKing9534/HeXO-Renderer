@@ -4,13 +4,13 @@ import de.mineking.hexo.api.socket.SocketIOClient
 import de.mineking.hexo.api.socket.SocketIOOptions
 import de.mineking.hexo.api.utils.EntityRequesterFactory
 import de.mineking.hexo.api.utils.logRequestErrors
+import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
-import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
 import io.ktor.client.request.request
@@ -18,7 +18,6 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
-import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -31,7 +30,6 @@ import kotlinx.serialization.json.Json
 annotation class InternalHexoApi
 
 private val logger = KotlinLogging.logger {}
-const val HEXO_WEBSITE = "https://hexo.did.science"
 
 private val json = Json {
     ignoreUnknownKeys = true
@@ -39,8 +37,8 @@ private val json = Json {
 }
 
 class HexoApiClient(
-    internal val coroutineScope: CoroutineScope = createCoroutineScope(),
-    private val host: String = HEXO_WEBSITE,
+    internal val coroutineScope: CoroutineScope = createCoroutineScope(logger),
+    internal val host: String = "https://hexo.did.science",
     socketIOOptions: SocketIOOptions? = SocketIOOptions.createDefault(host),
     private val httpClient: HttpClient = createDefaultHttpClient(),
     internal val entityRequesterFactory: EntityRequesterFactory = EntityRequesterFactory.Debouncing(coroutineScope).logRequestErrors(),
@@ -61,10 +59,6 @@ fun createDefaultHttpClient(
     engine: HttpClientEngine = DefaultHttpEngine,
     config: HttpClientConfig<*>.() -> Unit = {},
 ) = HttpClient(engine) {
-    install(WebSockets) {
-        contentConverter = KotlinxWebsocketSerializationConverter(json)
-    }
-
     install(ContentNegotiation) {
         json(json)
     }
@@ -77,7 +71,7 @@ fun createDefaultHttpClient(
     config()
 }
 
-fun createCoroutineScope(dispatcher: CoroutineDispatcher = DefaultCoroutineDispatcher): CoroutineScope {
+fun createCoroutineScope(logger: KLogger, dispatcher: CoroutineDispatcher = DefaultCoroutineDispatcher): CoroutineScope {
     val parent = SupervisorJob()
     return CoroutineScope(dispatcher + parent + CoroutineExceptionHandler { _, throwable ->
         logger.error(throwable) { "Uncaught exception from coroutine" }

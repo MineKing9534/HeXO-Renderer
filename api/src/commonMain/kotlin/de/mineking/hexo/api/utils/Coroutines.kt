@@ -17,7 +17,7 @@ private suspend fun <A, B> createResult(finished: A?, waiting: Deferred<B?>): Pa
 
 private fun <A, B> Pair<A, B>.reversed() = second to first
 
-internal suspend fun <A, B> awaitBothOrNull(
+suspend fun <A, B> awaitBothOrNull(
     first: suspend () -> A?,
     second: suspend () -> B?,
 ) = coroutineScope {

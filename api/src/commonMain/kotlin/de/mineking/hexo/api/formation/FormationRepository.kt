@@ -13,7 +13,7 @@ internal class FormationRepositoryImpl(private val client: HexoApiClient) : Form
         val response = client.request("/sandbox-positions/${id.value}")
 
         if (!response.status.isSuccess()) return@createEntityRequester null
-        response.body()
+        Formation.of(client.host, response.body())
     }
 
     override suspend fun getFormation(id: FormationId) = requester.fetch(id)

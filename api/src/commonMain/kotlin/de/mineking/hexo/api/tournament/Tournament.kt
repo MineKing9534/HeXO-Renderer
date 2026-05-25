@@ -1,6 +1,5 @@
 package de.mineking.hexo.api.tournament
 
-import de.mineking.hexo.api.HEXO_WEBSITE
 import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.InternalHexoApi
 import de.mineking.hexo.api.game.FinishedGameRepository
@@ -22,9 +21,10 @@ value class TournamentId(val value: Uuid)
 @Serializable
 value class TournamentMatchId(val value: String)
 
-data class Tournament(
+class Tournament(
     @property:InternalHexoApi val client: HexoApiClient,
     val id: TournamentId,
+    val url: String,
     val name: String,
     val description: String?,
     val format: TournamentFormat,
@@ -108,6 +108,7 @@ data class Tournament(
             return Tournament(
                 client = client,
                 id = dto.id,
+                url = "${client.host}/tournaments/${dto.id.value}",
                 name = dto.name,
                 description = dto.description,
                 format = TournamentFormat.of(dto, matches),
@@ -124,8 +125,6 @@ data class Tournament(
             )
         }
     }
-
-    val url get() = "${HEXO_WEBSITE}/tournaments/${id.value}"
 }
 
 class TournamentParticipant(

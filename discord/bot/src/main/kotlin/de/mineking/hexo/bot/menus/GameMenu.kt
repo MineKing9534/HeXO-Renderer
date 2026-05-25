@@ -1,0 +1,272 @@
+package de.mineking.hexo.bot.menus
+
+import de.mineking.discord.localization.Locale
+import de.mineking.discord.localization.LocalizationFile
+import de.mineking.discord.localization.LocalizationParameter
+import de.mineking.discord.localization.Localize
+import de.mineking.discord.ui.Lazy
+import de.mineking.discord.ui.MutableState
+import de.mineking.discord.ui.UIManager
+import de.mineking.discord.ui.builder.append
+import de.mineking.discord.ui.builder.code
+import de.mineking.discord.ui.builder.codeBlock
+import de.mineking.discord.ui.builder.components.buildTextDisplay
+import de.mineking.discord.ui.builder.components.localizedTextDisplay
+import de.mineking.discord.ui.builder.components.message.actionRow
+import de.mineking.discord.ui.builder.components.message.button
+import de.mineking.discord.ui.builder.components.message.container
+import de.mineking.discord.ui.builder.components.message.link
+import de.mineking.discord.ui.builder.components.message.mediaGallery
+import de.mineking.discord.ui.builder.components.message.modalButton
+import de.mineking.discord.ui.builder.components.message.section
+import de.mineking.discord.ui.builder.components.message.separator
+import de.mineking.discord.ui.builder.components.message.toggleButton
+import de.mineking.discord.ui.builder.components.modal.intInput
+import de.mineking.discord.ui.builder.components.modal.localizedLabel
+import de.mineking.discord.ui.builder.components.modal.unbox
+import de.mineking.discord.ui.builder.line
+import de.mineking.discord.ui.disabledIf
+import de.mineking.discord.ui.getValue
+import de.mineking.discord.ui.initialize
+import de.mineking.discord.ui.lazy
+import de.mineking.discord.ui.localize
+import de.mineking.discord.ui.message.MessageComponent
+import de.mineking.discord.ui.message.MessageMenuConfig
+import de.mineking.discord.ui.message.parameter
+import de.mineking.discord.ui.message.withParameter
+import de.mineking.discord.ui.modal.map
+import de.mineking.discord.ui.parameter
+import de.mineking.discord.ui.registerLocalizedMenu
+import de.mineking.discord.ui.render
+import de.mineking.discord.ui.setValue
+import de.mineking.discord.ui.state
+import de.mineking.discord.ui.terminateRender
+import de.mineking.hexo.api.asBoard
+import de.mineking.hexo.api.game.FinishedGame
+import de.mineking.hexo.api.game.FinishedGameRepository
+import de.mineking.hexo.api.game.GameFinishReason
+import de.mineking.hexo.api.game.GameId
+import de.mineking.hexo.api.game.isGuest
+import de.mineking.hexo.api.utils.TimeControl
+import de.mineking.hexo.board.Board
+import de.mineking.hexo.bot.CustomEmoji
+import de.mineking.hexo.bot.HeXODiscordBot
+import de.mineking.hexo.bot.main
+import de.mineking.hexo.bot.utils.MessageColor
+import de.mineking.hexo.bot.utils.asMediaGalleryItem
+import de.mineking.hexo.bot.utils.effectiveLocale
+import de.mineking.hexo.bot.utils.renderAsComponent
+import de.mineking.hexo.bot.utils.respond
+import de.mineking.hexo.core.CellOwner
+import de.mineking.hexo.render.RectilinearNotationType
+import de.mineking.hexo.render.renderRectilinearNotation
+import dev.freya02.jda.emojis.unicode.Emojis
+import net.dv8tion.jda.api.EmbedBuilder.ZERO_WIDTH_SPACE
+import net.dv8tion.jda.api.components.actionrow.ActionRow
+import net.dv8tion.jda.api.components.separator.Separator
+import net.dv8tion.jda.api.interactions.DiscordLocale
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback
+import kotlin.math.absoluteValue
+
+data class GameMenuParameter(val event: IReplyCallback, val id: GameId, val move: Int)
+private data class MatchData(val game: FinishedGame, val board: Board)
+
+fun UIManager.gameMenu(
+    gameRepository: FinishedGameRepository,
+) = registerLocalizedMenu<GameMenuParameter, GameMenuLocalization>("game") { localization ->
+    var id by state(GameId(""))
+    val moveState = state(0)
+    val showTurnNumber = state(false)
+
+    var move by moveState
+
+    initialize {
+        id = it.id
+        move = it.move
+    }
+
+    val locale = parameter({ DiscordLocale.UNKNOWN }, { it.event.effectiveLocale }, { event.effectiveLocale })
+    localize(locale) // Predefine locale for potential error handling
+
+    val lazyMatchData = lazy(default = null) {
+        val match = gameRepository.getGame(id) ?: return@lazy null
+        val board = match.asBoard(move, showTurnNumber.value)
+
+        MatchData(match, board)
+    }
+    val matchData by lazyMatchData
+
+    render {
+        val matchData = matchData
+        val event = parameter({ error("") }, { it.event }, { event })
+        if (matchData == null) {
+            event.respond(MessageColor.Error, localization.errorMatchNotFound(event.effectiveLocale, id))
+            terminateRender()
+        }
+
+        localize(locale) {
+            bindParameter("game", matchData.game)
+        }
+
+        move = move.coerceIn(0, matchData.game.moves.size)
+    }
+
+    +container {
+        render {
+            val (match, board) = matchData ?: return@render
+
+            +section(
+                accessory = link("view", emoji = Emojis.GLOBE_WITH_MERIDIANS, url = match.url),
+                localizedTextDisplay("title"),
+            )
+            +separator(invisible = true)
+
+            main.run {
+                +match.gameDetails(localization, locale)
+
+                +separator(spacing = Separator.Spacing.LARGE)
+                +mediaGallery(board.asMediaGalleryItem())
+                +separator(spacing = Separator.Spacing.LARGE)
+            }
+        }
+
+        +moveSelector("move", matchData?.game?.moves?.size ?: Int.MAX_VALUE, moveState)
+        +additionalActions(main, lazyMatchData, showTurnNumber)
+    }
+}
+
+context(main: HeXODiscordBot)
+private fun FinishedGame.gameDetails(localization: GameMenuLocalization, locale: DiscordLocale) = buildTextDisplay {
+    players.forEach { player ->
+        +line {
+            val emoji = when (player.color) {
+                CellOwner.X -> CustomEmoji.PlayerX
+                CellOwner.O -> CustomEmoji.PlayerO
+            }
+
+            append(main.emojiManager[emoji].formatted)
+            append(" ")
+            append(player.displayName)
+
+            if (!player.isGuest()) {
+                val eloChange = player.eloChange?.let { "　[${if (it < 0) "▼" else "▲"} ${it.absoluteValue}]" } ?: ""
+                append("　`${player.elo} ELO$eloChange`")
+            }
+            if (result.winner?.playerId == player.playerId) append(" :first_place:")
+        }
+    }
+
+    +line()
+    +line {
+        +code("${Emojis.HOURGLASS.formatted} ${result.duration}")
+        append("\u2003")
+        +code("${Emojis.TIMER_CLOCK.formatted} ${localization.timeControl(locale, options.timeControl)}")
+        append("\u2003")
+        +code(result.reason.localize(locale, localization))
+    }
+}
+
+private fun additionalActions(
+    main: HeXODiscordBot,
+    matchData: Lazy<MatchData?>,
+    showTurnNumber: MutableState<Boolean>,
+): MessageComponent<ActionRow> {
+    val matchData by matchData
+    return actionRow {
+        +button("format", emoji = Emojis.PRINTER) {
+            val board = matchData?.board ?: return@button
+            deferReply(true).queue()
+
+            hook.editOriginalComponents(container {
+                RectilinearNotationType.entries.forEach {
+                    +buildTextDisplay {
+                        +codeBlock("hexo", board.renderRectilinearNotation(it))
+                    }
+                }
+            }.renderAsComponent()).useComponentsV2().queue()
+        }
+        +toggleButton(
+            "turn",
+            emoji = main.emojiManager[if (showTurnNumber.value) CustomEmoji.SwitchOn else CustomEmoji.SwitchOff],
+            ref = showTurnNumber,
+        ) { deferEdit().queue() }
+    }
+}
+
+private fun GameFinishReason.localize(locale: DiscordLocale, localization: GameMenuLocalization): String {
+    val emoji = when (this) {
+        GameFinishReason.SixInARow -> Emojis.TRIANGULAR_RULER
+        GameFinishReason.Timeout -> Emojis.ALARM_CLOCK
+        GameFinishReason.Surrender -> Emojis.FLAG_WHITE
+        GameFinishReason.Disconnect -> Emojis.SATELLITE
+        GameFinishReason.DrawAgreement -> Emojis.HANDSHAKE
+        GameFinishReason.Terminated -> Emojis.NO_ENTRY
+    }
+
+    return "${emoji.formatted} ${localization.finishReason(locale, this)}"
+}
+
+private fun MessageMenuConfig<*, *>.moveSelector(
+    name: String,
+    max: Int,
+    ref: MutableState<Int>,
+): MessageComponent<ActionRow> {
+    var move by ref
+
+    return actionRow {
+        +button("$name-first", label = ZERO_WIDTH_SPACE, emoji = Emojis.REWIND) {
+            deferEdit().queue()
+            move = 1
+        }.disabledIf(move == 1)
+
+        +button(
+            "$name-back",
+            label = ZERO_WIDTH_SPACE,
+            emoji = Emojis.ARROW_LEFT,
+        ) {
+            deferEdit().queue()
+            move--
+        }.disabledIf(move <= 1)
+
+        +modalButton(
+            name,
+            label = "$move / $max",
+            emoji = Emojis.PUZZLE_PIECE,
+            component = localizedLabel(
+                intInput(
+                    "move",
+                    value = move,
+                    placeholder = "$move",
+                ).unbox().map { it ?: terminateRender() },
+            ),
+        ) {
+            deferEdit().queue()
+            move = it.coerceIn(1, max)
+        }
+
+        +button(
+            "$name-next",
+            label = ZERO_WIDTH_SPACE,
+            emoji = Emojis.ARROW_RIGHT,
+        ) {
+            deferEdit().queue()
+            move++
+        }.disabledIf(move >= max)
+
+        +button("$name-last", label = ZERO_WIDTH_SPACE, emoji = Emojis.FAST_FORWARD) {
+            deferEdit().queue()
+            move = parameter()
+        }.disabledIf(move == max).withParameter(max)
+    }
+}
+
+interface GameMenuLocalization : LocalizationFile {
+    @Localize
+    fun errorMatchNotFound(@Locale locale: DiscordLocale, @LocalizationParameter id: GameId): String
+
+    @Localize
+    fun timeControl(@Locale locale: DiscordLocale, @LocalizationParameter control: TimeControl): String
+
+    @Localize
+    fun finishReason(@Locale locale: DiscordLocale, @LocalizationParameter reason: GameFinishReason): String
+}

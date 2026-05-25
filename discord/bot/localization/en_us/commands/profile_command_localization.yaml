@@ -1,0 +1,17 @@
+command:
+  viewProfile.description: View HeXO Profile
+  profile:
+    description: Displays information about a hexi.did.science profile
+    options:
+      name.description: The profile name, id or url to view
+
+response.error:
+  not.found.generic: |-
+    ## Profile Not Found
+    
+    Unable to find a profile id associated with the given input.
+
+  not.found.user: |-
+    ## Profile Not Found
+    
+    No profile associated with ${ user.asMention }. 

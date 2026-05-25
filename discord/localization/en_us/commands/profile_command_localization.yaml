@@ -1,4 +1,0 @@
-command.profile:
-  description: Displays information about a hexi.did.science profile
-  options:
-    id.description: The profile id or url to view

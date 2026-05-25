@@ -9,11 +9,11 @@ COPY buildSrc ./buildSrc
 COPY . .
 
 RUN --mount=type=cache,target=/home/gradle/.gradle \
-    ./gradlew --no-daemon :discord:shadowJar
+    ./gradlew --no-daemon :discord:bot:shadowJar
 
 FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
-COPY --from=build /workspace/discord/build/libs/discord-*-all.jar /app/bot.jar
+COPY --from=build /workspace/discord/bot/build/libs/bot-*-all.jar /app/bot.jar
 
 ENTRYPOINT ["java", "-jar", "/app/bot.jar"]
