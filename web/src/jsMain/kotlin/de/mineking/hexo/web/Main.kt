@@ -53,6 +53,9 @@ private fun MainLayout(client: HexoApiClient) {
         board.clone().apply {
             val temporaryLine = temporaryLine
             if (temporaryLine != null) highlightedLines += temporaryLine
+
+            val maxTurn = cells.values.maxOfOrNull { it.turn ?: -1 }?.takeIf { it >= 0 }
+            cells.values.forEach { it.focused = maxTurn != null && (it.turn == maxTurn) }
         }
     }
 
@@ -63,10 +66,8 @@ private fun MainLayout(client: HexoApiClient) {
             board = transformedBoard,
             viewport = viewport,
             onViewportChange = { viewport = it },
-            onCellClick = {
-                val updated = board.clone()
-                updated[it].owner = CellOwner.X
-                board = updated
+            onCellClick = { coordinate ->
+                handleCellClick(coordinate, board, onBoardUpdate = { board = it })
             },
             onBoardRightClick = { event ->
                 handleBoardRightClick(board, event, onTemporaryLineUpdate = { temporaryLine = it }, onBoardUpdate = { board = it })
@@ -84,6 +85,46 @@ private fun MainLayout(client: HexoApiClient) {
             },
         )
     }
+}
+
+private fun handleCellClick(coordinate: CellCoordinate, board: HexoBoard, onBoardUpdate: (HexoBoard) -> Unit) {
+    if (coordinate in board.cells) return
+
+    var hadPosition = false
+    var turn = 0
+    var isComplete = false
+    var player = CellOwner.X
+
+    board.cells.values.forEach { cell ->
+        val cellOwner = cell.owner ?: return@forEach
+        val cellTurn = cell.turn?.takeIf { it >= turn } ?: run {
+            hadPosition = true
+            return@forEach
+        }
+
+        if (cellTurn == turn) {
+            isComplete = true
+        } else {
+            turn = cellTurn
+            isComplete = false
+            player = cellOwner
+        }
+    }
+
+    if (turn == 0 && hadPosition) {
+        turn = 1
+        player = CellOwner.X
+    } else if (isComplete) {
+        turn++
+        player = player.other
+    }
+
+    val updated = board.clone()
+    updated[coordinate].apply {
+        this.owner = player
+        this.turn = turn
+    }
+    onBoardUpdate(updated)
 }
 
 private fun MouseEvent.handleBoardRightClick(

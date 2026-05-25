@@ -2,10 +2,14 @@ package de.mineking.hexo.render.test
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellHighlight
+import de.mineking.hexo.board.Direction
 import de.mineking.hexo.core.CellOwner
+import de.mineking.hexo.parse.parseBKENotation
 import de.mineking.hexo.parse.parseRectilinearNotation
+import de.mineking.hexo.parse.parseRectilinearStateBKETurnNotation
 import de.mineking.hexo.render.RectilinearNotationType
 import de.mineking.hexo.render.renderRectilinearNotation
+import de.mineking.hexo.render.renderRectilinearStateBKETurnNotation
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -66,5 +70,24 @@ class IntegrationTest {
         val parsed = rendered.parseRectilinearNotation()
 
         assertEquals(board, parsed)
+    }
+
+    @Test
+    fun `bke test`() {
+        val input = "o A0 A2 x A1 A4 o B1.0 B4.0"
+        val parsed = input.parseBKENotation(null, Direction.Right)
+        val rendered = parsed.renderRectilinearStateBKETurnNotation(RectilinearNotationType.Compact)
+
+        assertEquals(input, rendered)
+    }
+
+    @Test
+    fun `rectilinear state bke turn test`() {
+        val input = ".x/xx, d o A0 B1 x B2.0 B2.1"
+        val parsed = input.parseRectilinearStateBKETurnNotation()
+        val rendered = parsed.renderRectilinearStateBKETurnNotation(RectilinearNotationType.Compact)
+
+        assertEquals(".x/xx, > @(0, -1) o A0 B0 x C1.0 C1.1", rendered)
+        val _ = rendered.parseRectilinearStateBKETurnNotation()
     }
 }
