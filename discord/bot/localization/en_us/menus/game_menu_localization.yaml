@@ -24,7 +24,9 @@ menu.game:
         label: Move number
         description: !<game:FinishedGame> The move to inspect [1-${game.moves.size}]
         placeholder: 42
-  format.label: Print Notation
+  notation:
+    label: Show Notation
+    title: Game State Notation
   turn.label: Show Turn Numbers
 
 finish.reason: >-

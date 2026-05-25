@@ -34,6 +34,7 @@ import de.mineking.discord.ui.message.MessageComponent
 import de.mineking.discord.ui.message.MessageMenuConfig
 import de.mineking.discord.ui.message.parameter
 import de.mineking.discord.ui.message.withParameter
+import de.mineking.discord.ui.modal.createModalComponent
 import de.mineking.discord.ui.modal.map
 import de.mineking.discord.ui.parameter
 import de.mineking.discord.ui.registerLocalizedMenu
@@ -55,7 +56,6 @@ import de.mineking.hexo.bot.main
 import de.mineking.hexo.bot.utils.MessageColor
 import de.mineking.hexo.bot.utils.asMediaGalleryItem
 import de.mineking.hexo.bot.utils.effectiveLocale
-import de.mineking.hexo.bot.utils.renderAsComponent
 import de.mineking.hexo.bot.utils.respond
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.render.RectilinearNotationType
@@ -94,7 +94,7 @@ fun UIManager.gameMenu(
 
         MatchData(match, board)
     }
-    val matchData by lazyMatchData
+    val matchData = lazyMatchData.getValue()
 
     render {
         val matchData = matchData
@@ -166,32 +166,35 @@ private fun FinishedGame.gameDetails(localization: GameMenuLocalization, locale:
     }
 }
 
-private fun additionalActions(
+private fun MessageMenuConfig<*, *>.additionalActions(
     main: HeXODiscordBot,
     matchData: Lazy<MatchData?>,
     showTurnNumber: MutableState<Boolean>,
-): MessageComponent<ActionRow> {
-    val matchData by matchData
-    return actionRow {
-        +button("format", emoji = Emojis.PRINTER) {
-            val board = matchData?.board ?: return@button
-            deferReply(true).queue()
-
-            hook.editOriginalComponents(container {
-                RectilinearNotationType.entries.forEach {
-                    +buildTextDisplay {
-                        +codeBlock("hexo", board.renderRectilinearNotation(it))
-                    }
-                }
-            }.renderAsComponent()).useComponentsV2().queue()
-        }
-        +toggleButton(
-            "turn",
-            emoji = main.emojiManager[if (showTurnNumber.value) CustomEmoji.SwitchOn else CustomEmoji.SwitchOff],
-            ref = showTurnNumber,
-        ) { deferEdit().queue() }
-    }
+) = actionRow {
+    +notationButton(matchData)
+    +toggleButton(
+        "turn",
+        emoji = main.emojiManager[if (showTurnNumber.value) CustomEmoji.SwitchOn else CustomEmoji.SwitchOff],
+        ref = showTurnNumber,
+    ) { deferEdit().queue() }
 }
+
+private fun MessageMenuConfig<*, *>.notationButton(
+    matchData: Lazy<MatchData?>,
+) = modalButton(
+    "notation",
+    emoji = Emojis.PRINTER,
+    component = createModalComponent {
+        val board = matchData.getValue()!!.board
+        +buildTextDisplay {
+            RectilinearNotationType.entries.forEach {
+                +codeBlock("hexo", board.renderRectilinearNotation(it))
+            }
+        }
+
+        produce {}
+    },
+)
 
 private fun GameFinishReason.localize(locale: DiscordLocale, localization: GameMenuLocalization): String {
     val emoji = when (this) {
