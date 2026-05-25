@@ -78,7 +78,21 @@ class RectilinearNotationParserTest {
 
     @Test
     fun `parse with cell highlight`() {
-        val board = "x x(!) - .(!) o(!)".parseRectilinearNotation()
+        val board = "x x(o) - .(!) o(!)".parseRectilinearNotation()
+        assertEquals(
+            mapOf(
+                CellCoordinate(0, 0) to Cell(CellOwner.X),
+                CellCoordinate(1, 0) to Cell(CellOwner.X, highlight = CellHighlight(CellOwner.O)),
+                CellCoordinate(4, 0) to Cell(null, highlight = CellHighlight(null)),
+                CellCoordinate(5, 0) to Cell(CellOwner.O, highlight = CellHighlight(null)),
+            ),
+            board.cells,
+        )
+    }
+
+    @Test
+    fun `parse legacy cell highlight`() {
+        val board = "x X - ! O".parseRectilinearNotation()
         assertEquals(
             mapOf(
                 CellCoordinate(0, 0) to Cell(CellOwner.X),

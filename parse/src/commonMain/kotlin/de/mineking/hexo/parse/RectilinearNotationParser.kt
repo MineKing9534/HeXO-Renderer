@@ -53,11 +53,17 @@ private enum class ParserState {
                     return
                 }
 
-                'x' -> configureCurrent { owner = CellOwner.X }
-                'o' -> configureCurrent { owner = CellOwner.O }
-                '.' -> {}
+                'x', 'X' -> configureCurrent { owner = CellOwner.X }
+                'o', 'O' -> configureCurrent { owner = CellOwner.O }
+                '.', '!' -> {}
                 '-' -> step()
                 else -> throw HexoNotationException("Unexpected character `$ch` at offset $offset")
+            }
+
+            if (ch.isUpperCase() || ch == '!') {
+                configureCurrent {
+                    highlight = CellHighlight(null)
+                }
             }
 
             step()

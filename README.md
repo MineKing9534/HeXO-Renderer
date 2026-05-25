@@ -57,7 +57,11 @@ Or for a more complex example:
 
 #### Highlighting
 Cells can also be highlighted. To do so, you can put the color (player symbol, or `!` for a neutral highlight) of the highlight in parentheses after the cell to highlight.
-`.(!)` Would be a empty neutral highlight, `o(x)` a blue cell with a yellow highlight.
+`.(!)` Would be an empty neutral highlight, `o(x)` a blue cell with a yellow highlight.
+
+> [!NOTE]
+> There is also a shorter syntax for neutral cell highlights: To highlight a cell notated by `x`, `o` or `.` you can use `X`, `O` or `!` to highlight that cell respectively.
+> For example `X` is equivalent to `x(!)`.
 
 Additionally, winning rows (6 or more in a row) are highlighted automatically in white.
 
