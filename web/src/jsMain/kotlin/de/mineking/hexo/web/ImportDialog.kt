@@ -21,6 +21,7 @@ import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
+import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 
 @Composable
@@ -55,29 +56,56 @@ fun ImportDialog(
         Div({ classes("text-xs", "text-slate-500") }) {
             Text("Game or Sandbox Position Link")
         }
-        Input(InputType.Url) {
-            value(url)
-            placeholder("https://hexo.did.science/sandbox/2mdyn02")
-            onInput {
-                url = it.value
+
+        UrlInput(
+            url = url,
+            onUrlUpdate = {
+                url = it
                 error = false
-            }
-            classes(
-                "w-full", "rounded-lg", "border-3", "border-slate-700", "bg-slate-950", "p-3",
-                "text-sm", "text-slate-100", "outline-none", "transition", "focus:bg-slate-800",
-            )
-            if (!valid) {
-                classes("focus:border-rose-400")
-            } else {
-                classes("focus:border-emerald-400")
-            }
-        }
+            },
+            valid = valid,
+        )
 
         if (error) {
             Div({ classes("min-h-5", "text-sm", "leading-relaxed", "text-rose-400") }) {
                 Text("Position or game not found")
             }
         }
+    }
+}
+
+@Composable
+private fun UrlInput(url: String, onUrlUpdate: (String) -> Unit, valid: Boolean) {
+    Input(InputType.Url) {
+        value(url)
+        placeholder("https://hexo.did.science/sandbox/2mdyn02")
+        onInput {
+            onUrlUpdate(it.value)
+        }
+        classes(
+            "w-full", "rounded-lg", "border-3", "border-slate-700", "bg-slate-950", "p-3",
+            "text-sm", "text-slate-100", "outline-none", "transition", "focus:bg-slate-800",
+        )
+        if (!valid) {
+            classes("focus:border-rose-400")
+        } else {
+            classes("focus:border-emerald-400")
+        }
+    }
+    Div({ classes("text-xs", "text-slate-500") }) {
+        Span({ classes("font-bold", "uppercase") }) {
+            Text("Hint: ")
+        }
+        Text("You can add ")
+        Span({
+            classes(
+                "mx-1", "inline-flex", "items-center", "rounded-md", "border", "px-1.5", "py-0.5", "font-mono", "text-xs", "font-semibold",
+                "border-indigo-300/30", "bg-slate-950/60", "text-indigo-300",
+            )
+        }) {
+            Text("?move=...")
+        }
+        Text(" to a game url to import the position at a specific move!")
     }
 }
 
@@ -133,8 +161,8 @@ private fun ConfirmButton(
     }
 }
 
-private val FORMATION_URL = "$URL/sandbox/(.*)".toRegex()
-private val GAME_URL = "$URL/games/(.*)".toRegex()
+private val FORMATION_URL = """^$URL/sandbox/(.*)$""".toRegex()
+private val GAME_URL = """^$URL/games/(.*?)(?:\?move=(\d+))?$""".toRegex()
 private suspend fun String.urlToBoard(
     formationRepository: FormationRepository,
     finishedGameRepository: FinishedGameRepository,
@@ -144,7 +172,10 @@ private suspend fun String.urlToBoard(
 
     return when {
         formationMatch != null -> formationRepository.getFormation(FormationId(formationMatch.groupValues[1]))?.asBoard()
-        gameMatch != null -> finishedGameRepository.getGame(GameId(gameMatch.groupValues[1]))?.asBoard()
+        gameMatch != null -> {
+            val move = gameMatch.groupValues[2].takeIf { it.isNotEmpty() }?.toInt()
+            finishedGameRepository.getGame(GameId(gameMatch.groupValues[1]))?.asBoard(move ?: Int.MAX_VALUE)
+        }
         else -> null
     }
 }
