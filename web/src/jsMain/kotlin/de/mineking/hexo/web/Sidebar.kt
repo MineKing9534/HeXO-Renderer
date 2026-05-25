@@ -3,6 +3,7 @@ package de.mineking.hexo.web
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -14,6 +15,7 @@ import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.parse.parseRectilinearStateBKETurnNotation
 import de.mineking.hexo.render.RectilinearNotationType
 import de.mineking.hexo.render.renderRectilinearNotation
+import de.mineking.hexo.render.renderRectilinearStateBKETurnNotation
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.dom.addClass
@@ -43,6 +45,7 @@ enum class BoardUpdateCause {
 fun Sidebar(
     formationRepository: FormationRepository,
     finishedGameRepository: FinishedGameRepository,
+    placementMode: MutableState<CellPlacementMode>,
     board: HexoBoard,
     onBoardChange: (BoardUpdateCause, HexoBoard) -> Unit,
 ) {
@@ -72,35 +75,77 @@ fun Sidebar(
         var notation by remember { mutableStateOf("") }
 
         LaunchedEffect(board) {
-            notation = board.renderRectilinearNotation(RectilinearNotationType.Compact)
+            notation = board.renderRectilinearStateBKETurnNotation(RectilinearNotationType.Compact)
             parseError = null
         }
 
         SidebarResizeHandle(resizing, ::startSidebarResize)
         SidebarHeader(parseError)
-        NotationField(
-            formationRepository = formationRepository,
-            finishedGameRepository = finishedGameRepository,
-            notation = notation,
-            parseError = parseError,
-            onChange = { cause, value ->
-                notation = value
-                if (value.isBlank()) {
-                    onBoardChange(cause, HexoBoard())
-                    return@NotationField
-                }
 
-                try {
-                    onBoardChange(cause, value.parseRectilinearStateBKETurnNotation())
-                    parseError = null
-                } catch (e: HexoNotationException) {
-                    parseError = e.message
-                }
-            },
-        )
-        SidebarNotationInfo(board, parseError)
+        Div({ classes("flex", "flex-col", "gap-2") }) {
+            NotationField(
+                formationRepository = formationRepository,
+                finishedGameRepository = finishedGameRepository,
+                notation = notation,
+                parseError = parseError,
+                onChange = { cause, value ->
+                    notation = value
+                    if (value.isBlank()) {
+                        onBoardChange(cause, HexoBoard())
+                        return@NotationField
+                    }
+
+                    try {
+                        onBoardChange(cause, value.parseRectilinearStateBKETurnNotation())
+                        parseError = null
+                    } catch (e: HexoNotationException) {
+                        parseError = e.message
+                    }
+                },
+            )
+            SidebarNotationInfo(board, parseError)
+        }
+
+        PlacementMode(placementMode)
 
         SidebarFooter()
+    }
+}
+
+@Composable
+private fun PlacementMode(placementMode: MutableState<CellPlacementMode>) {
+    var placementMode by placementMode
+    Div({ classes("space-y-2") }) {
+        Div({ classes("text-sm", "font-semibold", "uppercase", "text-slate-400") }) {
+            Text("Placement Mode")
+        }
+
+        Div({ classes("flex", "gap-3") }) {
+            CellPlacementMode.entries.forEach { mode ->
+                Button({
+                    classes(
+                        "rounded-full", "px-8", "py-1.25", "m-px", "text-xs", "font-medium", "ring-1", "backdrop-blur-sm", "transition-all",
+                        "duration-200", "hover:shadow-lg",
+                    )
+
+                    if (mode == placementMode) {
+                        classes(
+                            "bg-amber-400/12", "ring-amber-200/40", "text-amber-300", "shadow-amber-950/30",
+                            "hover:bg-amber-400/18", "hover:ring-amber-200/60", "hover:text-amber-200",
+                        )
+                    } else {
+                        classes(
+                            "bg-slate-800/40", "ring-slate-600/60", "text-slate-300",
+                            "hover:bg-slate-700/50", "hover:ring-slate-500/60", "hover:text-slate-100",
+                        )
+                    }
+
+                    onClick { placementMode = mode }
+                }) {
+                    Text(mode.name)
+                }
+            }
+        }
     }
 }
 
@@ -169,7 +214,7 @@ private fun SidebarHeader(parseError: String?) {
 @Composable
 private fun ParseStatus(valid: Boolean) {
     Span({
-        classes("rounded-full", "px-2.5", "py-1", "text-xs", "font-medium", "ring-1")
+        classes("rounded-full", "px-3", "py-1", "m-px", "text-xs", "font-medium", "ring-1")
         if (valid) {
             classes("bg-emerald-500/15", "ring-emerald-400/30", "text-emerald-400")
         } else {
@@ -250,7 +295,7 @@ private fun SidebarNotationInfo(board: HexoBoard, parseError: String?) {
             classes("text-rose-400")
         }
     }) {
-        Text(parseError ?: "${board.cells.size} cells")
+        Text(parseError ?: (if (board.cells.size == 1) "1 cell" else "${board.cells.size} cells"))
     }
 }
 

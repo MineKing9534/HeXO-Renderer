@@ -1,4 +1,4 @@
-package de.mineking.hexo.web.utils
+package de.mineking.hexo.web.components
 
 import androidx.compose.runtime.Composable
 import org.jetbrains.compose.web.ExperimentalComposeWebSvgApi

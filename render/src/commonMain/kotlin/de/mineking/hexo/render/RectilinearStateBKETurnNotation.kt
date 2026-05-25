@@ -48,6 +48,11 @@ fun Board.renderRectilinearStateBKETurnNotation(type: RectilinearNotationType): 
 }
 
 private fun List<Pair<CellOwner, List<CellCoordinate>>>.renderBKETurns(includePrefix: Boolean) = buildString {
+    if (this@renderBKETurns.isEmpty()) {
+        append("0")
+        return@buildString
+    }
+
     val baseline = Direction.Right
     val origin = this@renderBKETurns.first().second.first() - baseline.direction
 

@@ -12,9 +12,8 @@ import de.mineking.hexo.api.formation.FormationRepository
 import de.mineking.hexo.api.game.FinishedGameRepository
 import de.mineking.hexo.api.game.GameId
 import de.mineking.hexo.board.Board
-import de.mineking.hexo.web.utils.Dialog
-import de.mineking.hexo.web.utils.LoadingIndicator
-import kotlinx.coroutines.delay
+import de.mineking.hexo.web.components.Dialog
+import de.mineking.hexo.web.components.LoadingIndicator
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
@@ -23,7 +22,6 @@ import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Text
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun ImportDialog(

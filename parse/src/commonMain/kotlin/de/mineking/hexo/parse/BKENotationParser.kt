@@ -38,6 +38,12 @@ fun String.parseBKENotation(
     zeroOffsetLine: Direction,
     chirality: Chirality = Chirality.Clockwise,
 ): Board {
+    if (trim() == "0") {
+        return Board().apply {
+            this[0, 0].owner = CellOwner.X
+        }
+    }
+
     val turns = parseBKETurns()
     val board = Board()
 
@@ -67,6 +73,12 @@ fun String.parseBKENotation(
 }
 
 fun String.parseBKENotationOrNull(implicitOrigin: Boolean): Board? {
+    if (trim() == "0") {
+        return Board().apply {
+            this[0, 0].owner = CellOwner.X
+        }
+    }
+
     val match = BKE_FORMAT.matchEntire(this) ?: return null
 
     val (_, zeroOffsetLineSymbol, chiralitySymbol, originQ, originR, content) = match.groupValues

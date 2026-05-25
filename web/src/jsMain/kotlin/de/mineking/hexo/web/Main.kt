@@ -1,6 +1,7 @@
 package de.mineking.hexo.web
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,18 +40,23 @@ fun main() {
     }
 }
 
+enum class CellPlacementMode {
+    State,
+    Turn,
+}
+
 @Composable
 private fun MainLayout(client: HexoApiClient) {
     val repositories = remember(client) { client.createRepositories() }
 
-    var notation by remember { mutableStateOf("x") }
-    var viewport by remember { mutableStateOf<BoardViewport?>(null) }
+    val viewport = remember { mutableStateOf<BoardViewport?>(null) }
+    val placementMode = remember { mutableStateOf(CellPlacementMode.State) }
 
-    var board by remember { mutableStateOf(notation.parseRectilinearStateBKETurnNotation()) }
+    val board = remember { mutableStateOf("x".parseRectilinearStateBKETurnNotation()) }
     var temporaryLine by remember { mutableStateOf<HighlightLine?>(null) }
 
-    val transformedBoard = remember(board, temporaryLine) {
-        board.clone().apply {
+    val transformedBoard = remember(board.value, temporaryLine) {
+        board.value.clone().apply {
             val temporaryLine = temporaryLine
             if (temporaryLine != null) highlightedLines += temporaryLine
 
@@ -65,30 +71,59 @@ private fun MainLayout(client: HexoApiClient) {
         BoardPane(
             board = transformedBoard,
             viewport = viewport,
-            onViewportChange = { viewport = it },
             onCellClick = { coordinate ->
-                handleCellClick(coordinate, board, onBoardUpdate = { board = it })
+                when (placementMode.value) {
+                    CellPlacementMode.State -> placeStateCell(coordinate, board)
+                    CellPlacementMode.Turn -> placeTurnCell(coordinate, board)
+                }
             },
             onBoardRightClick = { event ->
-                handleBoardRightClick(board, event, onTemporaryLineUpdate = { temporaryLine = it }, onBoardUpdate = { board = it })
+                handleBoardRightClick(event, board, onTemporaryLineUpdate = { temporaryLine = it })
             },
         )
         Sidebar(
             formationRepository = repositories.formations,
             finishedGameRepository = repositories.finishedGames,
+            placementMode = placementMode,
             board = transformedBoard,
             onBoardChange = { cause, updated ->
-                board = updated
+                board.value = updated
                 if (cause == BoardUpdateCause.Import) {
-                    viewport = null
+                    viewport.value = null
                 }
             },
         )
     }
 }
 
-private fun handleCellClick(coordinate: CellCoordinate, board: HexoBoard, onBoardUpdate: (HexoBoard) -> Unit) {
-    if (coordinate in board.cells) return
+private fun placeStateCell(coordinate: CellCoordinate, board: MutableState<HexoBoard>) {
+    var board by board
+
+    val turn = board.cells[coordinate]?.turn
+    val maxTurn = board.cells.values.maxOfOrNull { it.turn ?: -1 }?.takeIf { it >= 0 }
+    if (turn != null && turn != maxTurn) return
+
+    board = board.clone().apply {
+        if (turn != null && turn == maxTurn) {
+            this[coordinate].apply {
+                owner = null
+                this.turn = null
+            }
+        } else {
+            this[coordinate].owner = when (board[coordinate].owner) {
+                null -> CellOwner.X
+                CellOwner.X -> CellOwner.O
+                CellOwner.O -> null
+            }
+        }
+    }
+}
+
+private fun placeTurnCell(coordinate: CellCoordinate, board: MutableState<HexoBoard>) {
+    var board by board
+    board.cells[coordinate]?.let {
+        if (it.owner != null || it.turn != null) return
+    }
 
     var hadPosition = false
     var turn = 0
@@ -119,20 +154,20 @@ private fun handleCellClick(coordinate: CellCoordinate, board: HexoBoard, onBoar
         player = player.other
     }
 
-    val updated = board.clone()
-    updated[coordinate].apply {
-        this.owner = player
-        this.turn = turn
+    board = board.clone().apply {
+        this[coordinate].apply {
+            this.owner = player
+            this.turn = turn
+        }
     }
-    onBoardUpdate(updated)
 }
 
 private fun MouseEvent.handleBoardRightClick(
-    board: HexoBoard,
     event: BoardRightClickEvent,
+    board: MutableState<HexoBoard>,
     onTemporaryLineUpdate: (HighlightLine?) -> Unit,
-    onBoardUpdate: (HexoBoard) -> Unit,
 ) {
+    var board by board
     val (from, to, final) = event
 
     val updated = board.clone()
@@ -164,23 +199,23 @@ private fun MouseEvent.handleBoardRightClick(
             onTemporaryLineUpdate(null)
         }
     }
-    onBoardUpdate(updated)
+    board = updated
 }
 
 @Composable
 private fun BoardPane(
     board: HexoBoard,
-    viewport: BoardViewport?,
-    onViewportChange: (BoardViewport?) -> Unit,
+    viewport: MutableState<BoardViewport?>,
     onCellClick: (MouseEvent.(CellCoordinate) -> Unit)? = null,
     onBoardRightClick: (MouseEvent.(BoardRightClickEvent) -> Unit)? = null,
 ) {
+    var viewport by viewport
     Div({ classes("min-w-0", "flex-1", "p-6") }) {
         Div({ classes("relative", "h-full", "overflow-hidden", "rounded-2xl", "border", "border-slate-800", "bg-slate-900", "shadow-2xl") }) {
             Board(
                 board = board,
                 viewport = viewport,
-                onViewportChange = onViewportChange,
+                onViewportChange = { viewport = it },
                 onCellClick = onCellClick,
                 onBoardRightClick = onBoardRightClick,
                 attrs = {
@@ -209,7 +244,7 @@ private fun BoardPane(
                     "border-slate-700", "bg-slate-950", "text-slate-300", "shadow-lg", "transition", "hover:bg-slate-800", "hover:text-slate-100",
                 )
                 onClick {
-                    onViewportChange(null)
+                    viewport = null
                 }
             }) {
                 Text("Reset View")
