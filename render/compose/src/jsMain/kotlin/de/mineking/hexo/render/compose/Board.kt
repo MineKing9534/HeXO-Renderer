@@ -12,12 +12,15 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.render.image.BoardRenderBounds
 import de.mineking.hexo.render.image.BoardRenderLayout
+import de.mineking.hexo.render.image.Color
+import de.mineking.hexo.render.image.Stroke
 import de.mineking.hexo.render.image.center
 import de.mineking.hexo.render.image.createRenderLayout
 import de.mineking.hexo.render.image.div
 import de.mineking.hexo.render.image.drawBoard
 import de.mineking.hexo.render.image.plus
 import de.mineking.hexo.render.image.topLeft
+import de.mineking.hexo.render.image.withAlpha
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Canvas
@@ -26,6 +29,7 @@ import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
 
 private const val BOARD_LAYOUT_RADIUS = 255.0
+private val cellHoverColor = Color.rgb(0x7dd3fc)
 
 @Composable
 fun Board(
@@ -51,17 +55,18 @@ fun Board(
 ) {
     var element by remember { mutableStateOf<HTMLCanvasElement?>(null) }
     var dragging by remember { mutableStateOf(false) }
+    var hoveredCell by remember { mutableStateOf<CellCoordinate?>(null) }
 
     val zoom = viewport?.zoom ?: 0.2
     val layout = remember(board, zoom) { board.createRenderLayout(BOARD_LAYOUT_RADIUS * zoom, BoardRenderBounds.IncludeSurroundings) }
     val effectiveViewport = viewport ?: BoardViewport(zoom = zoom, center = layout.boundingBox.center / zoom)
 
     fun redraw() {
-        element?.drawBoard(layout, effectiveViewport)
+        element?.drawBoard(layout, effectiveViewport, hoveredCell)
     }
 
     ResizeHandler(element) { redraw() }
-    LaunchedEffect(effectiveViewport, layout) { redraw() }
+    LaunchedEffect(effectiveViewport, layout, hoveredCell) { redraw() }
 
     BoardInteractions(
         element = element,
@@ -69,6 +74,7 @@ fun Board(
         viewport = { effectiveViewport },
         onViewportChange = onViewportChange,
         onDraggingChange = { dragging = it },
+        onCellHoverChange = { hoveredCell = it },
         onCellClick = { onCellClick?.invoke(it) },
         onBoardRightClick = { onBoardRightClick?.invoke(it) },
     )
@@ -105,7 +111,11 @@ private external class ResizeObserver(@Suppress("unused") callback: () -> Unit) 
     fun disconnect()
 }
 
-private fun HTMLCanvasElement.drawBoard(layout: BoardRenderLayout, viewport: BoardViewport) {
+private fun HTMLCanvasElement.drawBoard(
+    layout: BoardRenderLayout,
+    viewport: BoardViewport,
+    hoveredCell: CellCoordinate?,
+) {
     width = clientWidth
     height = clientHeight
 
@@ -113,5 +123,14 @@ private fun HTMLCanvasElement.drawBoard(layout: BoardRenderLayout, viewport: Boa
         layout = layout,
         padding = BOARD_RENDER_PADDING,
         offset = viewport.offset(this) + layout.boundingBox.topLeft,
-    )
+    ) {
+        if (hoveredCell == null) return@drawBoard
+        val cell = layout.board.cells[hoveredCell]
+
+        renderingContext.drawPolygon(
+            shape = hoveredCell.createHex(),
+            color = cellHoverColor.withAlpha(48),
+            outline = if (cell != null && (cell.highlighted || cell.focussed)) null else Stroke(cellHoverColor.withAlpha(140), 2f),
+        )
+    }
 }

@@ -25,6 +25,7 @@ fun HTMLCanvasElement.drawBoard(
     focusWinningRows: Boolean = true,
     theme: Theme = BasicTheme.Default,
     font: CanvasFont = DefaultCanvasFont,
+    middleLayer: InternalBoardRenderer.() -> Unit = {},
 ) {
     val context = getContext("2d") as CanvasRenderingContext2D
 
@@ -33,7 +34,7 @@ fun HTMLCanvasElement.drawBoard(
     context.fillRect(0.0, 0.0, width.toDouble(), height.toDouble())
     context.translate(padding.toDouble() + offset.x, padding.toDouble() + offset.y)
 
-    CanvasRenderingContext(context, font).drawBoard(layout, focusWinningRows, theme)
+    CanvasRenderingContext(context, font).drawBoard(layout, focusWinningRows, theme, middleLayer)
 }
 
 class CanvasRenderingContext(

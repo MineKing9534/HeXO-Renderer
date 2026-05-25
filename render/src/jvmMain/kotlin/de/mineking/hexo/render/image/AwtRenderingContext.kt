@@ -21,6 +21,7 @@ fun Board.renderToImage(
     padding: Int,
     focusWinningRows: Boolean = true,
     theme: Theme = BasicTheme.Default,
+    middleLayer: InternalBoardRenderer.() -> Unit = {},
 ): BufferedImage {
     require(cells.isNotEmpty())
 
@@ -39,7 +40,7 @@ fun Board.renderToImage(
 
     val context = AwtRenderingContext(graphics)
     try {
-        context.drawBoard(layout, focusWinningRows, theme)
+        context.drawBoard(layout, focusWinningRows, theme, middleLayer)
     } finally {
         graphics.dispose()
     }

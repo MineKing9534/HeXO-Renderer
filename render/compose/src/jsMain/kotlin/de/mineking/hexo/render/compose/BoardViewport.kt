@@ -58,11 +58,13 @@ internal fun BoardInteractions(
     viewport: () -> BoardViewport,
     onViewportChange: (BoardViewport) -> Unit,
     onDraggingChange: (Boolean) -> Unit,
+    onCellHoverChange: (CellCoordinate?) -> Unit,
     onCellClick: (CellCoordinate) -> Unit,
     onBoardRightClick: (BoardRightClickEvent) -> Unit,
 ) {
     val onViewportChange by rememberUpdatedState(onViewportChange)
     val onDraggingChange by rememberUpdatedState(onDraggingChange)
+    val onCellHoverChange by rememberUpdatedState(onCellHoverChange)
     val onCellClick by rememberUpdatedState(onCellClick)
     val onBoardRightClick by rememberUpdatedState(onBoardRightClick)
     val currentRenderLayout by rememberUpdatedState(renderLayout)
@@ -76,6 +78,7 @@ internal fun BoardInteractions(
             viewport = { currentViewport() },
             onViewportChange = { onViewportChange(it) },
             onDraggingChange = { onDraggingChange(it) },
+            onCellHoverChange = { onCellHoverChange(it) },
             onCellClick = { onCellClick(it) },
             onBoardRightClick = { onBoardRightClick(it) },
         )
@@ -99,6 +102,7 @@ private class BoardEventListeners(
     viewport: () -> BoardViewport,
     onViewportChange: (BoardViewport) -> Unit,
     private val onDraggingChange: (Boolean) -> Unit,
+    private val onCellHoverChange: (CellCoordinate?) -> Unit,
     private val onCellClick: (CellCoordinate) -> Unit,
     private val onBoardRightClick: (BoardRightClickEvent) -> Unit,
 ) {
@@ -117,11 +121,18 @@ private class BoardEventListeners(
         }
 
     private var suppressNextClick = false
+    private var hoveredCell: CellCoordinate? = null
+        set(value) {
+            if (field == value) return
+            field = value
+            onCellHoverChange(value)
+        }
 
     private fun pointerDown(event: Event) {
         require(event is MouseEvent)
         event.preventDefault()
 
+        hoveredCell = null
         when (event.button.toInt()) {
             PRIMARY_BUTTON -> {
                 suppressNextClick = false
@@ -139,10 +150,10 @@ private class BoardEventListeners(
         require(event is MouseEvent)
         event.preventDefault()
 
-        if (event.buttons.toInt() and PRIMARY_BUTTON_MASK != 0) {
-            dragTo(event.position())
-        } else if (event.buttons.toInt() and SECONDARY_BUTTON_MASK != 0) {
-            triggerRightClick(event.position(), final = false)
+        when {
+            event.buttons.toInt() and PRIMARY_BUTTON_MASK != 0 -> dragTo(event.position())
+            event.buttons.toInt() and SECONDARY_BUTTON_MASK != 0 -> triggerRightClick(event.position(), final = false)
+            else -> hoveredCell = cellAt(event.position())
         }
     }
 
@@ -154,6 +165,7 @@ private class BoardEventListeners(
         if (event.button.toInt() == SECONDARY_BUTTON) {
             triggerRightClick(event.position(), final = true)
         }
+        hoveredCell = cellAt(event.position())
     }
 
     private fun click(event: Event) {
@@ -176,6 +188,10 @@ private class BoardEventListeners(
         event.preventDefault()
     }
 
+    private fun clearHover(@Suppress("unused") event: Event) {
+        hoveredCell = null
+    }
+
     fun attach() {
         canvas.addEventListener("pointerdown", ::pointerDown)
         canvas.addEventListener("pointermove", ::pointerMove)
@@ -184,7 +200,9 @@ private class BoardEventListeners(
         canvas.addEventListener("click", ::click)
         canvas.addEventListener("wheel", ::wheel)
         canvas.addEventListener("contextmenu", ::suppressContextMenu)
+        canvas.addEventListener("pointerleave", ::clearHover)
         window.addEventListener("blur", ::finishDrag)
+        window.addEventListener("blur", ::clearHover)
     }
 
     fun detach() {
@@ -195,8 +213,11 @@ private class BoardEventListeners(
         canvas.removeEventListener("click", ::click)
         canvas.removeEventListener("wheel", ::wheel)
         canvas.removeEventListener("contextmenu", ::suppressContextMenu)
+        canvas.removeEventListener("pointerleave", ::clearHover)
         window.removeEventListener("blur", ::finishDrag)
+        window.removeEventListener("blur", ::clearHover)
         lastDragPosition = null
+        hoveredCell = null
     }
 
     private fun triggerRightClick(to: Point, final: Boolean) {

@@ -12,6 +12,7 @@ fun RenderingContext.drawBoard(
     layout: BoardRenderLayout,
     focusWinningRows: Boolean = true,
     theme: Theme = BasicTheme.Default,
+    middleLayer: InternalBoardRenderer.() -> Unit = {},
 ) {
     val renderer = InternalBoardRenderer(this, layout, theme)
 
@@ -27,15 +28,17 @@ fun RenderingContext.drawBoard(
         renderer.drawCell(position, cell)
     }
 
+    renderer.middleLayer()
+
     layout.board.highlightedLines.forEach {
         renderer.drawLine(it)
     }
 }
 
-private class InternalBoardRenderer(
-    private val renderingContext: RenderingContext,
+class InternalBoardRenderer(
+    val renderingContext: RenderingContext,
     val layout: BoardRenderLayout,
-    private val theme: Theme,
+    val theme: Theme,
 ) {
     private val hexSize = layout.size.layoutRadius * (1 - theme.gap / 64)
     private val borderThickness = (layout.size.layoutRadius * theme.borderThickness / 64).toFloat()
@@ -51,7 +54,7 @@ private class InternalBoardRenderer(
     }
 
     fun drawCell(position: CellCoordinate, cell: Cell) {
-        val hex = position.toPixel().createHex(hexSize)
+        val hex = position.createHex()
 
         renderingContext.drawPolygon(hex, theme.run { cell.backgroundColor() })
 
@@ -91,9 +94,11 @@ private class InternalBoardRenderer(
         )
     }
 
-    private fun CellCoordinate.toPixel() = layout.size.run {
+    fun CellCoordinate.toPixel() = layout.size.run {
         toPixel().let { (x, y) -> Point(x - layout.boundingBox.minX, y - layout.boundingBox.minY) }
     }
+
+    fun CellCoordinate.createHex() = toPixel().createHex(hexSize)
 }
 
 private const val DEGREES_TO_RADIANS = 0.017453292519943295
