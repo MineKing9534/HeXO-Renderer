@@ -60,7 +60,7 @@ fun Board(
 
     val zoom = viewport?.zoom ?: 0.2
     val layout = remember(board, zoom) { board.createRenderLayout(BOARD_LAYOUT_RADIUS * zoom, BoardRenderBounds.IncludeSurroundings) }
-    val effectiveViewport = viewport ?: BoardViewport(zoom = zoom, center = layout.boundingBox.center / zoom)
+    val effectiveViewport = viewport ?: BoardViewport(zoom = zoom, center = layout.boundingBox.center / zoom).also { onViewportChange(it) }
 
     fun redraw() {
         element?.drawBoard(layout, effectiveViewport, hoveredCell)
