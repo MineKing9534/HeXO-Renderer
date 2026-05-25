@@ -54,4 +54,38 @@ class BKENotationParser {
             board.cells,
         )
     }
+
+    @Test
+    fun `parse one move per turn`() {
+        val board = "x A0 o A1".parseBKENotation(zeroOffsetLine = Direction.TopRight, origin = null)
+
+        assertEquals(
+            mapOf(
+                CellCoordinate(0, 0) to Cell(CellOwner.X, turn = 0),
+                CellCoordinate(1, -1) to Cell(CellOwner.X, turn = 1),
+                CellCoordinate(1, 0) to Cell(CellOwner.O, turn = 2, focused = true),
+            ),
+            board.cells,
+        )
+    }
+
+    @Test
+    fun `parse three moves per turn`() {
+        val board = "x A0 A1 A2 o B0 B1 B2".parseBKENotation(zeroOffsetLine = Direction.TopRight, origin = null)
+
+        assertEquals(
+            mapOf(
+                CellCoordinate(0, 0) to Cell(CellOwner.X, turn = 0),
+
+                CellCoordinate(1, -1) to Cell(CellOwner.X, turn = 1),
+                CellCoordinate(1, 0) to Cell(CellOwner.X, turn = 1),
+                CellCoordinate(0, 1) to Cell(CellOwner.X, turn = 1),
+
+                CellCoordinate(2, -2) to Cell(CellOwner.O, turn = 2, focused = true),
+                CellCoordinate(2, -1) to Cell(CellOwner.O, turn = 2, focused = true),
+                CellCoordinate(2, 0) to Cell(CellOwner.O, turn = 2, focused = true),
+            ),
+            board.cells,
+        )
+    }
 }

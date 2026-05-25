@@ -10,7 +10,7 @@ import de.mineking.hexo.board.times
 import de.mineking.hexo.core.CellOwner
 
 private const val MOVE_PATTERN = /*language=regexp*/ """[A-Z](?:[0-5]\.)?\d+"""
-private const val TURN_PATTERN = /*language=regexp*/ """[xo]\s+$MOVE_PATTERN\s+$MOVE_PATTERN"""
+private const val TURN_PATTERN = /*language=regexp*/ """[xo](?:\s+$MOVE_PATTERN)+"""
 private const val TURN_LIST_PATTERN = /*language=regexp*/ """$TURN_PATTERN(?:\s+$TURN_PATTERN)*"""
 
 private const val ORIGIN_PATTERN = /*language=regexp*/ """@\s*\((-?\d+),\s*(-?\d+)\)"""
@@ -55,7 +55,7 @@ fun String.parseBKENotation(
         CellCoordinate.Zero
     }
 
-    turns.forEachIndexed { index, (player, first, second) ->
+    turns.forEachIndexed { index, (player, moves) ->
         fun CellCoordinate.applyMove() {
             board[this].apply {
                 owner = player
@@ -65,8 +65,9 @@ fun String.parseBKENotation(
             }
         }
 
-        first.toCellCoordinate(origin, zeroOffsetLine, chirality).applyMove()
-        second.toCellCoordinate(origin, zeroOffsetLine, chirality).applyMove()
+        moves.forEach {
+            it.toCellCoordinate(origin, zeroOffsetLine, chirality).applyMove()
+        }
     }
 
     return board
@@ -103,26 +104,37 @@ private data class RingOffset(
 
 private data class Turn(
     val player: CellOwner,
-    val first: RingOffset,
-    val second: RingOffset,
+    val moves: List<RingOffset>,
 )
 
 private fun String.parseBKETurns(): List<Turn> {
     val parts = trim().split(Regex("\\s+"))
-    requireHexo(parts.isNotEmpty() && parts.size % 3 == 0) {
-        "BKE turns have to be space separated blocks of the format `[x|o] [A-Z]<offset> [A-Z]<offset>`"
+    requireHexo(parts.isNotEmpty()) {
+        "BKE turns have to be space separated blocks of the format `[x|o] [A-Z]<offset>...`"
     }
 
-    return parts.indices.step(3).map { offset ->
-        val (playerChar, first, second) = parts.subList(offset, offset + 3)
+    val turns = mutableListOf<Turn>()
+    var offset = 0
+    while (offset < parts.size) {
+        val player = parts[offset].parsePlayer()
+        offset++
 
-        val player = playerChar.parsePlayer()
-        val firstMove = first.parseRingOffset()
-        val secondMove = second.parseRingOffset()
+        val moves = mutableListOf<RingOffset>()
+        while (offset < parts.size && !parts[offset].isPlayer()) {
+            moves += parts[offset].parseRingOffset()
+            offset++
+        }
 
-        Turn(player, firstMove, secondMove)
+        requireHexo(moves.isNotEmpty()) {
+            "BKE turns have to contain at least one move"
+        }
+        turns += Turn(player, moves)
     }
+
+    return turns
 }
+
+private fun String.isPlayer() = this == "o" || this == "x"
 
 private fun String.parsePlayer() = when (this) {
     "o" -> CellOwner.O
