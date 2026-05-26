@@ -68,8 +68,12 @@ fun Sidebar(
     }
 
     Div({
-        classes("relative", "flex", "shrink-0", "flex-col", "gap-8", "border-l", "border-slate-800", "bg-slate-900/80", "p-6", "shadow-2xl")
-        attr("style", "width: ${width}px")
+        classes(
+            "relative", "flex", "max-h-[30dvh]", "w-full", "shrink-0", "flex-col", "gap-5", "overflow-y-auto", "border-t", "border-slate-800",
+            "bg-slate-900/80", "p-4", "shadow-2xl", "md:max-h-none", "md:w-[var(--sidebar-width)]", "md:gap-8", "md:border-l", "md:border-t-0",
+            "md:p-6",
+        )
+        attr("style", "--sidebar-width: ${width}px")
     }) {
         var parseError by remember { mutableStateOf<String?>(null) }
         var notation by remember { mutableStateOf("") }
@@ -188,7 +192,7 @@ private fun SidebarResizeHandle(
 ) {
     Div({
         onMouseDown(onResizeStart)
-        classes("group", "absolute", "-left-1", "top-0", "grid", "h-full", "w-2", "cursor-col-resize", "place-items-center")
+        classes("group", "absolute", "-left-1", "top-0", "hidden", "h-full", "w-2", "cursor-col-resize", "place-items-center", "md:grid")
         if (resizing) {
             classes("bg-slate-700/30")
         } else {
@@ -250,7 +254,7 @@ private fun NotationField(
                     importDialogOpen = true
                 }
             }) {
-                Text("Import")
+                Text("Import Position")
             }
         }
 

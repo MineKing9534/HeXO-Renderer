@@ -16,7 +16,9 @@ import kotlinx.browser.window
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
+import org.w3c.dom.events.MouseEventInit
 import org.w3c.dom.events.WheelEvent
+import kotlin.math.sqrt
 import kotlin.reflect.KProperty
 
 internal const val BOARD_RENDER_PADDING = 128
@@ -24,11 +26,12 @@ internal const val BOARD_RENDER_PADDING = 128
 private const val MIN_ZOOM = 0.07
 private const val MAX_ZOOM = 0.8
 private const val ZOOM_STEP = 1.1
+private const val PINCH_ZOOM_DEAD_ZONE = 0.025
+private const val LONG_PRESS_DELAY = 450
+private const val LONG_PRESS_MOVE_TOLERANCE = 12.0
 
 private const val PRIMARY_BUTTON = 0
-private const val PRIMARY_BUTTON_MASK = 1
 private const val SECONDARY_BUTTON = 2
-private const val SECONDARY_BUTTON_MASK = 2
 
 data class BoardViewport(val zoom: Double, val center: Point) {
     internal fun pan(delta: Point) = copy(center = center - delta / zoom)
@@ -120,6 +123,11 @@ private class BoardEventListeners(
             field = value
         }
 
+    private var touchDragPosition: Point? = null
+    private var touchPinchGesture: PinchGesture? = null
+    private var touchLongPress: LongPress? = null
+    private var touchMoved = false
+
     private var suppressNextClick = false
     private var hoveredCell: CellCoordinate? = null
         set(value) {
@@ -130,9 +138,12 @@ private class BoardEventListeners(
 
     private fun pointerDown(event: Event) {
         require(event is MouseEvent)
+        if (event.isTouchPointer()) return
+
         event.preventDefault()
 
         hoveredCell = null
+
         when (event.button.toInt()) {
             PRIMARY_BUTTON -> {
                 suppressNextClick = false
@@ -148,24 +159,79 @@ private class BoardEventListeners(
 
     private fun pointerMove(event: Event) {
         require(event is MouseEvent)
+        if (event.isTouchPointer()) return
+
         event.preventDefault()
 
         when {
-            event.buttons.toInt() and PRIMARY_BUTTON_MASK != 0 -> dragTo(event.position())
-            event.buttons.toInt() and SECONDARY_BUTTON_MASK != 0 -> triggerRightClick(event.position(), final = false)
+            lastDragPosition != null -> dragMouseTo(event.position())
+            rightClickStart != null -> triggerRightClick(event.position(), final = false)
             else -> hoveredCell = cellAt(event.position())
         }
     }
 
     private fun pointerUp(event: Event) {
         require(event is MouseEvent)
-
-        finishDrag(event)
+        if (event.isTouchPointer()) return
 
         if (event.button.toInt() == SECONDARY_BUTTON) {
             triggerRightClick(event.position(), final = true)
         }
+
+        finishDrag(event)
         hoveredCell = cellAt(event.position())
+    }
+
+    private fun touchStart(event: Event) {
+        val touches = event.touches()
+        if (touches.isEmpty()) return
+
+        suppressNextClick = false
+        touchMoved = false
+        hoveredCell = null
+        rightClickStart = null
+        lastDragPosition = null
+
+        if (touches.size >= 2) {
+            event.preventDefault()
+            cancelLongPress()
+            beginTouchPinch(touches)
+        } else {
+            touchPinchGesture = null
+            touchDragPosition = touches.first()
+            scheduleLongPress(touches.first())
+        }
+    }
+
+    private fun touchMove(event: Event) {
+        val touches = event.touches()
+        if (touches.isEmpty()) return
+
+        if (touches.size >= 2) {
+            event.preventDefault()
+            cancelLongPress()
+            if (touchPinchGesture == null) beginTouchPinch(touches)
+            pinchTo(touches)
+        } else {
+            touchPinchGesture = null
+            if (moveSingleTouchTo(touches.first())) {
+                event.preventDefault()
+            }
+        }
+    }
+
+    private fun touchEnd(event: Event) {
+        val touches = event.touches()
+
+        val longPress = touchLongPress
+        if (longPress?.active == true) {
+            triggerLongPressRightClick(longPress, longPress.lastPosition, final = true)
+        }
+
+        cancelLongPress()
+        touchPinchGesture = null
+        touchDragPosition = touches.singleOrNull()
+        if (touches.isEmpty() && touchMoved) suppressNextClick = true
     }
 
     private fun click(event: Event) {
@@ -197,11 +263,16 @@ private class BoardEventListeners(
         canvas.addEventListener("pointermove", ::pointerMove)
         canvas.addEventListener("pointerup", ::pointerUp)
         canvas.addEventListener("pointercancel", ::finishDrag)
+        canvas.addEventListener("touchstart", ::touchStart)
+        canvas.addEventListener("touchmove", ::touchMove)
+        canvas.addEventListener("touchend", ::touchEnd)
+        canvas.addEventListener("touchcancel", ::finishTouch)
         canvas.addEventListener("click", ::click)
         canvas.addEventListener("wheel", ::wheel)
         canvas.addEventListener("contextmenu", ::suppressContextMenu)
         canvas.addEventListener("pointerleave", ::clearHover)
         window.addEventListener("blur", ::finishDrag)
+        window.addEventListener("blur", ::finishTouch)
         window.addEventListener("blur", ::clearHover)
     }
 
@@ -210,13 +281,19 @@ private class BoardEventListeners(
         canvas.removeEventListener("pointermove", ::pointerMove)
         canvas.removeEventListener("pointerup", ::pointerUp)
         canvas.removeEventListener("pointercancel", ::finishDrag)
+        canvas.removeEventListener("touchstart", ::touchStart)
+        canvas.removeEventListener("touchmove", ::touchMove)
+        canvas.removeEventListener("touchend", ::touchEnd)
+        canvas.removeEventListener("touchcancel", ::finishTouch)
         canvas.removeEventListener("click", ::click)
         canvas.removeEventListener("wheel", ::wheel)
         canvas.removeEventListener("contextmenu", ::suppressContextMenu)
         canvas.removeEventListener("pointerleave", ::clearHover)
         window.removeEventListener("blur", ::finishDrag)
+        window.removeEventListener("blur", ::finishTouch)
         window.removeEventListener("blur", ::clearHover)
         lastDragPosition = null
+        finishTouch()
         hoveredCell = null
     }
 
@@ -227,14 +304,136 @@ private class BoardEventListeners(
         if (end == lastRightClickEnd && !final) return
 
         start.onBoardRightClick(BoardRightClickEvent(cellAt(start.position()), end, final = final))
-        lastRightClickEnd = end
+
+        if (final) {
+            rightClickStart = null
+            lastRightClickEnd = null
+        } else {
+            lastRightClickEnd = end
+        }
     }
 
-    private fun dragTo(position: Point) {
+    private fun dragMouseTo(position: Point) {
         val lastPosition = lastDragPosition ?: return
         viewport = viewport.pan(position - lastPosition)
         suppressNextClick = true
         lastDragPosition = position
+    }
+
+    private fun dragTouchTo(position: Point): Boolean {
+        val lastPosition = touchDragPosition ?: run {
+            touchDragPosition = position
+            return false
+        }
+
+        viewport = viewport.pan(position - lastPosition)
+        suppressNextClick = true
+        touchMoved = true
+        touchDragPosition = position
+        return true
+    }
+
+    private fun moveSingleTouchTo(position: Point): Boolean {
+        val longPress = touchLongPress ?: return dragTouchTo(position)
+        longPress.lastPosition = position
+
+        return when {
+            longPress.active -> {
+                triggerLongPressRightClick(longPress, position, final = false)
+                true
+            }
+
+            longPress.startPosition.distanceTo(position) > LONG_PRESS_MOVE_TOLERANCE -> {
+                cancelLongPress()
+                dragTouchTo(position)
+            }
+
+            else -> false
+        }
+    }
+
+    private fun scheduleLongPress(position: Point) {
+        cancelLongPress()
+
+        val timeout = window.setTimeout({
+            val longPress = touchLongPress ?: return@setTimeout
+            longPress.active = true
+            suppressNextClick = true
+            touchMoved = true
+            touchDragPosition = null
+            triggerLongPressRightClick(longPress, longPress.lastPosition, final = false)
+        }, LONG_PRESS_DELAY)
+
+        touchLongPress = LongPress(
+            startPosition = position,
+            lastPosition = position,
+            timeout = timeout,
+        )
+    }
+
+    private fun cancelLongPress() {
+        val longPress = touchLongPress ?: return
+        window.clearTimeout(longPress.timeout)
+        touchLongPress = null
+    }
+
+    private fun triggerLongPressRightClick(longPress: LongPress, position: Point, final: Boolean) {
+        val end = cellAt(position)
+        if (end == longPress.lastCell && !final) return
+
+        MouseEvent("contextmenu", MouseEventInit()).onBoardRightClick(
+            BoardRightClickEvent(
+                from = cellAt(longPress.startPosition),
+                to = end,
+                final = final,
+            ),
+        )
+        longPress.lastCell = end
+    }
+
+    private fun beginTouchPinch(touches: List<Point>) {
+        touchDragPosition = null
+        touchPinchGesture = touchPinch(touches)?.let { PinchGesture(start = it, viewport = viewport) }
+        suppressNextClick = true
+    }
+
+    private fun pinchTo(touches: List<Point>) {
+        val gesture = touchPinchGesture ?: touchPinch(touches)
+            ?.let { PinchGesture(start = it, viewport = viewport) }
+            ?.also { touchPinchGesture = it }
+            ?: return
+
+        val current = touchPinch(touches) ?: return
+
+        val rect = canvas.getBoundingClientRect()
+        val scale = if (gesture.start.distance == 0.0) {
+            1.0
+        } else {
+            (current.distance / gesture.start.distance).let {
+                if (it in (1 - PINCH_ZOOM_DEAD_ZONE)..(1 + PINCH_ZOOM_DEAD_ZONE)) 1.0 else it
+            }
+        }
+
+        viewport = gesture.viewport
+            .zoomAt(
+                value = gesture.viewport.zoom * scale,
+                anchor = gesture.start.center - Point(rect.left, rect.top),
+                canvas = canvas,
+            )
+            .pan(current.center - gesture.start.center)
+
+        suppressNextClick = true
+        touchMoved = true
+    }
+
+    private fun touchPinch(touches: List<Point>): Pinch? {
+        if (touches.size < 2) return null
+
+        val delta = touches[0] - touches[1]
+        return Pinch(
+            center = (touches[0] + touches[1]) / 2.0,
+            distance = sqrt(delta.x * delta.x + delta.y * delta.y),
+        )
     }
 
     private fun beginDrag(event: MouseEvent) {
@@ -250,6 +449,13 @@ private class BoardEventListeners(
     private fun finishDrag(event: Event) {
         lastDragPosition = null
         releasePointer(event)
+    }
+
+    private fun finishTouch(@Suppress("unused") event: Event? = null) {
+        cancelLongPress()
+        touchDragPosition = null
+        touchPinchGesture = null
+        touchMoved = false
     }
 
     private fun releasePointer(event: Event) {
@@ -279,4 +485,34 @@ private class BoardEventListeners(
     }
 
     private fun MouseEvent.position() = Point(clientX.toDouble(), clientY.toDouble())
+
+    private fun Event.isTouchPointer() = asDynamic().pointerType == "touch"
+
+    private fun Event.touches(): List<Point> {
+        val touches = asDynamic().touches
+        val length = (touches.length as Number).toInt()
+
+        return List(length) {
+            val touch = touches.item(it)
+            Point(
+                (touch.clientX as Number).toDouble(),
+                (touch.clientY as Number).toDouble(),
+            )
+        }
+    }
+
+    private data class Pinch(val center: Point, val distance: Double)
+    private data class PinchGesture(val start: Pinch, val viewport: BoardViewport)
+    private data class LongPress(
+        val startPosition: Point,
+        var lastPosition: Point,
+        val timeout: Int,
+        var active: Boolean = false,
+        var lastCell: CellCoordinate? = null,
+    )
+}
+
+private fun Point.distanceTo(point: Point): Double {
+    val delta = this - point
+    return sqrt(delta.x * delta.x + delta.y * delta.y)
 }

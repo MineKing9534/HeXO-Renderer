@@ -66,7 +66,7 @@ private fun MainLayout(client: HexoApiClient) {
     }
 
     Div({
-        classes("flex", "h-screen", "w-screen", "overflow-hidden", "bg-slate-950", "font-sans", "text-slate-100")
+        classes("flex", "h-dvh", "w-screen", "flex-col", "overflow-hidden", "bg-slate-950", "font-sans", "text-slate-100", "md:flex-row")
     }) {
         BoardPane(
             board = transformedBoard,
@@ -210,7 +210,7 @@ private fun BoardPane(
     onBoardRightClick: (MouseEvent.(BoardRightClickEvent) -> Unit)? = null,
 ) {
     var viewport by viewport
-    Div({ classes("min-w-0", "flex-1", "p-6") }) {
+    Div({ classes("min-h-0", "min-w-0", "flex-1", "p-3", "md:p-6") }) {
         Div({ classes("relative", "h-full", "overflow-hidden", "rounded-2xl", "border", "border-slate-800", "bg-slate-900", "shadow-2xl") }) {
             Board(
                 board = board,
@@ -221,7 +221,7 @@ private fun BoardPane(
                 attrs = {
                     attr("width", "1200")
                     attr("height", "900")
-                    classes("block", "h-full", "w-full")
+                    classes("block", "h-full", "w-full", "touch-none")
                 },
             )
 
