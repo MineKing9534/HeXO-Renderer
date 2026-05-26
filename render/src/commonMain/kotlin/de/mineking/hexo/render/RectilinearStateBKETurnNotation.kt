@@ -33,14 +33,16 @@ fun Board.renderRectilinearStateBKETurnNotation(type: RectilinearNotationType): 
         board.cells[coordinate]?.owner = null
     }
 
-    val state = board.renderRectilinearNotation(type)
+    val renderedState = board.renderRectilinearNotationInternal(type)
+    val state = renderedState.notation
     if (turns.isEmpty()) return state
 
-    val renderedTurns = turns.entries
+    val normalizedTurns = turns.mapValues { (_, moves) -> moves.first to moves.second.map { it - renderedState.topLeft } }
+    val renderedTurns = normalizedTurns.entries
         .filter { it.key > 0 }
         .sortedBy { it.key }
         .map { it.value }
-        .renderBKETurns(origin = turns[0]?.second?.firstOrNull(), includePrefix = state.isNotEmpty())
+        .renderBKETurns(origin = normalizedTurns[0]?.second?.firstOrNull(), includePrefix = state.isNotEmpty())
 
     if (state.isEmpty()) return renderedTurns
 

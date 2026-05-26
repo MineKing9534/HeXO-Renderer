@@ -90,4 +90,18 @@ class IntegrationTest {
         assertEquals(".x/xx, > @(0, -1) o A0 B0 x C1.0 C1.1", rendered)
         val _ = rendered.parseRectilinearStateBKETurnNotation()
     }
+
+    @Test
+    fun `rectilinear state bke turn preserves shared offset`() {
+        val board = Board()
+        board[4, 0].owner = CellOwner.X
+        board[0, 0].apply {
+            owner = CellOwner.O
+            turn = 1
+        }
+
+        val rendered = board.renderRectilinearStateBKETurnNotation(RectilinearNotationType.Compact)
+
+        assertEquals("x, > @(-5, 0) o A0", rendered)
+    }
 }

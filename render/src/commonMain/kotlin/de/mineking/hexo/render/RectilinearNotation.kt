@@ -28,12 +28,16 @@ class RectilinearNotationBoardRenderer(val type: RectilinearNotationType) : Boar
     override suspend fun Board.render() = renderRectilinearNotation(type)
 }
 
-fun Board.renderRectilinearNotation(type: RectilinearNotationType): String {
+fun Board.renderRectilinearNotation(type: RectilinearNotationType) = renderRectilinearNotationInternal(type).notation
+
+internal data class RenderedRectilinearNotation(val notation: String, val topLeft: CellCoordinate)
+
+internal fun Board.renderRectilinearNotationInternal(type: RectilinearNotationType): RenderedRectilinearNotation {
     val highlightLines = highlightedLines.groupBy { it.start }
     val renderCells = (highlightLines.keys.associateWith { Cell() } + cells)
         .filter { (coordinate, cell) -> coordinate in highlightLines || cell.shouldRender() }
 
-    if (renderCells.isEmpty()) return ""
+    if (renderCells.isEmpty()) return RenderedRectilinearNotation("", CellCoordinate.Zero)
 
     val rows = renderCells.entries
         .groupBy { (coordinate, _) -> coordinate.r }
@@ -43,7 +47,7 @@ fun Board.renderRectilinearNotation(type: RectilinearNotationType): String {
     val minR = rows.keys.min()
     val maxR = rows.keys.max()
 
-    return buildString {
+    val notation = buildString {
         for (r in minR..maxR) {
             rows[r]?.let { row ->
                 append(type.columnSeparator.repeat(r - minR))
@@ -55,6 +59,8 @@ fun Board.renderRectilinearNotation(type: RectilinearNotationType): String {
             }
         }
     }.let { type.run { it.postprocess() } }
+
+    return RenderedRectilinearNotation(notation, CellCoordinate(minQ, minR))
 }
 
 private fun Cell.shouldRender() = owner != null || highlight != null || label.isNotBlank()
