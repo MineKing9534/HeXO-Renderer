@@ -40,21 +40,21 @@ fun Board.renderRectilinearStateBKETurnNotation(type: RectilinearNotationType): 
         .filter { it.key > 0 }
         .sortedBy { it.key }
         .map { it.value }
-        .renderBKETurns(includePrefix = state.isNotEmpty())
+        .renderBKETurns(origin = turns[0]?.second?.firstOrNull(), includePrefix = state.isNotEmpty())
 
     if (state.isEmpty()) return renderedTurns
 
     return "$state, $renderedTurns"
 }
 
-private fun List<Pair<CellOwner, List<CellCoordinate>>>.renderBKETurns(includePrefix: Boolean) = buildString {
+private fun List<Pair<CellOwner, List<CellCoordinate>>>.renderBKETurns(origin: CellCoordinate?, includePrefix: Boolean) = buildString {
     if (this@renderBKETurns.isEmpty()) {
         append("0")
         return@buildString
     }
 
     val baseline = Direction.Right
-    val origin = this@renderBKETurns.first().second.first() - baseline.direction
+    val origin = origin ?: (this@renderBKETurns.first().second.first() - baseline.direction)
 
     if (includePrefix) {
         append("${baseline.symbol} @(${origin.q}, ${origin.r}) ")
