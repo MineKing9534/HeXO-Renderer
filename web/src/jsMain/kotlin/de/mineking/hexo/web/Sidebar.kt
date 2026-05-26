@@ -16,19 +16,24 @@ import de.mineking.hexo.parse.parseRectilinearStateBKETurnNotation
 import de.mineking.hexo.render.RectilinearNotationType
 import de.mineking.hexo.render.renderRectilinearNotation
 import de.mineking.hexo.render.renderRectilinearStateBKETurnNotation
+import de.mineking.hexo.web.components.Dialog
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.dom.addClass
 import kotlinx.dom.removeClass
+import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
+import org.jetbrains.compose.web.attributes.readOnly
 import org.jetbrains.compose.web.dom.A
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextArea
 import org.w3c.dom.events.EventListener
 import org.w3c.dom.events.MouseEvent
+import org.w3c.dom.url.URL
 import de.mineking.hexo.board.Board as HexoBoard
 
 private const val DEFAULT_SIDEBAR_WIDTH = 384
@@ -90,6 +95,7 @@ fun Sidebar(
             NotationField(
                 formationRepository = formationRepository,
                 finishedGameRepository = finishedGameRepository,
+                board = board,
                 notation = notation,
                 parseError = parseError,
                 onChange = { cause, value ->
@@ -233,29 +239,19 @@ private fun ParseStatus(valid: Boolean) {
 private fun NotationField(
     formationRepository: FormationRepository,
     finishedGameRepository: FinishedGameRepository,
+    board: HexoBoard,
     notation: String,
     parseError: String?,
     onChange: (BoardUpdateCause, String) -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
-    var importDialogOpen by remember { mutableStateOf(false) }
 
     Div({ classes("space-y-2") }) {
         Div({ classes("flex", "items-center", "justify-between", "gap-3") }) {
             Div({ classes("text-sm", "font-semibold", "uppercase", "text-slate-400") }) {
                 Text("Notation")
             }
-            Button({
-                classes(
-                    "rounded-md", "border", "border-slate-700", "bg-slate-950", "px-2.5", "py-1",
-                    "text-xs", "font-medium", "text-slate-300", "transition", "hover:bg-slate-800", "hover:text-slate-100",
-                )
-                onClick {
-                    importDialogOpen = true
-                }
-            }) {
-                Text("Import Position")
-            }
+            NotationActions(formationRepository, finishedGameRepository, board, onChange)
         }
 
         TextArea {
@@ -274,6 +270,56 @@ private fun NotationField(
                 else -> classes("border-slate-700", "bg-slate-950")
             }
         }
+    }
+}
+
+@Composable
+private fun NotationActions(
+    formationRepository: FormationRepository,
+    finishedGameRepository: FinishedGameRepository,
+    board: HexoBoard,
+    onChange: (BoardUpdateCause, String) -> Unit,
+) {
+    @Composable
+    fun Button(label: String, onClick: () -> Unit) {
+        Button({
+            classes(
+                "rounded-md", "border", "border-slate-700", "bg-slate-950", "px-2.5", "py-1", "text-nowrap",
+                "text-xs", "font-medium", "text-slate-300", "transition", "hover:bg-slate-800", "hover:text-slate-100",
+            )
+            onClick { onClick() }
+        }) {
+            Text(label)
+        }
+    }
+
+    var importDialogOpen by remember { mutableStateOf(false) }
+    Div({ classes("flex", "gap-2") }) {
+        var link by remember { mutableStateOf<String?>(null) }
+        Button("Copy Link") {
+            val url = URL(window.location.href)
+            url.searchParams.set("position", board.renderRectilinearStateBKETurnNotation(RectilinearNotationType.Compact).replace("/", "_"))
+            link = url.toString()
+        }
+
+        if (link != null) {
+            Dialog(
+                title = "Position Link",
+                onClose = { link = null },
+            ) {
+                Input(InputType.Url) {
+                    value(link ?: "")
+                    classes(
+                        "w-full", "resize-y", "rounded-lg", "border-3", "p-3", "text-sm", "text-slate-100",
+                        "outline-none", "transition", "font-mono", "border-slate-700", "bg-slate-950",
+                        "focus:border-emerald-400", "focus:bg-slate-800", "text-ellipsis",
+                    )
+                    readOnly()
+                }
+            }
+        }
+
+        Button("Import Position") { importDialogOpen = true }
     }
 
     if (importDialogOpen) {

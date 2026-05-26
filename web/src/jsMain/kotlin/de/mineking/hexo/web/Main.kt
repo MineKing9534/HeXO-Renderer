@@ -20,6 +20,7 @@ import de.mineking.hexo.parse.parseRectilinearStateBKETurnNotation
 import de.mineking.hexo.render.compose.Board
 import de.mineking.hexo.render.compose.BoardRightClickEvent
 import de.mineking.hexo.render.compose.BoardViewport
+import kotlinx.browser.window
 import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
@@ -27,6 +28,7 @@ import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.renderComposable
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.events.MouseEvent
+import org.w3c.dom.url.URLSearchParams
 import de.mineking.hexo.board.Board as HexoBoard
 
 const val URL = "https://hexo.did.science"
@@ -35,8 +37,12 @@ private const val PROXY = "https://hexo.mineking.dev/proxy"
 fun main() {
     js("require('./style.css')")
     renderComposable(rootElementId = "root") {
+        val params = URLSearchParams(window.location.search)
+        val initial = params.get("position")?.replace("_", "/") ?: "0"
+        window.history.pushState(null, "", window.location.pathname)
+
         val client = remember { HexoApiClient(host = PROXY, socketIOOptions = null) }
-        MainLayout(client)
+        MainLayout(client, initial)
     }
 }
 
@@ -46,13 +52,13 @@ enum class CellPlacementMode {
 }
 
 @Composable
-private fun MainLayout(client: HexoApiClient) {
+private fun MainLayout(client: HexoApiClient, initialPosition: String) {
     val repositories = remember(client) { client.createRepositories() }
 
     val viewport = remember { mutableStateOf<BoardViewport?>(null) }
-    val placementMode = remember { mutableStateOf(CellPlacementMode.State) }
+    val placementMode = remember { mutableStateOf(CellPlacementMode.Turn) }
 
-    val board = remember { mutableStateOf("x".parseRectilinearStateBKETurnNotation()) }
+    val board = remember { mutableStateOf(initialPosition.parseRectilinearStateBKETurnNotation()) }
     var temporaryLine by remember { mutableStateOf<HighlightLine?>(null) }
 
     val transformedBoard = remember(board.value, temporaryLine) {

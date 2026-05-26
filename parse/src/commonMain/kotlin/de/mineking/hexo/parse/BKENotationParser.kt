@@ -40,7 +40,10 @@ fun String.parseBKENotation(
 ): Board {
     if (trim() == "0") {
         return Board().apply {
-            this[0, 0].owner = CellOwner.X
+            this[0, 0].apply {
+                owner = CellOwner.X
+                turn = 0
+            }
         }
     }
 
@@ -76,7 +79,10 @@ fun String.parseBKENotation(
 fun String.parseBKENotationOrNull(implicitOrigin: Boolean): Board? {
     if (trim() == "0") {
         return Board().apply {
-            this[0, 0].owner = CellOwner.X
+            this[0, 0].apply {
+                owner = CellOwner.X
+                turn = 0
+            }
         }
     }
 
