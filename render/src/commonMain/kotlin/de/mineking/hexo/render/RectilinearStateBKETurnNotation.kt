@@ -55,17 +55,16 @@ private fun List<Pair<CellOwner, List<CellCoordinate>>>.renderBKETurns(origin: C
         return@buildString
     }
 
-    val baseline = Direction.Right
-    val origin = origin ?: (this@renderBKETurns.first().second.first() - baseline.direction)
+    val layout = chooseBKELayout(origin)
 
     if (includePrefix) {
-        append("${baseline.symbol} @(${origin.q}, ${origin.r}) ")
+        append("${layout.baseline.symbol} @(${layout.origin.q}, ${layout.origin.r}) ")
     }
 
     this@renderBKETurns.forEach { (owner, cells) ->
         append("${owner.symbol} ")
         cells.forEach { cell ->
-            val (ring, sector, sectorOffset) = cell.ringOffset(origin, baseline)
+            val (ring, sector, sectorOffset) = cell.ringOffset(layout.origin, layout.baseline)
             append('A' + ring - 1)
 
             if (ring == 1) {
@@ -80,9 +79,49 @@ private fun List<Pair<CellOwner, List<CellCoordinate>>>.renderBKETurns(origin: C
     }
 }.trimEnd()
 
+private data class BKELayout(val origin: CellCoordinate, val baseline: Direction)
+
+private fun List<Pair<CellOwner, List<CellCoordinate>>>.chooseBKELayout(origin: CellCoordinate?): BKELayout {
+    val cells = flatMap { it.second }
+    val forbiddenOrigins = cells.toSet()
+
+    if (origin != null && origin !in forbiddenOrigins) {
+        return BKELayout(origin, Direction.Right)
+    }
+
+    val first = cells.first()
+    val maxDistance = cells.maxOf { first.distanceTo(it) } + 1
+    return (1..maxDistance)
+        .flatMap { ring ->
+            Direction.entries.map { direction -> BKELayout(first - direction.direction * ring, direction) }
+        }
+        .filter { it.origin !in forbiddenOrigins }
+        .minWith { a, b ->
+            val scoreCompare = compareScores(a.score(cells), b.score(cells))
+            if (scoreCompare != 0) {
+                scoreCompare
+            } else {
+                compareValuesBy(a, b, { it.baseline.ordinal }, { it.origin.q }, { it.origin.r })
+            }
+        }
+}
+
+private fun BKELayout.score(cells: List<CellCoordinate>) = cells.flatMap {
+    val (ring, sector, sectorOffset) = it.ringOffset(origin, baseline)
+    listOf(ring, sector * ring + sectorOffset)
+}
+
+private fun compareScores(a: List<Int>, b: List<Int>): Int {
+    a.zip(b).forEach { (left, right) ->
+        left.compareTo(right).takeIf { it != 0 }?.let { return it }
+    }
+
+    return a.size.compareTo(b.size)
+}
+
 private data class RingOffset(val ring: Int, val sector: Int, val sectorOffset: Int)
 private fun CellCoordinate.ringOffset(origin: CellCoordinate, baseline: Direction): RingOffset {
-    if (this == origin) return RingOffset(0, 0, 0)
+    require(this != origin) { "BKE origin cannot be a rendered move" }
 
     val relative = this - origin
     val ring = distanceTo(origin)

@@ -87,7 +87,7 @@ class IntegrationTest {
         val parsed = input.parseRectilinearStateBKETurnNotation()
         val rendered = parsed.renderRectilinearStateBKETurnNotation(RectilinearNotationType.Compact)
 
-        assertEquals(".x/xx, > @(0, -1) o A0 B0 x C1.0 C1.1", rendered)
+        assertEquals(".x/xx, b @(1, 0) o A0 A1 x B3.1 B4.0", rendered)
         val _ = rendered.parseRectilinearStateBKETurnNotation()
     }
 
@@ -103,5 +103,26 @@ class IntegrationTest {
         val rendered = board.renderRectilinearStateBKETurnNotation(RectilinearNotationType.Compact)
 
         assertEquals("x, > @(-5, 0) o A0", rendered)
+    }
+
+    @Test
+    fun `bke origin is not placed on a bke move`() {
+        val board = Board()
+        board[0, 0].owner = CellOwner.X
+        board[2, 0].apply {
+            owner = CellOwner.O
+            turn = 1
+            focused = true
+        }
+        board[1, 0].apply {
+            owner = CellOwner.O
+            turn = 1
+            focused = true
+        }
+
+        val rendered = board.renderRectilinearStateBKETurnNotation(RectilinearNotationType.Compact)
+
+        assertEquals("x, q @(2, -1) o A0 A1", rendered)
+        assertEquals(board, rendered.parseRectilinearStateBKETurnNotation())
     }
 }
