@@ -66,7 +66,7 @@ private fun MainLayout(client: HexoApiClient, initialPosition: String) {
             val temporaryLine = temporaryLine
             if (temporaryLine != null) highlightedLines += temporaryLine
 
-            val maxTurn = cells.values.maxOfOrNull { it.turn ?: -1 }?.takeIf { it >= 0 }
+            val maxTurn = getMaxTurn()
             cells.values.forEach { it.focused = maxTurn != null && (it.turn == maxTurn) }
         }
     }
@@ -102,17 +102,19 @@ private fun MainLayout(client: HexoApiClient, initialPosition: String) {
     }
 }
 
+private fun HexoBoard.getMaxTurn() = cells.values.maxOfOrNull { it.turn ?: -1 }?.takeIf { it >= 0 }
+
 private fun placeStateCell(coordinate: CellCoordinate, board: MutableState<HexoBoard>) {
     var board by board
 
     val turn = board.cells[coordinate]?.turn
-    val maxTurn = board.cells.values.maxOfOrNull { it.turn ?: -1 }?.takeIf { it >= 0 }
+    val maxTurn = board.getMaxTurn()
     if (turn != null && turn != maxTurn) return
 
     board = board.clone().apply {
         if (turn != null && turn == maxTurn) {
             this[coordinate].apply {
-                owner = null
+                this.owner = null
                 this.turn = null
             }
         } else {
@@ -127,16 +129,36 @@ private fun placeStateCell(coordinate: CellCoordinate, board: MutableState<HexoB
 
 private fun placeTurnCell(coordinate: CellCoordinate, board: MutableState<HexoBoard>) {
     var board by board
+    val maxTurn = board.getMaxTurn()
     board.cells[coordinate]?.let {
+        if (maxTurn != null && it.turn == maxTurn) {
+            val updated = board.clone().apply {
+                this[coordinate].apply {
+                    this.owner = null
+                    this.turn = null
+                }
+            }
+            board = updated
+        }
         if (it.owner != null || it.turn != null) return
     }
 
+    val (player, turn) = board.findNextTurn()
+    board = board.clone().apply {
+        this[coordinate].apply {
+            this.owner = player
+            this.turn = turn
+        }
+    }
+}
+
+private fun HexoBoard.findNextTurn(): Pair<CellOwner, Int> {
     var hadPosition = false
     var turn = 0
     var isComplete = false
     var player = CellOwner.X
 
-    board.cells.values.forEach { cell ->
+    cells.values.forEach { cell ->
         val cellOwner = cell.owner ?: return@forEach
         val cellTurn = cell.turn?.takeIf { it >= turn } ?: run {
             hadPosition = true
@@ -160,12 +182,7 @@ private fun placeTurnCell(coordinate: CellCoordinate, board: MutableState<HexoBo
         player = player.other
     }
 
-    board = board.clone().apply {
-        this[coordinate].apply {
-            this.owner = player
-            this.turn = turn
-        }
-    }
+    return player to turn
 }
 
 private fun MouseEvent.handleBoardRightClick(
