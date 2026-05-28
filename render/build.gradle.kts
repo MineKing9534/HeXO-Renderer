@@ -1,13 +1,23 @@
 plugins {
-    id("kotlin-jvm")
+    id("kotlin-multiplatform")
 }
 
-dependencies {
-    implementation(projects.core)
-    implementation(projects.board)
+kotlin {
+    sourceSets.commonMain {
+        dependencies {
+            implementation(projects.board)
+        }
+    }
 
-    implementation(libs.kotlin.coroutines.core)
-    implementation(libs.cache)
+    sourceSets.jvmMain {
+        dependencies {
+            implementation(libs.cache)
+        }
+    }
 
-    testImplementation(projects.parse)
+    sourceSets.commonTest {
+        dependencies {
+            implementation(projects.parse)
+        }
+    }
 }

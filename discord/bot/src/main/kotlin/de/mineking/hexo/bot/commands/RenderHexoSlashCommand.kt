@@ -17,6 +17,7 @@ import de.mineking.discord.ui.modal.replyModal
 import de.mineking.discord.ui.parameter
 import de.mineking.discord.ui.registerLocalizedModal
 import de.mineking.discord.ui.render
+import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.utils.asMediaGalleryItem
 import de.mineking.hexo.bot.utils.finalErrorResponse
@@ -66,7 +67,7 @@ private fun renderHexoCommandImpl(
             deferReply().queue()
             val board = try {
                 main.notationParser.parse(input)
-            } catch (e: IllegalArgumentException) {
+            } catch (e: HexoNotationException) {
                 finalErrorResponse(localization.responseError(userLocale, input, e.message))
             }
 

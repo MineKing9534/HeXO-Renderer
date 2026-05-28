@@ -15,3 +15,14 @@ detekt {
     allRules = false
     config.setFrom("$rootDir/config/detekt.yml")
 }
+
+pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
+    detekt {
+        val languages = listOf("common", "js", "jvm")
+        val files = languages
+            .flatMap { listOf("${it}Main", "${it}Test") }
+            .map { "src/$it/kotlin" }
+
+        source = files(files)
+    }
+}

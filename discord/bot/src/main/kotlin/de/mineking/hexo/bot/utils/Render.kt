@@ -4,9 +4,10 @@ import de.mineking.discord.localization.Locale
 import de.mineking.discord.localization.LocalizationFile
 import de.mineking.discord.localization.Localize
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.localization
-import de.mineking.hexo.render.renderToByteArray
+import de.mineking.hexo.render.image.renderToByteArray
 import net.dv8tion.jda.api.components.MessageTopLevelComponent
 import net.dv8tion.jda.api.components.mediagallery.MediaGallery
 import net.dv8tion.jda.api.components.mediagallery.MediaGalleryItem
@@ -134,7 +135,7 @@ private enum class SegmentParser(val symbol: String, val keepAsText: Boolean) {
             val (code, lang) = content.decodeCodeAndLanguage()
             state.result += try {
                 MediaGallery.of(main.notationParser.parse(code).asMediaGalleryItem())
-            } catch (_: IllegalArgumentException) {
+            } catch (_: HexoNotationException) {
                 TextDisplay.of("$symbol${lang?.let { "$it\n" } ?: ""}$code$symbol")
             }
         }
@@ -155,7 +156,7 @@ private enum class SegmentParser(val symbol: String, val keepAsText: Boolean) {
         override suspend fun handle(content: String, state: ComponentParserState) {
             try {
                 state.afterParagraph += main.notationParser.parse(content).asMediaGalleryItem()
-            } catch (_: IllegalArgumentException) {
+            } catch (_: HexoNotationException) {
             }
         }
     },

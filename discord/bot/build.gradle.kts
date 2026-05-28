@@ -10,7 +10,6 @@ plugins {
 }
 
 dependencies {
-    implementation(projects.core)
     implementation(projects.board)
 
     implementation(projects.parse)

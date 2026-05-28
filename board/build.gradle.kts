@@ -1,8 +1,12 @@
 plugins {
-    id("kotlin-jvm")
+    id("kotlin-multiplatform")
     id("publish")
 }
 
-dependencies {
-    implementation(projects.core)
+kotlin {
+    sourceSets.commonMain {
+        dependencies {
+            api(projects.core)
+        }
+    }
 }

@@ -14,10 +14,6 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-detekt {
-    source = files("src/commonMain/kotlin", "src/jsMain/kotlin", "src/jvmMain/kotlin")
-}
-
 dependencies {
     kspCommonMainMetadata(projects.api.processor)
 }
@@ -28,7 +24,7 @@ kotlin {
     sourceSets.commonMain {
         generatedKotlin.srcDir(layout.buildDirectory.dir("generated/ksp"))
         dependencies {
-            implementation(projects.core)
+            implementation(projects.board)
 
             implementation(libs.kotlin.serialization.json)
             implementation(libs.bundles.ktor.client)
@@ -39,8 +35,6 @@ kotlin {
 
     sourceSets.jvmMain {
         dependencies {
-            implementation(projects.board)
-
             implementation(libs.cache)
             implementation(libs.ktor.client.cio)
 

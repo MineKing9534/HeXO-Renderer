@@ -37,8 +37,8 @@ import de.mineking.hexo.link.oauth2.DiscordOAuth2Client
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
 import de.mineking.hexo.parse.RectilinearStateBKETurnNotationParser
 import de.mineking.hexo.parse.cached
-import de.mineking.hexo.render.ImageBoardRenderer
 import de.mineking.hexo.render.cached
+import de.mineking.hexo.render.image.ImageBoardRenderer
 import dev.freya02.jda.emojis.unicode.Emojis
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking

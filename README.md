@@ -56,26 +56,23 @@ Or for a more complex example:
 ![example 2](assets/example_2.png)
 
 #### Highlighting
-It is also possible to highlight cells. For player characters you can use uppercase letters and for empty cells `!`:
+Cells can also be highlighted. To do so, you can put the color (player symbol, or `!` for a neutral highlight) of the highlight in parentheses after the cell to highlight.
+`.(!)` Would be an empty neutral highlight, `o(x)` a blue cell with a yellow highlight.
 
-| Default Character | Highlighted Variant |
-|-------------------|---------------------|
-| x                 | X                   |
-| o                 | O                   |
-| .                 | !                   |
+> [!NOTE]
+> There is also a shorter syntax for neutral cell highlights: To highlight a cell notated by `x`, `o` or `.` you can use `X`, `O` or `!` to highlight that cell respectively.
+> For example `X` is equivalent to `x(!)`.
 
-Additionally, winning rows (6 or more in a row) are highlighted automatically.
+Additionally, winning rows (6 or more in a row) are highlighted automatically in white.
 
-`...!/...x/oxxxxxx/.oox/ooox/.o.o`
+`....(!)/...x/oxxxxxx/.oox/ooox/.o.o`
 
 ![example highlight](assets/example_highlight.png)
 
-You can also highlight lines. Highlighted lines are defined in parentheses after the cell that the line should start from. Inside the parentheses you have to specify at least the direction of the line, and optionally the length and color of the line.
+You can also highlight lines. To do so, you have to prefix a direction and length of the line before the color in the parentheses.
 
 The direction of the line is indicated by one of the following symbols: `>`, `q`, `p`, `<`, `b`, `d` representing one of the right, bottom right, bottom left, left, top left or top right.
 The length can be specified directly after. If no length is specified, it will default to `4`.
-
-Also, either `x` or `o` can ba added last, which specifies the color of the line. If no value is specified, the line will be pink by default.
 
 `.(>4)xx/.o(q3o)/(>4o)oo`
 
