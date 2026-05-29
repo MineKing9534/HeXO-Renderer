@@ -37,8 +37,8 @@ import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.url.URL
 import de.mineking.hexo.board.Board as HexoBoard
 
-private const val DEFAULT_SIDEBAR_WIDTH = 384
-private const val MIN_SIDEBAR_WIDTH = 320
+private const val DEFAULT_SIDEBAR_WIDTH = 380
+private const val MIN_SIDEBAR_WIDTH = 330
 private const val MAX_SIDEBAR_WIDTH = 560
 private const val GITHUB_URL = "https://github.com/MineKing9534/HeXO-Renderer"
 
@@ -246,11 +246,19 @@ private fun NotationField(
     var focused by remember { mutableStateOf(false) }
 
     Div({ classes("space-y-2") }) {
-        Div({ classes("flex", "items-center", "justify-between", "gap-3") }) {
-            Div({ classes("text-sm", "font-semibold", "uppercase", "text-slate-400") }) {
+        Div({ classes("relative", "min-h-8", "overflow-hidden") }) {
+            Div({ classes("pt-1.5", "text-sm", "font-semibold", "uppercase", "text-slate-400") }) {
                 Text("Notation")
             }
-            NotationActions(formationRepository, finishedGameRepository, notation, onChange)
+            Div({
+                classes(
+                    "absolute", "right-0", "top-0", "z-10", "max-w-full",
+                    "before:pointer-events-none", "before:absolute", "before:-left-5", "before:top-0", "before:h-full", "before:w-5",
+                    "before:bg-linear-to-r", "before:from-transparent", "before:to-slate-900/95", "before:content-['']",
+                )
+            }) {
+                NotationActions(formationRepository, finishedGameRepository, notation, onChange)
+            }
         }
 
         TextArea {
@@ -295,7 +303,7 @@ private fun NotationActions(
     }
 
     var importDialogOpen by remember { mutableStateOf(false) }
-    Div({ classes("flex", "gap-2") }) {
+    Div({ classes("flex", "max-w-full", "justify-end", "gap-2") }) {
         var link by remember { mutableStateOf<String?>(null) }
         Button("Copy Link", enabled = notation.isNotBlank()) {
             val url = URL(window.location.href)
