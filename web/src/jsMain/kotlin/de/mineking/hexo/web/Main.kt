@@ -38,7 +38,7 @@ fun main() {
     js("require('./style.css')")
     renderComposable(rootElementId = "root") {
         val params = URLSearchParams(window.location.search)
-        val initial = params.get("position")?.replace("_", "/") ?: "0"
+        val initial = params.get("position")?.replace("_", "/") ?: ""
         window.history.pushState(null, "", window.location.pathname)
 
         val client = remember { HexoApiClient(host = PROXY, socketIOOptions = null) }
@@ -56,7 +56,7 @@ private fun MainLayout(client: HexoApiClient, initialPosition: String) {
     val repositories = remember(client) { client.createRepositories() }
 
     val viewport = remember { mutableStateOf<BoardViewport?>(null) }
-    val placementMode = remember { mutableStateOf(CellPlacementMode.Turn) }
+    val placementMode = remember { mutableStateOf(if (initialPosition.isNotBlank()) CellPlacementMode.Turn else CellPlacementMode.State) }
 
     val board = remember { mutableStateOf(initialPosition.parseRectilinearStateBKETurnNotation()) }
     var temporaryLine by remember { mutableStateOf<HighlightLine?>(null) }
