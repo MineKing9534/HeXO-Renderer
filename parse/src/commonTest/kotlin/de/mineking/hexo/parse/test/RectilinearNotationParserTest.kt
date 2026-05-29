@@ -155,6 +155,6 @@ class RectilinearNotationParserTest {
         val e = assertFailsWith<HexoNotationException> {
             val _ = "x.[ab".parseRectilinearNotation()
         }
-        assertEquals("Unterminated symbol at end of input", e.message)
+        assertEquals("Unterminated symbol at end of input: `ab`", e.message)
     }
 }
