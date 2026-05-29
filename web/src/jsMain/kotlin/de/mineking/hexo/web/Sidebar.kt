@@ -22,6 +22,7 @@ import kotlinx.browser.window
 import kotlinx.dom.addClass
 import kotlinx.dom.removeClass
 import org.jetbrains.compose.web.attributes.InputType
+import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.attributes.readOnly
 import org.jetbrains.compose.web.dom.A
@@ -95,7 +96,6 @@ fun Sidebar(
             NotationField(
                 formationRepository = formationRepository,
                 finishedGameRepository = finishedGameRepository,
-                board = board,
                 notation = notation,
                 parseError = parseError,
                 onChange = { cause, value ->
@@ -239,7 +239,6 @@ private fun ParseStatus(valid: Boolean) {
 private fun NotationField(
     formationRepository: FormationRepository,
     finishedGameRepository: FinishedGameRepository,
-    board: HexoBoard,
     notation: String,
     parseError: String?,
     onChange: (BoardUpdateCause, String) -> Unit,
@@ -251,7 +250,7 @@ private fun NotationField(
             Div({ classes("text-sm", "font-semibold", "uppercase", "text-slate-400") }) {
                 Text("Notation")
             }
-            NotationActions(formationRepository, finishedGameRepository, board, onChange)
+            NotationActions(formationRepository, finishedGameRepository, notation, onChange)
         }
 
         TextArea {
@@ -277,15 +276,17 @@ private fun NotationField(
 private fun NotationActions(
     formationRepository: FormationRepository,
     finishedGameRepository: FinishedGameRepository,
-    board: HexoBoard,
+    notation: String,
     onChange: (BoardUpdateCause, String) -> Unit,
 ) {
     @Composable
-    fun Button(label: String, onClick: () -> Unit) {
+    fun Button(label: String, enabled: Boolean = true, onClick: () -> Unit) {
         Button({
+            if (!enabled) disabled()
             classes(
                 "rounded-md", "border", "border-slate-700", "bg-slate-950", "px-2.5", "py-1", "text-nowrap",
-                "text-xs", "font-medium", "text-slate-300", "transition", "hover:bg-slate-800", "hover:text-slate-100",
+                "text-xs", "font-medium", "text-slate-300", "disabled:text-slate-400", "transition",
+                "not-disabled:hover:bg-slate-800", "not-disabled:hover:text-slate-100",
             )
             onClick { onClick() }
         }) {
@@ -296,9 +297,9 @@ private fun NotationActions(
     var importDialogOpen by remember { mutableStateOf(false) }
     Div({ classes("flex", "gap-2") }) {
         var link by remember { mutableStateOf<String?>(null) }
-        Button("Copy Link") {
+        Button("Copy Link", enabled = notation.isNotBlank()) {
             val url = URL(window.location.href)
-            url.searchParams.set("position", board.renderRectilinearStateBKETurnNotation(RectilinearNotationType.Compact).replace("/", "_"))
+            url.searchParams.set("position", notation.replace("/", "_"))
             link = url.toString()
         }
 
