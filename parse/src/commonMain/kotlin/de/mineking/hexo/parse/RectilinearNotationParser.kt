@@ -27,7 +27,9 @@ fun String.parseRectilinearNotation(): Board {
         state = state.handleChar(ch, offset, cursor, buffer)
     }
 
-    requireHexo(buffer.isEmpty()) { "Unterminated symbol at end of input" }
+    state.handleEOF(cursor, buffer)
+
+    requireHexo(buffer.isEmpty()) { "Unterminated symbol at end of input: `$buffer`" }
     return board
 }
 
@@ -75,11 +77,14 @@ private enum class ParserState {
                 buffer.append(ch)
                 return this
             } else {
-                cursor.step(buffer.toString().toInt())
-                buffer.clear()
-
+                handleEOF(cursor, buffer)
                 return Normal.handleChar(ch, offset, cursor, buffer)
             }
+        }
+
+        override fun handleEOF(cursor: Cursor, buffer: StringBuilder) {
+            cursor.step(buffer.toString().toInt())
+            buffer.clear()
         }
     },
     Label {
@@ -135,6 +140,7 @@ private enum class ParserState {
     ;
 
     abstract fun handleChar(ch: Char, offset: Int, cursor: Cursor, buffer: StringBuilder): ParserState
+    open fun handleEOF(cursor: Cursor, buffer: StringBuilder) {}
 }
 
 private class Cursor(private val board: Board) {

@@ -15,7 +15,7 @@ private const val TURN_LIST_PATTERN = /*language=regexp*/ """$TURN_PATTERN(?:\s+
 
 private const val ORIGIN_PATTERN = /*language=regexp*/ """@\s*\((-?\d+),\s*(-?\d+)\)"""
 
-private val BKE_FORMAT = """^([bdpq<>])?\s*(CW|CCW)?\s*(?:$ORIGIN_PATTERN\s*:?)?\s*($TURN_LIST_PATTERN)$""".toRegex()
+private val BKE_FORMAT = """^\s*([bdpq<>])?\s*(CW|CCW)?\s*(?:$ORIGIN_PATTERN\s*:?)?\s*($TURN_LIST_PATTERN)\s*$""".toRegex()
 
 enum class Chirality(val symbol: String) {
     Clockwise("CW"),

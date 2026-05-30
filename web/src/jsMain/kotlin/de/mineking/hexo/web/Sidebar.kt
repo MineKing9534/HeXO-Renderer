@@ -22,6 +22,7 @@ import kotlinx.browser.window
 import kotlinx.dom.addClass
 import kotlinx.dom.removeClass
 import org.jetbrains.compose.web.attributes.InputType
+import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.attributes.readOnly
 import org.jetbrains.compose.web.dom.A
@@ -36,8 +37,8 @@ import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.url.URL
 import de.mineking.hexo.board.Board as HexoBoard
 
-private const val DEFAULT_SIDEBAR_WIDTH = 384
-private const val MIN_SIDEBAR_WIDTH = 320
+private const val DEFAULT_SIDEBAR_WIDTH = 380
+private const val MIN_SIDEBAR_WIDTH = 330
 private const val MAX_SIDEBAR_WIDTH = 560
 private const val GITHUB_URL = "https://github.com/MineKing9534/HeXO-Renderer"
 
@@ -95,7 +96,6 @@ fun Sidebar(
             NotationField(
                 formationRepository = formationRepository,
                 finishedGameRepository = finishedGameRepository,
-                board = board,
                 notation = notation,
                 parseError = parseError,
                 onChange = { cause, value ->
@@ -239,7 +239,6 @@ private fun ParseStatus(valid: Boolean) {
 private fun NotationField(
     formationRepository: FormationRepository,
     finishedGameRepository: FinishedGameRepository,
-    board: HexoBoard,
     notation: String,
     parseError: String?,
     onChange: (BoardUpdateCause, String) -> Unit,
@@ -247,11 +246,19 @@ private fun NotationField(
     var focused by remember { mutableStateOf(false) }
 
     Div({ classes("space-y-2") }) {
-        Div({ classes("flex", "items-center", "justify-between", "gap-3") }) {
-            Div({ classes("text-sm", "font-semibold", "uppercase", "text-slate-400") }) {
+        Div({ classes("relative", "min-h-8", "overflow-hidden") }) {
+            Div({ classes("pt-1.5", "text-sm", "font-semibold", "uppercase", "text-slate-400") }) {
                 Text("Notation")
             }
-            NotationActions(formationRepository, finishedGameRepository, board, onChange)
+            Div({
+                classes(
+                    "absolute", "right-0", "top-0", "z-10", "max-w-full",
+                    "before:pointer-events-none", "before:absolute", "before:-left-5", "before:top-0", "before:h-full", "before:w-5",
+                    "before:bg-linear-to-r", "before:from-transparent", "before:to-slate-900/95", "before:content-['']",
+                )
+            }) {
+                NotationActions(formationRepository, finishedGameRepository, notation, onChange)
+            }
         }
 
         TextArea {
@@ -277,15 +284,17 @@ private fun NotationField(
 private fun NotationActions(
     formationRepository: FormationRepository,
     finishedGameRepository: FinishedGameRepository,
-    board: HexoBoard,
+    notation: String,
     onChange: (BoardUpdateCause, String) -> Unit,
 ) {
     @Composable
-    fun Button(label: String, onClick: () -> Unit) {
+    fun Button(label: String, enabled: Boolean = true, onClick: () -> Unit) {
         Button({
+            if (!enabled) disabled()
             classes(
                 "rounded-md", "border", "border-slate-700", "bg-slate-950", "px-2.5", "py-1", "text-nowrap",
-                "text-xs", "font-medium", "text-slate-300", "transition", "hover:bg-slate-800", "hover:text-slate-100",
+                "text-xs", "font-medium", "text-slate-300", "disabled:text-slate-400", "transition",
+                "not-disabled:hover:bg-slate-800", "not-disabled:hover:text-slate-100",
             )
             onClick { onClick() }
         }) {
@@ -294,11 +303,11 @@ private fun NotationActions(
     }
 
     var importDialogOpen by remember { mutableStateOf(false) }
-    Div({ classes("flex", "gap-2") }) {
+    Div({ classes("flex", "max-w-full", "justify-end", "gap-2") }) {
         var link by remember { mutableStateOf<String?>(null) }
-        Button("Copy Link") {
+        Button("Copy Link", enabled = notation.isNotBlank()) {
             val url = URL(window.location.href)
-            url.searchParams.set("position", board.renderRectilinearStateBKETurnNotation(RectilinearNotationType.Compact).replace("/", "_"))
+            url.searchParams.set("position", notation.replace("/", "_"))
             link = url.toString()
         }
 

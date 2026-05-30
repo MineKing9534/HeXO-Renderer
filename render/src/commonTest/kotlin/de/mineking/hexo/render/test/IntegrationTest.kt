@@ -2,9 +2,7 @@ package de.mineking.hexo.render.test
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellHighlight
-import de.mineking.hexo.board.Direction
 import de.mineking.hexo.core.CellOwner
-import de.mineking.hexo.parse.parseBKENotation
 import de.mineking.hexo.parse.parseRectilinearNotation
 import de.mineking.hexo.parse.parseRectilinearStateBKETurnNotation
 import de.mineking.hexo.render.RectilinearNotationType
@@ -73,9 +71,18 @@ class IntegrationTest {
     }
 
     @Test
-    fun `bke test`() {
+    fun `bke test 1`() {
+        val input = "o A0"
+        val parsed = input.parseRectilinearStateBKETurnNotation()
+        val rendered = parsed.renderRectilinearStateBKETurnNotation(RectilinearNotationType.Compact)
+
+        assertEquals(input, rendered)
+    }
+
+    @Test
+    fun `bke test 2`() {
         val input = "o A0 A2 x A1 A4 o B1.0 B4.0"
-        val parsed = input.parseBKENotation(null, Direction.Right)
+        val parsed = input.parseRectilinearStateBKETurnNotation()
         val rendered = parsed.renderRectilinearStateBKETurnNotation(RectilinearNotationType.Compact)
 
         assertEquals(input, rendered)
@@ -103,6 +110,24 @@ class IntegrationTest {
         val rendered = board.renderRectilinearStateBKETurnNotation(RectilinearNotationType.Compact)
 
         assertEquals("x, > @(-5, 0) o A0", rendered)
+    }
+
+    @Test
+    fun `rectilinear state bke turn optimizes fixed origin direction`() {
+        val board = Board()
+        board[0, 0].owner = CellOwner.X
+        board[1, 0].apply {
+            owner = CellOwner.O
+            turn = 0
+        }
+        board[1, 1].apply {
+            owner = CellOwner.O
+            turn = 1
+        }
+
+        val rendered = board.renderRectilinearStateBKETurnNotation(RectilinearNotationType.Compact)
+
+        assertEquals("x, q @(1, 0) o A0", rendered)
     }
 
     @Test

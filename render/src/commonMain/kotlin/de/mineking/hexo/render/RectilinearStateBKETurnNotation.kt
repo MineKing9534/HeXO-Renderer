@@ -86,7 +86,9 @@ private fun List<Pair<CellOwner, List<CellCoordinate>>>.chooseBKELayout(origin: 
     val forbiddenOrigins = cells.toSet()
 
     if (origin != null && origin !in forbiddenOrigins) {
-        return BKELayout(origin, Direction.Right)
+        return Direction.entries
+            .map { direction -> BKELayout(origin, direction) }
+            .chooseBest(cells)
     }
 
     val first = cells.first()
@@ -96,19 +98,21 @@ private fun List<Pair<CellOwner, List<CellCoordinate>>>.chooseBKELayout(origin: 
             Direction.entries.map { direction -> BKELayout(first - direction.direction * ring, direction) }
         }
         .filter { it.origin !in forbiddenOrigins }
-        .minWith { a, b ->
-            val scoreCompare = compareScores(a.score(cells), b.score(cells))
-            if (scoreCompare != 0) {
-                scoreCompare
-            } else {
-                compareValuesBy(a, b, { it.baseline.ordinal }, { it.origin.q }, { it.origin.r })
-            }
-        }
+        .chooseBest(cells)
 }
 
 private fun BKELayout.score(cells: List<CellCoordinate>) = cells.flatMap {
     val (ring, sector, sectorOffset) = it.ringOffset(origin, baseline)
     listOf(ring, sector * ring + sectorOffset)
+}
+
+private fun List<BKELayout>.chooseBest(cells: List<CellCoordinate>) = minWith { a, b ->
+    val scoreCompare = compareScores(a.score(cells), b.score(cells))
+    if (scoreCompare != 0) {
+        scoreCompare
+    } else {
+        compareValuesBy(a, b, { it.baseline.ordinal }, { it.origin.q }, { it.origin.r })
+    }
 }
 
 private fun compareScores(a: List<Int>, b: List<Int>): Int {

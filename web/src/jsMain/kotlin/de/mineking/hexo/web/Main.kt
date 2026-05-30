@@ -11,6 +11,7 @@ import de.mineking.hexo.api.createRepositories
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.Direction
+import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.HighlightLine
 import de.mineking.hexo.board.clone
 import de.mineking.hexo.board.contains
@@ -20,11 +21,14 @@ import de.mineking.hexo.parse.parseRectilinearStateBKETurnNotation
 import de.mineking.hexo.render.compose.Board
 import de.mineking.hexo.render.compose.BoardRightClickEvent
 import de.mineking.hexo.render.compose.BoardViewport
+import de.mineking.hexo.web.components.Dialog
 import kotlinx.browser.window
+import org.jetbrains.compose.web.attributes.readOnly
 import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.dom.TextArea
 import org.jetbrains.compose.web.renderComposable
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.events.MouseEvent
@@ -36,13 +40,40 @@ private const val PROXY = "https://hexo.mineking.dev/proxy"
 
 fun main() {
     js("require('./style.css')")
+
+    val params = URLSearchParams(window.location.search)
+    val initial = params.get("position")?.replace("_", "/") ?: ""
+    window.history.pushState(null, "", window.location.pathname)
+
+    val (initialBoard, initialError) = try {
+        val board = when {
+            initial.isBlank() -> HexoBoard()
+            else -> initial.parseRectilinearStateBKETurnNotation()
+        }
+
+        board to null
+    } catch (e: HexoNotationException) {
+        HexoBoard() to e.message
+    }
+
     renderComposable(rootElementId = "root") {
-        val params = URLSearchParams(window.location.search)
-        val initial = params.get("position")?.replace("_", "/") ?: "0"
-        window.history.pushState(null, "", window.location.pathname)
+        var error by remember { mutableStateOf(initialError) }
 
         val client = remember { HexoApiClient(host = PROXY, socketIOOptions = null) }
-        MainLayout(client, initial)
+        MainLayout(client, initialBoard)
+
+        if (error != null) {
+            Dialog(title = "Invalid Position", onClose = { error = null }) {
+                TextArea {
+                    value(error ?: "")
+                    classes(
+                        "w-full", "resize-y", "rounded-lg", "border-3", "p-3", "text-sm", "text-rose-100",
+                        "outline-none", "transition", "font-mono", "bg-slate-950", "border-rose-400",
+                    )
+                    readOnly()
+                }
+            }
+        }
     }
 }
 
@@ -52,13 +83,20 @@ enum class CellPlacementMode {
 }
 
 @Composable
-private fun MainLayout(client: HexoApiClient, initialPosition: String) {
+private fun MainLayout(client: HexoApiClient, initialBoard: HexoBoard) {
     val repositories = remember(client) { client.createRepositories() }
 
     val viewport = remember { mutableStateOf<BoardViewport?>(null) }
-    val placementMode = remember { mutableStateOf(CellPlacementMode.Turn) }
+    val placementMode = remember {
+        mutableStateOf(
+            when {
+                initialBoard.cells.values.any { it.owner != null } -> CellPlacementMode.Turn
+                else -> CellPlacementMode.State
+            },
+        )
+    }
 
-    val board = remember { mutableStateOf(initialPosition.parseRectilinearStateBKETurnNotation()) }
+    val board = remember { mutableStateOf(initialBoard) }
     var temporaryLine by remember { mutableStateOf<HighlightLine?>(null) }
 
     val transformedBoard = remember(board.value, temporaryLine) {
