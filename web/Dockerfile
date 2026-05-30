@@ -1,7 +1,7 @@
 FROM gradle:9.4.0-jdk21 AS build
 
 WORKDIR /workspace
-ARG WEB_BASE_PATH=/app
+ARG WEB_BASE_PATH
 
 COPY gradlew settings.gradle.kts build.gradle.kts gradle.properties ./
 COPY gradle ./gradle

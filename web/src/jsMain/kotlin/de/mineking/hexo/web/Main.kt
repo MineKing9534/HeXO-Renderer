@@ -22,6 +22,7 @@ import de.mineking.hexo.render.compose.Board
 import de.mineking.hexo.render.compose.BoardRightClickEvent
 import de.mineking.hexo.render.compose.BoardViewport
 import de.mineking.hexo.web.components.Dialog
+import kotlinx.browser.document
 import kotlinx.browser.window
 import org.jetbrains.compose.web.attributes.readOnly
 import org.jetbrains.compose.web.dom.AttrBuilderContext
@@ -39,8 +40,6 @@ const val URL = "https://hexo.did.science"
 private const val PROXY = "https://hexo.mineking.dev/proxy"
 
 fun main() {
-    js("require('./style.css')")
-
     val params = URLSearchParams(window.location.search)
     val initial = params.get("position")?.replace("_", "/") ?: ""
     window.history.pushState(null, "", window.location.pathname)
@@ -56,7 +55,10 @@ fun main() {
         HexoBoard() to e.message
     }
 
-    renderComposable(rootElementId = "root") {
+    val rootElement = document.getElementById("root")!!
+    rootElement.innerHTML = ""
+
+    renderComposable(root = rootElement) {
         var error by remember { mutableStateOf(initialError) }
 
         val client = remember { HexoApiClient(host = PROXY, socketIOOptions = null) }

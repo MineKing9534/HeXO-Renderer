@@ -5,6 +5,8 @@ plugins {
 
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.compose.compiler)
+
+    id("tailwindcss")
 }
 
 repositories {
@@ -43,13 +45,13 @@ kotlin {
             implementation(compose.html.core)
             implementation(compose.html.svg)
             implementation(compose.runtime)
-
-            implementation(npm("tailwindcss", "^4.3.0"))
-            implementation(npm("@tailwindcss/postcss", "^4.3.0"))
-            implementation(npm("postcss", "8.5.15"))
-            implementation(npm("postcss-loader", "8.2.1"))
         }
     }
+}
+
+tailwindcss {
+    resourceTask = tasks.jsProcessResources
+    resourcePath = "/"
 }
 
 tasks.named<Copy>("jsProcessResources") {

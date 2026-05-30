@@ -1,6 +1,7 @@
 package de.mineking.hexo.web
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,7 +35,7 @@ fun ImportDialog(
     var url by remember { mutableStateOf("") }
     var error by remember { mutableStateOf(false) }
 
-    val valid = remember(url, error) { url.matches(FORMATION_URL) || url.matches(GAME_URL) || error }
+    val valid by derivedStateOf { url.isNotBlank() && !error }
 
     Dialog(
         title = "Import Position",
@@ -68,6 +69,9 @@ fun ImportDialog(
 
         if (error) {
             Div({ classes("min-h-5", "text-sm", "leading-relaxed", "text-rose-400") }) {
+                Span({ classes("font-bold", "uppercase") }) {
+                    Text("Error: ")
+                }
                 Text("Position or game not found")
             }
         }
