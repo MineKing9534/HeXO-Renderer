@@ -1,4 +1,4 @@
-package de.mineking.hexo.bot
+package de.mineking.hexo.launcher
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable

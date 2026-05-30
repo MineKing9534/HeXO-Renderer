@@ -1,6 +1,7 @@
 FROM gradle:9.4.0-jdk21 AS build
 
 WORKDIR /workspace
+ARG WEB_BASE_PATH=/app
 
 COPY gradlew settings.gradle.kts build.gradle.kts gradle.properties ./
 COPY gradle ./gradle
@@ -9,7 +10,7 @@ COPY buildSrc ./buildSrc
 COPY . .
 
 RUN --mount=type=cache,target=/home/gradle/.gradle,sharing=locked \
-    ./gradlew --no-daemon :web:jsBrowserDistribution
+    ./gradlew --no-daemon :web:jsBrowserDistribution -Pweb.basePath=${WEB_BASE_PATH}
 
 FROM nginx:1.31.1-alpine
 
