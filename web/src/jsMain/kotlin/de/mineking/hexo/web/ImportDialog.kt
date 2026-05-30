@@ -88,7 +88,7 @@ private fun UrlInput(url: String, onUrlUpdate: (String) -> Unit, valid: Boolean)
         }
         classes(
             "w-full", "rounded-lg", "border-3", "border-slate-700", "bg-slate-950", "p-3",
-            "text-sm", "text-slate-100", "outline-none", "transition", "focus:bg-slate-800", "text-ellipsis",
+            "text-sm", "text-slate-100", "placeholder-slate-500", "outline-none", "transition", "focus:bg-slate-800", "text-ellipsis",
         )
         if (!valid) {
             classes("focus:border-rose-400")
