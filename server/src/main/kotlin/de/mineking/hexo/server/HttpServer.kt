@@ -25,7 +25,7 @@ class HttpServer(services: List<WebService>, port: Int) {
 
                 call.respondHtml {
                     statusPage(CardColorScheme.Error, title = "500 Internal Server Error") {
-                        +"An unexpected error occurred"
+                        +"The server could not complete this request. Please try again in a moment."
                     }
                 }
             }
@@ -33,14 +33,14 @@ class HttpServer(services: List<WebService>, port: Int) {
             status(HttpStatusCode.NotFound) {
                 call.respondHtml {
                     statusPage(CardColorScheme.Error, title = "404 Not Found") {
-                        +"The requested page was not found"
+                        +"There is no HeXO page or service at this address. Check the link and try again."
                     }
                 }
             }
         }
 
         routing {
-            staticResources("/static", "static")
+            staticResources("/static", "static", index = null)
             services.forEach {
                 it.run {
                     registerRoutes()
