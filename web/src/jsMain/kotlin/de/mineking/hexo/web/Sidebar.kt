@@ -268,7 +268,7 @@ private fun NotationField(
             onFocus { focused = true }
             onBlur { focused = false }
             classes(
-                "min-h-32", "w-full", "resize-y", "rounded-lg", "border-3", "p-3", "text-sm", "text-slate-100",
+                "min-h-32", "w-full", "resize-y", "rounded-lg", "border-3", "p-3", "text-sm", "text-slate-100", "placeholder-slate-500",
                 "outline-none", "transition", "font-mono",
             )
             when {

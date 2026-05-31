@@ -1,16 +1,24 @@
-import org.gradle.internal.execution.caching.CachingState.enabled
+import org.apache.tools.ant.filters.ReplaceTokens
 
 plugins {
-    kotlin("multiplatform")
-    id("kotlin-common")
+    id("kotlin-multiplatform")
 
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.compose.compiler)
+
+    id("tailwindcss")
 }
 
 repositories {
     google()
 }
+
+val webBasePath = providers.gradleProperty("web.basePath")
+    .orElse("/")
+    .map { path ->
+        val prefixed = if (path.startsWith("/")) path else "/$path"
+        prefixed.removeSuffix("/")
+    }
 
 kotlin {
     js {
@@ -37,11 +45,21 @@ kotlin {
             implementation(compose.html.core)
             implementation(compose.html.svg)
             implementation(compose.runtime)
-
-            implementation(npm("tailwindcss", "^4.3.0"))
-            implementation(npm("@tailwindcss/postcss", "^4.3.0"))
-            implementation(npm("postcss", "8.5.15"))
-            implementation(npm("postcss-loader", "8.2.1"))
         }
+    }
+}
+
+tailwindcss {
+    resourceTask = tasks.jsProcessResources
+    resourcePath = "/"
+}
+
+tasks.named<Copy>("jsProcessResources") {
+    inputs.property("webBasePath", webBasePath)
+
+    filesMatching("index.html") {
+        filter<ReplaceTokens>(
+            "tokens" to mapOf("WEB_BASE_PATH" to webBasePath.get()),
+        )
     }
 }

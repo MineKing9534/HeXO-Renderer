@@ -1,6 +1,7 @@
 package de.mineking.hexo.web
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -15,6 +16,7 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.components.LoadingIndicator
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.web.ExperimentalComposeWebSvgApi
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.attributes.placeholder
@@ -23,6 +25,8 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.svg.Path
+import org.jetbrains.compose.web.svg.Svg
 
 @Composable
 fun ImportDialog(
@@ -34,7 +38,7 @@ fun ImportDialog(
     var url by remember { mutableStateOf("") }
     var error by remember { mutableStateOf(false) }
 
-    val valid = remember(url, error) { url.matches(FORMATION_URL) || url.matches(GAME_URL) || error }
+    val valid by derivedStateOf { url.isNotBlank() && !error }
 
     Dialog(
         title = "Import Position",
@@ -68,6 +72,9 @@ fun ImportDialog(
 
         if (error) {
             Div({ classes("min-h-5", "text-sm", "leading-relaxed", "text-rose-400") }) {
+                Span({ classes("font-bold", "uppercase") }) {
+                    Text("Error: ")
+                }
                 Text("Position or game not found")
             }
         }
@@ -84,7 +91,7 @@ private fun UrlInput(url: String, onUrlUpdate: (String) -> Unit, valid: Boolean)
         }
         classes(
             "w-full", "rounded-lg", "border-3", "border-slate-700", "bg-slate-950", "p-3",
-            "text-sm", "text-slate-100", "outline-none", "transition", "focus:bg-slate-800", "text-ellipsis",
+            "text-sm", "text-slate-100", "placeholder-slate-500", "outline-none", "transition", "focus:bg-slate-800", "text-ellipsis",
         )
         if (!valid) {
             classes("focus:border-rose-400")
@@ -109,6 +116,7 @@ private fun UrlInput(url: String, onUrlUpdate: (String) -> Unit, valid: Boolean)
     }
 }
 
+@OptIn(ExperimentalComposeWebSvgApi::class)
 @Composable
 private fun ConfirmButton(
     formationRepository: FormationRepository,
@@ -125,8 +133,8 @@ private fun ConfirmButton(
         if (!valid) disabled()
 
         classes(
-            "rounded-lg", "border", "px-4", "py-2", "transition", "text-sm", "font-medium", "h-10", "w-20",
-            "flex", "items-center", "justify-center",
+            "rounded-lg", "border", "px-4", "py-2", "transition", "text-sm", "font-medium", "h-10", "w-24",
+            "flex", "items-center", "justify-center", "gap-1.5",
         )
 
         if (loading || !valid) {
@@ -156,6 +164,18 @@ private fun ConfirmButton(
         if (loading) {
             LoadingIndicator { classes("size-6") }
         } else {
+            Svg("0 0 24 24", {
+                attr("fill", "none")
+                attr("stroke", "currentColor")
+                attr("stroke-width", "2")
+                attr("stroke-linecap", "round")
+                attr("stroke-linejoin", "round")
+                classes("size-5", "shrink-0")
+            }) {
+                Path("M12 15V3")
+                Path("M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4")
+                Path("m7 10 5 5 5-5")
+            }
             Text("Import")
         }
     }

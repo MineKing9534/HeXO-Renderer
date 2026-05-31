@@ -28,3 +28,6 @@ include(":api:processor")
 
 include(":discord:link")
 include(":discord:bot")
+
+include(":server")
+include(":launcher")

@@ -46,10 +46,10 @@ fun Dialog(
                         attr("stroke-width", "2")
                         attr("stroke-linecap", "round")
                         attr("stroke-linejoin", "round")
-                    }, {
+                    }) {
                         Path("m9 9 6 6")
                         Path("m15 9-6 6")
-                    })
+                    }
                 }
 
                 Div({ classes("flex", "flex-col", "space-y-2") }) {
