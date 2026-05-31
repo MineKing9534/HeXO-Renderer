@@ -16,6 +16,7 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.components.LoadingIndicator
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.web.ExperimentalComposeWebSvgApi
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.attributes.placeholder
@@ -24,6 +25,8 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.svg.Path
+import org.jetbrains.compose.web.svg.Svg
 
 @Composable
 fun ImportDialog(
@@ -113,6 +116,7 @@ private fun UrlInput(url: String, onUrlUpdate: (String) -> Unit, valid: Boolean)
     }
 }
 
+@OptIn(ExperimentalComposeWebSvgApi::class)
 @Composable
 private fun ConfirmButton(
     formationRepository: FormationRepository,
@@ -129,8 +133,8 @@ private fun ConfirmButton(
         if (!valid) disabled()
 
         classes(
-            "rounded-lg", "border", "px-4", "py-2", "transition", "text-sm", "font-medium", "h-10", "w-20",
-            "flex", "items-center", "justify-center",
+            "rounded-lg", "border", "px-4", "py-2", "transition", "text-sm", "font-medium", "h-10", "w-24",
+            "flex", "items-center", "justify-center", "gap-1.5",
         )
 
         if (loading || !valid) {
@@ -160,6 +164,18 @@ private fun ConfirmButton(
         if (loading) {
             LoadingIndicator { classes("size-6") }
         } else {
+            Svg("0 0 24 24", {
+                attr("fill", "none")
+                attr("stroke", "currentColor")
+                attr("stroke-width", "2")
+                attr("stroke-linecap", "round")
+                attr("stroke-linejoin", "round")
+                classes("size-5", "shrink-0")
+            }) {
+                Path("M12 15V3")
+                Path("M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4")
+                Path("m7 10 5 5 5-5")
+            }
             Text("Import")
         }
     }
