@@ -1,7 +1,7 @@
 package de.mineking.hexo.render.test
 
-import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellHighlight
+import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.parse.parseRectilinearNotation
 import de.mineking.hexo.parse.parseRectilinearStateBKETurnNotation
@@ -13,7 +13,7 @@ import kotlin.test.assertEquals
 
 class IntegrationTest {
     private fun integrationTest(type: RectilinearNotationType) {
-        val board = Board()
+        val board = MutableBoard()
         board[0, 0].owner = CellOwner.X
         board[3, 0].owner = CellOwner.X
         board[0, 1].owner = CellOwner.O
@@ -38,7 +38,7 @@ class IntegrationTest {
 
     @Test
     fun `compact with highlight`() {
-        val board = Board()
+        val board = MutableBoard()
         board[0, 0].apply {
             owner = CellOwner.X
             highlight = CellHighlight(null)
@@ -57,7 +57,7 @@ class IntegrationTest {
 
     @Test
     fun `label integration test`() {
-        val board = Board()
+        val board = MutableBoard()
         board[0, 0].apply {
             owner = CellOwner.X
             label = "a"
@@ -100,7 +100,7 @@ class IntegrationTest {
 
     @Test
     fun `rectilinear state bke turn preserves shared offset`() {
-        val board = Board()
+        val board = MutableBoard()
         board[4, 0].owner = CellOwner.X
         board[0, 0].apply {
             owner = CellOwner.O
@@ -114,7 +114,7 @@ class IntegrationTest {
 
     @Test
     fun `rectilinear state bke turn optimizes fixed origin direction`() {
-        val board = Board()
+        val board = MutableBoard()
         board[0, 0].owner = CellOwner.X
         board[1, 0].apply {
             owner = CellOwner.O
@@ -132,7 +132,7 @@ class IntegrationTest {
 
     @Test
     fun `bke origin is not placed on a bke move`() {
-        val board = Board()
+        val board = MutableBoard()
         board[0, 0].owner = CellOwner.X
         board[2, 0].apply {
             owner = CellOwner.O

@@ -2,24 +2,32 @@ package de.mineking.hexo.parse
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.HexoNotationException
-import de.mineking.hexo.board.merge
+import de.mineking.hexo.board.MutableBoard
+import de.mineking.hexo.board.focusWinningRows
+import de.mineking.hexo.board.plus
 
-object RectilinearStateBKETurnNotationParser : BoardParser {
-    override suspend fun parse(notation: String) = notation.parseRectilinearStateBKETurnNotation()
+class RectilinearStateBKETurnNotationParser(val focusWinningRows: Boolean = true) : BoardParser {
+    override suspend fun parse(notation: String) = notation.parseRectilinearStateBKETurnNotation(focusWinningRows)
 }
 
-fun String.parseRectilinearStateBKETurnNotation(): Board {
+fun String.parseRectilinearStateBKETurnNotation(focusWinningRows: Boolean = true): Board {
     val parts = split(",\\s*".toRegex(), limit = 2)
 
-    return if (parts.size == 1) {
-        parseBKENotationOrNull(implicitOrigin = true) ?: parseRectilinearNotation()
+    val board = if (parts.size == 1) {
+        parseBKENotationOrNull(implicitOrigin = true, focusWinningRows = false) ?: parseRectilinearNotation(focusWinningRows = false)
     } else {
         val (rectilinear, bke) = parts
 
-        val originalState = rectilinear.parseRectilinearNotation()
-        val additionalMoves = bke.parseBKENotationOrNull(implicitOrigin = false)
+        val originalState = rectilinear.parseRectilinearNotation(focusWinningRows = false)
+        val additionalMoves = bke.parseBKENotationOrNull(implicitOrigin = false, focusWinningRows = false)
             ?: throw HexoNotationException("Invalid BKE notation format, use `[b,d,p,q,<,>][CW,CCW]? ...`")
 
-        originalState.merge(additionalMoves)
+        originalState + additionalMoves
     }
+
+    if (focusWinningRows) {
+        (board as MutableBoard).focusWinningRows()
+    }
+
+    return board
 }

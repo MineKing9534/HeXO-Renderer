@@ -106,7 +106,7 @@ fun Sidebar(
                     }
 
                     try {
-                        onBoardChange(cause, value.parseRectilinearStateBKETurnNotation())
+                        onBoardChange(cause, value.parseRectilinearStateBKETurnNotation(focusWinningRows = false))
                         parseError = null
                     } catch (e: HexoNotationException) {
                         parseError = e.message

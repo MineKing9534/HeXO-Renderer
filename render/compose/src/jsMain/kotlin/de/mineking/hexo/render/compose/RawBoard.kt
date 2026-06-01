@@ -10,10 +10,14 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.render.image.BasicTheme
 import de.mineking.hexo.render.image.BoardRenderBounds
 import de.mineking.hexo.render.image.BoardRenderLayout
+import de.mineking.hexo.render.image.CanvasFont
 import de.mineking.hexo.render.image.Color
+import de.mineking.hexo.render.image.DefaultCanvasFont
 import de.mineking.hexo.render.image.Stroke
+import de.mineking.hexo.render.image.Theme
 import de.mineking.hexo.render.image.center
 import de.mineking.hexo.render.image.createRenderLayout
 import de.mineking.hexo.render.image.div
@@ -33,25 +37,15 @@ private const val BOARD_LAYOUT_RADIUS = 255.0
 private val cellHoverColor = Color.rgb(0x7dd3fc)
 
 @Composable
-fun Board(
-    board: Board,
-    attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
-    onCellClick: (MouseEvent.(CellCoordinate) -> Unit)? = null,
-    onBoardRightClick: (MouseEvent.(BoardRightClickEvent) -> Unit)? = null,
-    content: ContentBuilder<HTMLCanvasElement>? = null,
-) {
-    var viewport by remember { mutableStateOf<BoardViewport?>(null) }
-    Board(board, viewport, { viewport = it }, attrs, onCellClick, onBoardRightClick, content)
-}
-
-@Composable
-fun Board(
+fun RawBoard(
     board: Board,
     viewport: BoardViewport?,
     onViewportChange: (BoardViewport) -> Unit,
-    attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
+    theme: Theme = BasicTheme.Default,
+    font: CanvasFont = DefaultCanvasFont,
     onCellClick: (MouseEvent.(CellCoordinate) -> Unit)? = null,
     onBoardRightClick: (MouseEvent.(BoardRightClickEvent) -> Unit)? = null,
+    attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
     content: ContentBuilder<HTMLCanvasElement>? = null,
 ) {
     var element by remember { mutableStateOf<HTMLCanvasElement?>(null) }
@@ -63,7 +57,13 @@ fun Board(
     val effectiveViewport = viewport ?: BoardViewport(zoom = zoom, center = layout.boundingBox.center / zoom).also { onViewportChange(it) }
 
     fun redraw() {
-        element?.drawBoard(layout, effectiveViewport, hoveredCell)
+        element?.drawBoard(
+            layout = layout,
+            viewport = effectiveViewport,
+            hoveredCell = hoveredCell,
+            theme = theme,
+            font = font,
+        )
     }
 
     ResizeHandler(element) { redraw() }
@@ -116,6 +116,8 @@ private fun HTMLCanvasElement.drawBoard(
     layout: BoardRenderLayout,
     viewport: BoardViewport,
     hoveredCell: CellCoordinate?,
+    theme: Theme,
+    font: CanvasFont,
 ) {
     width = clientWidth
     height = clientHeight
@@ -124,6 +126,8 @@ private fun HTMLCanvasElement.drawBoard(
         layout = layout,
         padding = BOARD_RENDER_PADDING,
         offset = viewport.offset(this) + layout.boundingBox.topLeft,
+        theme = theme,
+        font = font,
     ) {
         if (hoveredCell == null) return@drawBoard
         val cell = layout.board.cells[hoveredCell]

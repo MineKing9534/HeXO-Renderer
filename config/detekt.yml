@@ -25,6 +25,9 @@ complexity:
   CyclomaticComplexMethod:
     allowedComplexity: 16
     active: true
+  ComplexCondition:
+    allowedConditions: 5
+    active: true
 
 potential-bugs:
   active: true

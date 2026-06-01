@@ -2,7 +2,8 @@ package de.mineking.hexo.render.image
 
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
-import de.mineking.hexo.board.HighlightLine
+import de.mineking.hexo.board.LineHighlight
+import de.mineking.hexo.board.MutableCell
 import de.mineking.hexo.board.end
 import kotlin.math.cos
 import kotlin.math.sin
@@ -10,27 +11,19 @@ import kotlin.math.sin
 @IgnorableReturnValue
 fun RenderingContext.drawBoard(
     layout: BoardRenderLayout,
-    focusWinningRows: Boolean = true,
     theme: Theme = BasicTheme.Default,
     middleLayer: InternalBoardRenderer.() -> Unit = {},
 ) {
     val renderer = InternalBoardRenderer(this, layout, theme)
 
-    val winningCells =
-        if (focusWinningRows) {
-            layout.board.findWinningRows().flatten().map { it.first }.toSet()
-        } else {
-            emptyList()
-        }
-
     for (position in layout.coordinates) {
-        val cell = layout.board.cells[position]?.let { it.copy(focused = it.focused || position in winningCells) } ?: Cell()
+        val cell = layout.board.cells[position] ?: Cell()
         renderer.drawCell(position, cell)
     }
 
     renderer.middleLayer()
 
-    layout.board.highlightedLines.forEach {
+    layout.board.lineHighlights.forEach {
         renderer.drawLine(it)
     }
 }
@@ -41,13 +34,13 @@ class InternalBoardRenderer(
     val theme: Theme,
 ) {
     companion object {
-        private val FOCUS = Cell(focused = true)
+        private val FOCUS = MutableCell(focused = true)
     }
 
     private val hexSize = layout.size.layoutRadius * (1 - theme.gap / 64)
     private val borderThickness = (layout.size.layoutRadius * theme.borderThickness / 64).toFloat()
 
-    fun drawLine(line: HighlightLine) {
+    fun drawLine(line: LineHighlight) {
         val (backgroundColor, borderColor) = theme.run { line.color() }
         renderingContext.drawLine(
             from = line.start.toPixel(),

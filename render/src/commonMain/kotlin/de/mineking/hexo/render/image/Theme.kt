@@ -1,7 +1,7 @@
 package de.mineking.hexo.render.image
 
 import de.mineking.hexo.board.Cell
-import de.mineking.hexo.board.HighlightLine
+import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.core.CellOwner
 import kotlin.jvm.JvmInline
 
@@ -48,7 +48,7 @@ interface Theme {
 
     val backgroundColor: Color
 
-    fun HighlightLine.color(): ElementColors
+    fun LineHighlight.color(): ElementColors
     fun Cell.backgroundColor(): ElementColors
     fun Cell.highlightColor(): ElementColors
 
@@ -73,7 +73,7 @@ class BasicTheme(
         else -> default
     }
 
-    override fun HighlightLine.color() = Theme.ElementColors(
+    override fun LineHighlight.color() = Theme.ElementColors(
         color.color(default = highlightColor).withAlpha(220),
         cellBorderColor.withAlpha(128),
     )

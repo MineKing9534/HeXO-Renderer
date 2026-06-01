@@ -1,9 +1,9 @@
 package de.mineking.hexo.render.test
 
-import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.Direction
+import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.render.image.renderToImage
 import java.io.ByteArrayOutputStream
@@ -14,7 +14,7 @@ import kotlin.test.assertTrue
 class ImageRenderTest {
     @Test
     fun `render image`() {
-        val board = Board()
+        val board = MutableBoard()
         board[0, 0].apply {
             owner = CellOwner.X
             highlight = CellHighlight(null)
@@ -53,7 +53,7 @@ class ImageRenderTest {
 
     @Test
     fun `highlighted line`() {
-        val board = Board()
+        val board = MutableBoard()
         board[0, 1].apply {
             owner = CellOwner.X
             label = "a"

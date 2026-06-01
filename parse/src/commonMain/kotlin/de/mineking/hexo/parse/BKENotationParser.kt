@@ -4,6 +4,8 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.HexoNotationException
+import de.mineking.hexo.board.MutableBoard
+import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.requireHexo
 import de.mineking.hexo.board.times
@@ -28,8 +30,9 @@ enum class Chirality(val symbol: String) {
     }
 }
 
-object BKENotationParser : BoardParser {
-    override suspend fun parse(notation: String) = notation.parseBKENotationOrNull(implicitOrigin = true)
+class BKENotationParser(val focusWinningRows: Boolean = true) : BoardParser {
+    override suspend fun parse(notation: String) = notation
+        .parseBKENotationOrNull(implicitOrigin = true, focusWinningRows = focusWinningRows)
         ?: throw HexoNotationException("Invalid BKE notation")
 }
 
@@ -37,9 +40,10 @@ fun String.parseBKENotation(
     origin: CellCoordinate?,
     zeroOffsetLine: Direction,
     chirality: Chirality = Chirality.Clockwise,
+    focusWinningRows: Boolean = true,
 ): Board {
     if (trim() == "0") {
-        return Board().apply {
+        return MutableBoard().apply {
             this[0, 0].apply {
                 owner = CellOwner.X
                 turn = 0
@@ -48,7 +52,7 @@ fun String.parseBKENotation(
     }
 
     val turns = parseBKETurns()
-    val board = Board()
+    val board = MutableBoard()
 
     val origin = origin ?: run {
         board[0, 0].apply {
@@ -73,12 +77,19 @@ fun String.parseBKENotation(
         }
     }
 
+    if (focusWinningRows) {
+        board.focusWinningRows()
+    }
+
     return board
 }
 
-fun String.parseBKENotationOrNull(implicitOrigin: Boolean): Board? {
+fun String.parseBKENotationOrNull(
+    implicitOrigin: Boolean,
+    focusWinningRows: Boolean = true,
+): Board? {
     if (trim() == "0") {
-        return Board().apply {
+        return MutableBoard().apply {
             this[0, 0].apply {
                 owner = CellOwner.X
                 turn = 0
@@ -98,7 +109,7 @@ fun String.parseBKENotationOrNull(implicitOrigin: Boolean): Board? {
         if (originR.isNotEmpty()) CellCoordinate(originQ.toInt(), originR.toInt()) else CellCoordinate.Zero
     }
 
-    return content.parseBKENotation(origin, zeroOffsetLine, chirality)
+    return content.parseBKENotation(origin, zeroOffsetLine, chirality, focusWinningRows)
 }
 
 private operator fun <T> List<T>.component6() = get(5)

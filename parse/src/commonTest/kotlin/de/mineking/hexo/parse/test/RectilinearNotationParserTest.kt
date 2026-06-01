@@ -5,7 +5,7 @@ import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.HexoNotationException
-import de.mineking.hexo.board.HighlightLine
+import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.parse.parseRectilinearNotation
 import kotlin.test.Test
@@ -118,10 +118,10 @@ class RectilinearNotationParserTest {
 
         assertEquals(
             listOf(
-                HighlightLine(CellCoordinate(1, 0), Direction.Left, length = 3, color = CellOwner.X),
-                HighlightLine(CellCoordinate(0, 2), Direction.TopLeft, length = 6, color = null),
+                LineHighlight(CellCoordinate(1, 0), Direction.Left, length = 3, color = CellOwner.X),
+                LineHighlight(CellCoordinate(0, 2), Direction.TopLeft, length = 6, color = null),
             ),
-            board.highlightedLines,
+            board.lineHighlights,
         )
     }
 
