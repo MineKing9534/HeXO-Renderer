@@ -79,13 +79,14 @@ class BasicTheme(
     )
     override fun Cell.backgroundColor() = Theme.ElementColors(owner.color(default = emptyCellBackgroundColor), cellBorderColor)
     override fun Cell.highlightColor(): Theme.ElementColors {
-        val color = when {
-            highlight != null -> highlight?.color.color(default = highlightColor)
-            focused -> focusColor
+        val (color, fillBackground) = when {
+            highlight != null -> highlight?.color.color(default = highlightColor) to (highlight?.color == null)
+            focused -> focusColor to true
             else -> return Theme.ElementColors(Color.Transparent, Color.Transparent)
         }
 
-        return Theme.ElementColors(color.withAlpha(48), color)
+        val alpha = if (fillBackground) 48 else 16
+        return Theme.ElementColors(color.withAlpha(alpha), color)
     }
 
     override fun Cell.labelColor() = owner.color(default = emptyCellLabelColor) { it.darker() }

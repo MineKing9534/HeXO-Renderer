@@ -27,7 +27,10 @@ class ImageRenderTest {
             owner = CellOwner.O
             label = "1"
         }
-        board[2, 1].owner = CellOwner.O
+        board[2, 1].apply {
+            owner = CellOwner.O
+            highlight = CellHighlight(CellOwner.X)
+        }
         board[0, 3].owner = CellOwner.X
         board[0, 4].apply {
             highlight = CellHighlight(null)

@@ -40,6 +40,10 @@ class InternalBoardRenderer(
     val layout: BoardRenderLayout,
     val theme: Theme,
 ) {
+    companion object {
+        private val FOCUS = Cell(focused = true)
+    }
+
     private val hexSize = layout.size.layoutRadius * (1 - theme.gap / 64)
     private val borderThickness = (layout.size.layoutRadius * theme.borderThickness / 64).toFloat()
 
@@ -62,10 +66,16 @@ class InternalBoardRenderer(
         val (highlightColor, highlightBorderColor) = theme.run { cell.highlightColor() }
         renderingContext.drawPolygon(hex, highlightColor, Stroke(highlightBorderColor, borderThickness * 3))
 
+        if (cell.highlight != null && cell.owner != null) {
+            val point = position.toPixel()
+            val (_, color) = theme.run { FOCUS.highlightColor() }
+            renderingContext.drawLine(point, point, Stroke(color, borderThickness * 8))
+        }
+
         drawCellLabel(position, cell)
     }
 
-    fun drawCellLabel(position: CellCoordinate, cell: Cell) {
+    private fun drawCellLabel(position: CellCoordinate, cell: Cell) {
         val text = cell.label.takeIf { it.isNotBlank() }
             ?: cell.turn?.toString()
             ?: return
