@@ -9,7 +9,6 @@ import javax.imageio.ImageIO
 class ImageBoardRenderer(
     private val layoutRadius: Double,
     private val padding: Int,
-    private val focusWinningRows: Boolean = true,
     private val theme: Theme = BasicTheme.Default,
 ) : BoardRenderer<BufferedImage> {
     companion object {
@@ -22,7 +21,6 @@ class ImageBoardRenderer(
     override suspend fun Board.render() = renderToImage(
         layoutRadius = layoutRadius,
         padding = padding,
-        focusWinningRows = focusWinningRows,
         theme = theme,
     )
 }

@@ -1,6 +1,6 @@
 package de.mineking.hexo.render.test
 
-import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.render.RectilinearNotationType
 import de.mineking.hexo.render.renderRectilinearNotation
@@ -10,7 +10,7 @@ import kotlin.test.assertEquals
 class RectilinearNotationRenderTest {
     @Test
     fun `render compact`() {
-        val board = Board()
+        val board = MutableBoard()
         board[0, 0].owner = CellOwner.X
         board[3, 0].owner = CellOwner.X
         board[0, 1].owner = CellOwner.O
@@ -26,7 +26,7 @@ class RectilinearNotationRenderTest {
 
     @Test
     fun `render compact minimize prefix single line`() {
-        val board = Board()
+        val board = MutableBoard()
         board[10, 0].owner = CellOwner.X
 
         val rendered = board.renderRectilinearNotation(RectilinearNotationType.Compact)
@@ -35,7 +35,7 @@ class RectilinearNotationRenderTest {
 
     @Test
     fun `render compact minimize prefix multiple lines`() {
-        val board = Board()
+        val board = MutableBoard()
         board[10, 0].owner = CellOwner.X
         board[10, 1].owner = CellOwner.O
 
@@ -45,7 +45,7 @@ class RectilinearNotationRenderTest {
 
     @Test
     fun `render compact long empty space`() {
-        val board = Board()
+        val board = MutableBoard()
         board[10, 0].owner = CellOwner.X
         board[0, 1].owner = CellOwner.O
 
@@ -55,7 +55,7 @@ class RectilinearNotationRenderTest {
 
     @Test
     fun `render multiline`() {
-        val board = Board()
+        val board = MutableBoard()
         board[0, 0].owner = CellOwner.X
         board[3, 0].owner = CellOwner.X
         board[0, 1].owner = CellOwner.O

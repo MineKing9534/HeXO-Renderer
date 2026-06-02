@@ -1,7 +1,7 @@
 package de.mineking.hexo.render.image
 
 import de.mineking.hexo.board.Cell
-import de.mineking.hexo.board.HighlightLine
+import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.core.CellOwner
 import kotlin.jvm.JvmInline
 
@@ -48,14 +48,14 @@ interface Theme {
 
     val backgroundColor: Color
 
-    fun HighlightLine.color(): ElementColors
+    fun LineHighlight.color(): ElementColors
     fun Cell.backgroundColor(): ElementColors
     fun Cell.highlightColor(): ElementColors
 
     fun Cell.labelColor(): Color
 }
 
-class BasicTheme(
+data class BasicTheme(
     override val gap: Double,
     override val borderThickness: Double,
     override val backgroundColor: Color,
@@ -73,19 +73,20 @@ class BasicTheme(
         else -> default
     }
 
-    override fun HighlightLine.color() = Theme.ElementColors(
-        color.color(default = highlightColor).withAlpha(220),
+    override fun LineHighlight.color() = Theme.ElementColors(
+        color.color(default = highlightColor).withAlpha(240),
         cellBorderColor.withAlpha(128),
     )
     override fun Cell.backgroundColor() = Theme.ElementColors(owner.color(default = emptyCellBackgroundColor), cellBorderColor)
     override fun Cell.highlightColor(): Theme.ElementColors {
-        val color = when {
-            highlight != null -> highlight?.color.color(default = highlightColor)
-            focused -> focusColor
+        val (color, fillBackground) = when {
+            highlight != null -> highlight?.color.color(default = highlightColor) to (highlight?.color == null)
+            focused -> focusColor to true
             else -> return Theme.ElementColors(Color.Transparent, Color.Transparent)
         }
 
-        return Theme.ElementColors(color.withAlpha(48), color)
+        val alpha = if (fillBackground) 48 else 16
+        return Theme.ElementColors(color.withAlpha(alpha), color)
     }
 
     override fun Cell.labelColor() = owner.color(default = emptyCellLabelColor) { it.darker() }
@@ -95,7 +96,7 @@ class BasicTheme(
             6.0,
             2.0,
             backgroundColor = Color.rgb(0x0f172a),
-            cellBorderColor = Color.rgb(0x202a3d),
+            cellBorderColor = Color.rgb(0x232d43),
             highlightColor = Color.rgb(0xec6fb1),
             focusColor = Color.rgb(0xffffff),
             emptyCellBackgroundColor = Color.Transparent,

@@ -19,7 +19,6 @@ import kotlin.math.ceil
 fun Board.renderToImage(
     layoutRadius: Double,
     padding: Int,
-    focusWinningRows: Boolean = true,
     theme: Theme = BasicTheme.Default,
     middleLayer: InternalBoardRenderer.() -> Unit = {},
 ): BufferedImage {
@@ -40,7 +39,7 @@ fun Board.renderToImage(
 
     val context = AwtRenderingContext(graphics)
     try {
-        context.drawBoard(layout, focusWinningRows, theme, middleLayer)
+        context.drawBoard(layout, theme, middleLayer)
     } finally {
         graphics.dispose()
     }

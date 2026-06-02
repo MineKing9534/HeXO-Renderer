@@ -77,7 +77,7 @@ fun Board.createRenderLayout(layoutRadius: Double, bounds: BoardRenderBounds): B
     return BoardRenderLayout(
         size = size,
         boundingBox = findBoundingBox(size, when (bounds) {
-            BoardRenderBounds.IncludeSurroundings -> visibleCoordinates + cells.keys
+            BoardRenderBounds.IncludeSurroundings -> visibleCoordinates
             BoardRenderBounds.Compact -> cells.keys.ifEmpty { setOf(CellCoordinate.Zero) }
         }),
         coordinates = visibleCoordinates,
@@ -91,8 +91,8 @@ private fun Board.findBoundingBox(size: RenderSize, visibleCoordinates: Set<Cell
     var minY = Double.POSITIVE_INFINITY
     var maxY = Double.NEGATIVE_INFINITY
 
-    val endPoints = highlightedLines.flatMap { listOf(it.start, it.end) }
-    val positions = visibleCoordinates + cells.keys + endPoints
+    val endPoints = lineHighlights.flatMap { listOf(it.start, it.end) }
+    val positions = visibleCoordinates + endPoints
     for (position in positions.ifEmpty { listOf(CellCoordinate.Zero) }) {
         val center = size.run { position.toPixel() }
         val hex = center.createHex(size.layoutRadius)
@@ -116,7 +116,7 @@ private fun Board.findBoundingBox(size: RenderSize, visibleCoordinates: Set<Cell
 private const val VISIBLE_DISTANCE = 8
 internal fun Board.findVisibleCoordinates(): Set<CellCoordinate> {
     val occupied = cells
-        .filterValues { it.owner != null }
+        .filterValues { it.owner != null || it.highlight != null || it.focused || it.label.isNotBlank() }
         .keys
         .ifEmpty { setOf(CellCoordinate.Zero) }
 

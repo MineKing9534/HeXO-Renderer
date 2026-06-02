@@ -4,6 +4,8 @@ plugins {
 
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.compose.compiler)
+
+    id("publish")
 }
 
 repositories {
@@ -12,7 +14,6 @@ repositories {
 
 kotlin {
     js { browser() }
-
 
     sourceSets.jsMain {
         dependencies {

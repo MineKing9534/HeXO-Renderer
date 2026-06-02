@@ -3,13 +3,33 @@ package de.mineking.hexo.board
 import de.mineking.hexo.core.CellOwner
 import kotlin.math.abs
 
-data class Cell(
-    var owner: CellOwner? = null,
-    var highlight: CellHighlight? = null,
-    var focused: Boolean = false,
-    var turn: Int? = null,
-    var label: String = "",
-)
+sealed interface Cell {
+    val owner: CellOwner?
+    val highlight: CellHighlight?
+    val focused: Boolean
+    val turn: Int?
+    val label: String
+
+    fun copy(): MutableCell
+}
+
+fun Cell(
+    owner: CellOwner? = null,
+    highlight: CellHighlight? = null,
+    focused: Boolean = false,
+    turn: Int? = null,
+    label: String = "",
+): Cell = MutableCell(owner, highlight, focused, turn, label)
+
+data class MutableCell(
+    override var owner: CellOwner? = null,
+    override var highlight: CellHighlight? = null,
+    override var focused: Boolean = false,
+    override var turn: Int? = null,
+    override var label: String = "",
+) : Cell {
+    override fun copy() = copy(owner = owner)
+}
 
 data class CellHighlight(val color: CellOwner?)
 
@@ -30,15 +50,15 @@ operator fun CellCoordinate.plus(other: CellCoordinate) = CellCoordinate(q + oth
 operator fun CellCoordinate.minus(other: CellCoordinate) = CellCoordinate(q - other.q, r - other.r)
 operator fun CellCoordinate.times(scalar: Int) = CellCoordinate(q * scalar, r * scalar)
 
-data class HighlightLine(val start: CellCoordinate, val direction: Direction, val length: Int, val color: CellOwner?) {
+data class LineHighlight(val start: CellCoordinate, val direction: Direction, val length: Int, val color: CellOwner?) {
     init {
         requireHexo(length in 1..MAX_LENGTH) { "Length must be between 1 and $MAX_LENGTH" }
     }
 
     companion object {
-        const val MAX_LENGTH = 10
+        const val MAX_LENGTH = 12
     }
 }
 
-val HighlightLine.end get() = start + direction.direction * (length - 1)
-operator fun HighlightLine.contains(coordinate: CellCoordinate) = (0 until length).any { coordinate == start + direction.direction * it }
+val LineHighlight.end get() = start + direction.direction * (length - 1)
+operator fun LineHighlight.contains(coordinate: CellCoordinate) = (0 until length).any { coordinate == start + direction.direction * it }

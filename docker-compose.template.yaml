@@ -69,6 +69,7 @@ services:
       dockerfile: web/Dockerfile
       args:
         WEB_BASE_PATH: /app
+        WEB_API_PROXY: https://hexo.mineking.dev/proxy
     restart: unless-stopped
     expose:
       - "80"

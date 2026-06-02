@@ -8,19 +8,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.createRepositories
+import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
-import de.mineking.hexo.board.CellHighlight
-import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.HexoNotationException
-import de.mineking.hexo.board.HighlightLine
+import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.board.clone
-import de.mineking.hexo.board.contains
-import de.mineking.hexo.board.distanceTo
+import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.parse.parseRectilinearStateBKETurnNotation
-import de.mineking.hexo.render.compose.Board
-import de.mineking.hexo.render.compose.BoardRightClickEvent
+import de.mineking.hexo.render.compose.BoardInteraction
 import de.mineking.hexo.render.compose.BoardViewport
+import de.mineking.hexo.render.compose.InteractiveBoard
 import de.mineking.hexo.web.components.Dialog
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -32,12 +30,7 @@ import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextArea
 import org.jetbrains.compose.web.renderComposable
 import org.w3c.dom.HTMLDivElement
-import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.url.URLSearchParams
-import de.mineking.hexo.board.Board as HexoBoard
-
-const val URL = "https://hexo.did.science"
-private const val PROXY = "https://hexo.mineking.dev/proxy"
 
 fun main() {
     val params = URLSearchParams(window.location.search)
@@ -46,13 +39,13 @@ fun main() {
 
     val (initialBoard, initialError) = try {
         val board = when {
-            initial.isBlank() -> HexoBoard()
-            else -> initial.parseRectilinearStateBKETurnNotation()
+            initial.isBlank() -> Board()
+            else -> initial.parseRectilinearStateBKETurnNotation(focusWinningRows = false)
         }
 
         board to null
     } catch (e: HexoNotationException) {
-        HexoBoard() to e.message
+        Board() to e.message
     }
 
     val rootElement = document.getElementById("root")!!
@@ -61,7 +54,7 @@ fun main() {
     renderComposable(root = rootElement) {
         var error by remember { mutableStateOf(initialError) }
 
-        val client = remember { HexoApiClient(host = PROXY, socketIOOptions = null) }
+        val client = remember { BuildConfig.API_PROXY?.let { HexoApiClient(host = it, socketIOOptions = null) } }
         MainLayout(client, initialBoard)
 
         if (error != null) {
@@ -85,8 +78,8 @@ enum class CellPlacementMode {
 }
 
 @Composable
-private fun MainLayout(client: HexoApiClient, initialBoard: HexoBoard) {
-    val repositories = remember(client) { client.createRepositories() }
+private fun MainLayout(client: HexoApiClient?, initialBoard: Board) {
+    val repositories = remember(client) { client?.createRepositories() }
 
     val viewport = remember { mutableStateOf<BoardViewport?>(null) }
     val placementMode = remember {
@@ -98,16 +91,13 @@ private fun MainLayout(client: HexoApiClient, initialBoard: HexoBoard) {
         )
     }
 
-    val board = remember { mutableStateOf(initialBoard) }
-    var temporaryLine by remember { mutableStateOf<HighlightLine?>(null) }
-
-    val transformedBoard = remember(board.value, temporaryLine) {
-        board.value.clone().apply {
-            val temporaryLine = temporaryLine
-            if (temporaryLine != null) highlightedLines += temporaryLine
-
+    var board by remember { mutableStateOf(initialBoard) }
+    val transformedBoard = remember(board) {
+        board.clone().apply {
             val maxTurn = getMaxTurn()
             cells.values.forEach { it.focused = maxTurn != null && (it.turn == maxTurn) }
+
+            focusWinningRows()
         }
     }
 
@@ -117,23 +107,21 @@ private fun MainLayout(client: HexoApiClient, initialBoard: HexoBoard) {
         BoardPane(
             board = transformedBoard,
             viewport = viewport,
-            onCellClick = { coordinate ->
-                when (placementMode.value) {
-                    CellPlacementMode.State -> placeStateCell(coordinate, board)
-                    CellPlacementMode.Turn -> placeTurnCell(coordinate, board)
+            onBoardInteraction = { interaction ->
+                board = board.clone().also {
+                    when (interaction) {
+                        is BoardInteraction.PlaceCell -> it.placeCell(interaction.coordinate, placementMode.value)
+                        is BoardInteraction.HighlightBoardInteraction -> interaction.apply(it)
+                    }
                 }
-            },
-            onBoardRightClick = { event ->
-                handleBoardRightClick(event, board, onTemporaryLineUpdate = { temporaryLine = it })
             },
         )
         Sidebar(
-            formationRepository = repositories.formations,
-            finishedGameRepository = repositories.finishedGames,
+            repositories = repositories,
             placementMode = placementMode,
             board = transformedBoard,
             onBoardChange = { cause, updated ->
-                board.value = updated
+                board = updated
                 if (cause == BoardUpdateCause.Import) {
                     viewport.value = null
                 }
@@ -142,57 +130,42 @@ private fun MainLayout(client: HexoApiClient, initialBoard: HexoBoard) {
     }
 }
 
-private fun HexoBoard.getMaxTurn() = cells.values.maxOfOrNull { it.turn ?: -1 }?.takeIf { it >= 0 }
+private fun Board.getMaxTurn() = cells.values.maxOfOrNull { it.turn ?: -1 }?.takeIf { it >= 0 }
 
-private fun placeStateCell(coordinate: CellCoordinate, board: MutableState<HexoBoard>) {
-    var board by board
+private fun MutableBoard.placeCell(coordinate: CellCoordinate, mode: CellPlacementMode) {
+    val maxTurn = getMaxTurn()
 
-    val turn = board.cells[coordinate]?.turn
-    val maxTurn = board.getMaxTurn()
-    if (turn != null && turn != maxTurn) return
+    val currentCell = cells[coordinate]
+    if (currentCell?.turn != null && currentCell.turn == maxTurn) {
+        this[coordinate].owner = null
+        this[coordinate].turn = null
+        return
+    }
 
-    board = board.clone().apply {
-        if (turn != null && turn == maxTurn) {
-            this[coordinate].apply {
-                this.owner = null
-                this.turn = null
-            }
-        } else {
-            this[coordinate].owner = when (board[coordinate].owner) {
+    when (mode) {
+        CellPlacementMode.State if currentCell?.turn == null -> {
+            this[coordinate].owner = when (currentCell?.owner) {
                 null -> CellOwner.X
                 CellOwner.X -> CellOwner.O
                 CellOwner.O -> null
             }
         }
-    }
-}
 
-private fun placeTurnCell(coordinate: CellCoordinate, board: MutableState<HexoBoard>) {
-    var board by board
-    val maxTurn = board.getMaxTurn()
-    board.cells[coordinate]?.let {
-        if (maxTurn != null && it.turn == maxTurn) {
-            val updated = board.clone().apply {
-                this[coordinate].apply {
-                    this.owner = null
-                    this.turn = null
-                }
+        CellPlacementMode.Turn -> {
+            if (currentCell?.owner != null) return
+
+            val (player, turn) = findNextTurn()
+            this[coordinate].apply {
+                this.owner = player
+                this.turn = turn
             }
-            board = updated
         }
-        if (it.owner != null || it.turn != null) return
-    }
 
-    val (player, turn) = board.findNextTurn()
-    board = board.clone().apply {
-        this[coordinate].apply {
-            this.owner = player
-            this.turn = turn
-        }
+        else -> {}
     }
 }
 
-private fun HexoBoard.findNextTurn(): Pair<CellOwner, Int> {
+private fun Board.findNextTurn(): Pair<CellOwner, Int> {
     var hadPosition = false
     var turn = 0
     var isComplete = false
@@ -225,62 +198,20 @@ private fun HexoBoard.findNextTurn(): Pair<CellOwner, Int> {
     return player to turn
 }
 
-private fun MouseEvent.handleBoardRightClick(
-    event: BoardRightClickEvent,
-    board: MutableState<HexoBoard>,
-    onTemporaryLineUpdate: (HighlightLine?) -> Unit,
-) {
-    var board by board
-    val (from, to, final) = event
-
-    val updated = board.clone()
-    val color = when {
-        ctrlKey -> CellOwner.X
-        altKey -> CellOwner.O
-        else -> null
-    }
-
-    if (from == to && final) {
-        if (!updated.removeHighlightLinesAt(to)) {
-            if (updated[to].highlight != null) {
-                updated[to].highlight = null
-            } else {
-                updated[to].highlight = CellHighlight(color)
-            }
-        }
-        onTemporaryLineUpdate(null)
-    } else {
-        val (direction, length) = from.findClosestLineTo(to)
-        val line = HighlightLine(from, direction, length, color)
-
-        if (final) {
-            updated.highlightedLines += line
-            onTemporaryLineUpdate(null)
-        } else if (from != to) {
-            onTemporaryLineUpdate(line)
-        } else {
-            onTemporaryLineUpdate(null)
-        }
-    }
-    board = updated
-}
-
 @Composable
 private fun BoardPane(
-    board: HexoBoard,
+    board: Board,
     viewport: MutableState<BoardViewport?>,
-    onCellClick: (MouseEvent.(CellCoordinate) -> Unit)? = null,
-    onBoardRightClick: (MouseEvent.(BoardRightClickEvent) -> Unit)? = null,
+    onBoardInteraction: (BoardInteraction) -> Unit,
 ) {
     var viewport by viewport
     Div({ classes("min-h-0", "min-w-0", "flex-1", "p-3", "md:p-6") }) {
         Div({ classes("relative", "h-full", "overflow-hidden", "rounded-2xl", "border", "border-slate-800", "bg-slate-900", "shadow-2xl") }) {
-            Board(
+            InteractiveBoard(
                 board = board,
                 viewport = viewport,
                 onViewportChange = { viewport = it },
-                onCellClick = onCellClick,
-                onBoardRightClick = onBoardRightClick,
+                onBoardInteraction = onBoardInteraction,
                 attrs = {
                     attr("width", "1200")
                     attr("height", "900")
@@ -315,41 +246,3 @@ private fun BoardPane(
         }
     }
 }
-
-private fun CellCoordinate.findClosestLineTo(to: CellCoordinate): Pair<Direction, Int> {
-    val maxLength = distanceTo(to)
-
-    var bestDirection = Direction.Right
-    var bestLength = 0
-    var bestDistance = distanceTo(to)
-
-    for (direction in Direction.entries) {
-        for (length in 0..maxLength) {
-            val end = CellCoordinate(
-                q + direction.direction.q * length,
-                r + direction.direction.r * length,
-            )
-
-            val dist = end.distanceTo(to)
-
-            if (dist < bestDistance || (dist == bestDistance && length < bestLength)) {
-                bestDirection = direction
-                bestLength = length
-                bestDistance = dist
-            }
-        }
-    }
-
-    return bestDirection to (bestLength + 1).coerceAtMost(HighlightLine.MAX_LENGTH)
-}
-
-private fun HexoBoard.removeHighlightLinesAt(coordinate: CellCoordinate) = highlightedLines
-    .indexOfLast { line -> coordinate in line }
-    .let {
-        if (it == -1) {
-            return@let false
-        }
-
-        highlightedLines.removeAt(it)
-        true
-    }

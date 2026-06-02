@@ -143,7 +143,7 @@ private fun installShutdownHook(bot: HeXODiscordBot, httpServer: HttpServer?) {
 
 private fun HexoRepositories.createNotationParser(): BoardParser = SandboxFormationOrNotationParser(
     formationRepository = formations,
-    delegateParser = RectilinearStateBKETurnNotationParser,
+    delegateParser = RectilinearStateBKETurnNotationParser(),
 ).cached()
 
 private fun createBoardRenderer(): BoardRenderer<BufferedImage> = ImageBoardRenderer.Default.cached()

@@ -4,7 +4,7 @@ import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.Direction
-import de.mineking.hexo.board.HighlightLine
+import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.parse.parseRectilinearStateBKETurnNotation
 import kotlin.test.Test
@@ -44,9 +44,9 @@ class RectilinearStateBKETurnParserTest {
         )
         assertEquals(
             listOf(
-                HighlightLine(CellCoordinate.Zero, Direction.Right, 6, null),
+                LineHighlight(CellCoordinate.Zero, Direction.Right, 6, null),
             ),
-            board.highlightedLines,
+            board.lineHighlights,
         )
     }
 }

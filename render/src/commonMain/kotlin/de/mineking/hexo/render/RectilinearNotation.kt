@@ -3,7 +3,7 @@ package de.mineking.hexo.render
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
-import de.mineking.hexo.board.HighlightLine
+import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.core.CellOwner
 import kotlin.math.min
 
@@ -33,9 +33,9 @@ fun Board.renderRectilinearNotation(type: RectilinearNotationType) = renderRecti
 internal data class RenderedRectilinearNotation(val notation: String, val topLeft: CellCoordinate)
 
 internal fun Board.renderRectilinearNotationInternal(type: RectilinearNotationType): RenderedRectilinearNotation {
-    val highlightLines = highlightedLines.groupBy { it.start }
-    val renderCells = (highlightLines.keys.associateWith { Cell() } + cells)
-        .filter { (coordinate, cell) -> coordinate in highlightLines || cell.shouldRender() }
+    val lineHighlights = this@renderRectilinearNotationInternal.lineHighlights.groupBy { it.start }
+    val renderCells = (lineHighlights.keys.associateWith { Cell() } + cells)
+        .filter { (coordinate, cell) -> coordinate in lineHighlights || cell.shouldRender() }
 
     if (renderCells.isEmpty()) return RenderedRectilinearNotation("", CellCoordinate.Zero)
 
@@ -51,7 +51,7 @@ internal fun Board.renderRectilinearNotationInternal(type: RectilinearNotationTy
         for (r in minR..maxR) {
             rows[r]?.let { row ->
                 append(type.columnSeparator.repeat(r - minR))
-                appendRow(r, row, minQ, highlightLines, type)
+                appendRow(r, row, minQ, lineHighlights, type)
             }
 
             if (r < maxR) {
@@ -69,7 +69,7 @@ private fun StringBuilder.appendRow(
     r: Int,
     row: Map<Int, Cell>,
     minQ: Int,
-    highlightLines: Map<CellCoordinate, List<HighlightLine>>,
+    lineHighlights: Map<CellCoordinate, List<LineHighlight>>,
     type: RectilinearNotationType,
 ) {
     val maxQ = row.keys.max()
@@ -77,7 +77,7 @@ private fun StringBuilder.appendRow(
     for (q in min(minQ, row.keys.min())..maxQ) {
         val coordinate = CellCoordinate(q, r)
         appendCell(row[q])
-        highlightLines[coordinate]?.forEach { append(it.render()) }
+        lineHighlights[coordinate]?.forEach { append(it.render()) }
 
         if (q < maxQ) {
             append(type.columnSeparator)
@@ -85,7 +85,7 @@ private fun StringBuilder.appendRow(
     }
 }
 
-private fun HighlightLine.render(): String {
+private fun LineHighlight.render(): String {
     val owner = when (color) {
         CellOwner.X -> "x"
         CellOwner.O -> "o"

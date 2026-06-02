@@ -1,23 +1,25 @@
 package de.mineking.hexo.parse
 
 import de.mineking.hexo.board.Board
-import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.HexoNotationException
+import de.mineking.hexo.board.MutableBoard
+import de.mineking.hexo.board.MutableCell
+import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.minus
 import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.requireHexo
 import de.mineking.hexo.board.times
 import de.mineking.hexo.core.CellOwner
 
-object RectilinearNotationParser : BoardParser {
-    override suspend fun parse(notation: String) = notation.parseRectilinearNotation()
+class RectilinearNotationParser(val focusWinningRows: Boolean = true) : BoardParser {
+    override suspend fun parse(notation: String) = notation.parseRectilinearNotation(focusWinningRows)
 }
 
-fun String.parseRectilinearNotation(): Board {
-    val board = Board()
+fun String.parseRectilinearNotation(focusWinningRows: Boolean = true): Board {
+    val board = MutableBoard()
     val cursor = Cursor(board)
 
     var state = ParserState.Normal
@@ -30,6 +32,11 @@ fun String.parseRectilinearNotation(): Board {
     state.handleEOF(cursor, buffer)
 
     requireHexo(buffer.isEmpty()) { "Unterminated symbol at end of input: `$buffer`" }
+
+    if (focusWinningRows) {
+        board.focusWinningRows()
+    }
+
     return board
 }
 
@@ -143,7 +150,7 @@ private enum class ParserState {
     open fun handleEOF(cursor: Cursor, buffer: StringBuilder) {}
 }
 
-private class Cursor(private val board: Board) {
+private class Cursor(private val board: MutableBoard) {
     companion object {
         private val STEP_DIRECTION = CellCoordinate(1, 0)
         private val NEWLINE_DIRECTION = CellCoordinate(0, 1)
@@ -154,11 +161,11 @@ private class Cursor(private val board: Board) {
 
     val previousPosition get() = position - STEP_DIRECTION
 
-    fun configureCurrent(block: Cell.() -> Unit) {
+    fun configureCurrent(block: MutableCell.() -> Unit) {
         board[position].block()
     }
 
-    fun configurePrevious(block: Cell.() -> Unit) {
+    fun configurePrevious(block: MutableCell.() -> Unit) {
         requireHexo(position.q >= 1) { "This operations requires a cell in the current row!" }
         board[position - STEP_DIRECTION].block()
     }

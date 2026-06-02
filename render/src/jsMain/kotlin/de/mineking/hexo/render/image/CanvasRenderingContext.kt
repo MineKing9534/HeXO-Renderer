@@ -22,7 +22,6 @@ fun HTMLCanvasElement.drawBoard(
     layout: BoardRenderLayout,
     padding: Int,
     offset: Point = Point.Zero,
-    focusWinningRows: Boolean = true,
     theme: Theme = BasicTheme.Default,
     font: CanvasFont = DefaultCanvasFont,
     middleLayer: InternalBoardRenderer.() -> Unit = {},
@@ -34,7 +33,7 @@ fun HTMLCanvasElement.drawBoard(
     context.fillRect(0.0, 0.0, width.toDouble(), height.toDouble())
     context.translate(padding.toDouble() + offset.x, padding.toDouble() + offset.y)
 
-    CanvasRenderingContext(context, font).drawBoard(layout, focusWinningRows, theme, middleLayer)
+    CanvasRenderingContext(context, font).drawBoard(layout, theme, middleLayer)
 }
 
 class CanvasRenderingContext(

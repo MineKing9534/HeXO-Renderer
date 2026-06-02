@@ -15,8 +15,8 @@ import de.mineking.hexo.render.image.topLeft
 import kotlinx.browser.window
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.Event
+import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
-import org.w3c.dom.events.MouseEventInit
 import org.w3c.dom.events.WheelEvent
 import kotlin.math.sqrt
 import kotlin.reflect.KProperty
@@ -52,7 +52,24 @@ data class BoardViewport(val zoom: Double, val center: Point) {
     ) - center * zoom
 }
 
-data class BoardRightClickEvent(val from: CellCoordinate, val to: CellCoordinate, val final: Boolean)
+data class BoardRightClickEvent(
+    val from: CellCoordinate,
+    val to: CellCoordinate,
+    val phase: BoardRightClickPhase,
+    val modifiers: BoardModifierKeys,
+)
+
+data class BoardModifierKeys(
+    val ctrlKey: Boolean = false,
+    val altKey: Boolean = false,
+    val shiftKey: Boolean = false,
+)
+
+enum class BoardRightClickPhase {
+    Drag,
+    Commit,
+    Abort,
+}
 
 @Composable
 internal fun BoardInteractions(
@@ -62,8 +79,8 @@ internal fun BoardInteractions(
     onViewportChange: (BoardViewport) -> Unit,
     onDraggingChange: (Boolean) -> Unit,
     onCellHoverChange: (CellCoordinate?) -> Unit,
-    onCellClick: MouseEvent.(CellCoordinate) -> Unit,
-    onBoardRightClick: MouseEvent.(BoardRightClickEvent) -> Unit,
+    onCellClick: (CellCoordinate) -> Unit,
+    onBoardRightClick: (BoardRightClickEvent) -> Unit,
 ) {
     val onViewportChange by rememberUpdatedState(onViewportChange)
     val onDraggingChange by rememberUpdatedState(onDraggingChange)
@@ -106,14 +123,36 @@ private class BoardEventListeners(
     onViewportChange: (BoardViewport) -> Unit,
     private val onDraggingChange: (Boolean) -> Unit,
     private val onCellHoverChange: (CellCoordinate?) -> Unit,
-    private val onCellClick: MouseEvent.(CellCoordinate) -> Unit,
-    private val onBoardRightClick: MouseEvent.(BoardRightClickEvent) -> Unit,
+    private val onCellClick: (CellCoordinate) -> Unit,
+    private val onBoardRightClick: (BoardRightClickEvent) -> Unit,
 ) {
     private val renderLayout by renderLayout
     private var viewport by viewport.withSetter(onViewportChange)
 
-    private var rightClickStart: MouseEvent? = null
-    private var lastRightClickEnd: CellCoordinate? = null
+    private val canvasListeners = listOf(
+        ListenerRegistration("pointerdown", ::pointerDown),
+        ListenerRegistration("pointermove", ::pointerMove),
+        ListenerRegistration("pointerup", ::pointerUp),
+        ListenerRegistration("pointercancel", ::finishDrag),
+        ListenerRegistration("touchstart", ::touchStart),
+        ListenerRegistration("touchmove", ::touchMove),
+        ListenerRegistration("touchend", ::touchEnd),
+        ListenerRegistration("touchcancel", ::finishTouch),
+        ListenerRegistration("click", ::click),
+        ListenerRegistration("wheel", ::wheel),
+        ListenerRegistration("contextmenu", ::suppressContextMenu),
+        ListenerRegistration("pointerleave", ::leaveCanvas),
+    )
+    private val windowListeners = listOf(
+        ListenerRegistration("blur", ::finishDrag),
+        ListenerRegistration("blur", ::finishTouch),
+        ListenerRegistration("blur", ::clearHover),
+        ListenerRegistration("keydown", ::keyChange),
+        ListenerRegistration("keyup", ::keyChange),
+    )
+
+    private var rightClickDrag: RightClickDrag? = null
+    private var currentModifierKeys = BoardModifierKeys()
     private var lastDragPosition: Point? = null
         set(value) {
             val wasDragging = field != null
@@ -140,20 +179,14 @@ private class BoardEventListeners(
         require(event is MouseEvent)
         if (event.isTouchPointer()) return
 
+        syncModifierKeys(event)
         event.preventDefault()
 
         hoveredCell = null
 
         when (event.button.toInt()) {
-            PRIMARY_BUTTON -> {
-                suppressNextClick = false
-                beginDrag(event)
-            }
-
-            SECONDARY_BUTTON -> {
-                rightClickStart = event
-                lastRightClickEnd = null
-            }
+            PRIMARY_BUTTON -> beginMouseDrag(event)
+            SECONDARY_BUTTON -> beginRightClickDrag(event)
         }
     }
 
@@ -161,11 +194,12 @@ private class BoardEventListeners(
         require(event is MouseEvent)
         if (event.isTouchPointer()) return
 
+        val modifiersChanged = updateModifierKeys(event)
         event.preventDefault()
 
         when {
             lastDragPosition != null -> dragMouseTo(event.position())
-            rightClickStart != null -> triggerRightClick(event.position(), final = false)
+            rightClickDrag != null -> dragRightClickTo(event.position(), force = modifiersChanged)
             else -> hoveredCell = cellAt(event.position())
         }
     }
@@ -174,8 +208,9 @@ private class BoardEventListeners(
         require(event is MouseEvent)
         if (event.isTouchPointer()) return
 
+        syncModifierKeys(event)
         if (event.button.toInt() == SECONDARY_BUTTON) {
-            triggerRightClick(event.position(), final = true)
+            commitRightClick(event.position())
         }
 
         finishDrag(event)
@@ -189,8 +224,7 @@ private class BoardEventListeners(
         suppressNextClick = false
         touchMoved = false
         hoveredCell = null
-        rightClickStart = null
-        lastDragPosition = null
+        finishMouseInteractions()
 
         if (touches.size >= 2) {
             event.preventDefault()
@@ -225,7 +259,7 @@ private class BoardEventListeners(
 
         val longPress = touchLongPress
         if (longPress?.active == true) {
-            triggerLongPressRightClick(longPress, longPress.lastPosition, final = true)
+            triggerLongPressRightClick(longPress, longPress.lastPosition, BoardRightClickPhase.Commit)
         }
 
         cancelLongPress()
@@ -235,82 +269,87 @@ private class BoardEventListeners(
     }
 
     private fun click(event: Event) {
-        val mouseEvent = event as MouseEvent
+        require(event is MouseEvent)
+
         if (suppressNextClick) {
             suppressNextClick = false
             return
         }
 
-        event.onCellClick(cellAt(mouseEvent.position()))
+        onCellClick(cellAt(event.position()))
     }
 
     private fun wheel(event: Event) {
-        val wheelEvent = event as WheelEvent
-        wheelEvent.preventDefault()
-        zoomAt(wheelEvent)
+        event.preventDefault()
+        require(event is WheelEvent)
+
+        zoomAt(event)
     }
 
     private fun suppressContextMenu(event: Event) {
         event.preventDefault()
     }
 
+    private fun keyChange(event: Event) {
+        require(event is KeyboardEvent)
+
+        suppressAltMenuDuringRightClick(event)
+        if (updateModifierKeys(event)) refreshRightClickDrag()
+    }
+
     private fun clearHover(@Suppress("unused") event: Event) {
         hoveredCell = null
     }
 
+    private fun leaveCanvas(event: Event) {
+        abortRightClick()
+        clearHover(event)
+    }
+
     fun attach() {
-        canvas.addEventListener("pointerdown", ::pointerDown)
-        canvas.addEventListener("pointermove", ::pointerMove)
-        canvas.addEventListener("pointerup", ::pointerUp)
-        canvas.addEventListener("pointercancel", ::finishDrag)
-        canvas.addEventListener("touchstart", ::touchStart)
-        canvas.addEventListener("touchmove", ::touchMove)
-        canvas.addEventListener("touchend", ::touchEnd)
-        canvas.addEventListener("touchcancel", ::finishTouch)
-        canvas.addEventListener("click", ::click)
-        canvas.addEventListener("wheel", ::wheel)
-        canvas.addEventListener("contextmenu", ::suppressContextMenu)
-        canvas.addEventListener("pointerleave", ::clearHover)
-        window.addEventListener("blur", ::finishDrag)
-        window.addEventListener("blur", ::finishTouch)
-        window.addEventListener("blur", ::clearHover)
+        canvasListeners.forEach { canvas.addEventListener(it.type, it.listener) }
+        windowListeners.forEach { window.addEventListener(it.type, it.listener) }
     }
 
     fun detach() {
-        canvas.removeEventListener("pointerdown", ::pointerDown)
-        canvas.removeEventListener("pointermove", ::pointerMove)
-        canvas.removeEventListener("pointerup", ::pointerUp)
-        canvas.removeEventListener("pointercancel", ::finishDrag)
-        canvas.removeEventListener("touchstart", ::touchStart)
-        canvas.removeEventListener("touchmove", ::touchMove)
-        canvas.removeEventListener("touchend", ::touchEnd)
-        canvas.removeEventListener("touchcancel", ::finishTouch)
-        canvas.removeEventListener("click", ::click)
-        canvas.removeEventListener("wheel", ::wheel)
-        canvas.removeEventListener("contextmenu", ::suppressContextMenu)
-        canvas.removeEventListener("pointerleave", ::clearHover)
-        window.removeEventListener("blur", ::finishDrag)
-        window.removeEventListener("blur", ::finishTouch)
-        window.removeEventListener("blur", ::clearHover)
-        lastDragPosition = null
+        canvasListeners.forEach { canvas.removeEventListener(it.type, it.listener) }
+        windowListeners.forEach { window.removeEventListener(it.type, it.listener) }
+        finishMouseInteractions()
         finishTouch()
         hoveredCell = null
     }
 
-    private fun triggerRightClick(to: Point, final: Boolean) {
-        val start = rightClickStart ?: return
+    private fun beginMouseDrag(event: MouseEvent) {
+        suppressNextClick = false
+        beginDrag(event)
+    }
+
+    private fun beginRightClickDrag(event: MouseEvent) {
+        rightClickDrag = RightClickDrag(start = cellAt(event.position()))
+    }
+
+    private fun dragRightClickTo(to: Point, force: Boolean = false) {
+        val drag = rightClickDrag ?: return
 
         val end = cellAt(to)
-        if (end == lastRightClickEnd && !final) return
+        if (end == drag.lastEnd && !force) return
 
-        start.onBoardRightClick(BoardRightClickEvent(cellAt(start.position()), end, final = final))
+        emitRightClick(drag.start, end, BoardRightClickPhase.Drag)
+        rightClickDrag = drag.copy(lastEnd = end)
+    }
 
-        if (final) {
-            rightClickStart = null
-            lastRightClickEnd = null
-        } else {
-            lastRightClickEnd = end
-        }
+    private fun commitRightClick(to: Point) {
+        val drag = rightClickDrag ?: return
+
+        emitRightClick(drag.start, cellAt(to), BoardRightClickPhase.Commit)
+        rightClickDrag = null
+    }
+
+    private fun abortRightClick() {
+        val drag = rightClickDrag ?: return
+
+        emitRightClick(drag.start, drag.start, BoardRightClickPhase.Abort)
+        rightClickDrag = null
     }
 
     private fun dragMouseTo(position: Point) {
@@ -339,7 +378,7 @@ private class BoardEventListeners(
 
         return when {
             longPress.active -> {
-                triggerLongPressRightClick(longPress, position, final = false)
+                triggerLongPressRightClick(longPress, position, BoardRightClickPhase.Drag)
                 true
             }
 
@@ -361,7 +400,7 @@ private class BoardEventListeners(
             suppressNextClick = true
             touchMoved = true
             touchDragPosition = null
-            triggerLongPressRightClick(longPress, longPress.lastPosition, final = false)
+            triggerLongPressRightClick(longPress, longPress.lastPosition, BoardRightClickPhase.Drag)
         }, LONG_PRESS_DELAY)
 
         touchLongPress = LongPress(
@@ -377,18 +416,64 @@ private class BoardEventListeners(
         touchLongPress = null
     }
 
-    private fun triggerLongPressRightClick(longPress: LongPress, position: Point, final: Boolean) {
+    private fun triggerLongPressRightClick(longPress: LongPress, position: Point, phase: BoardRightClickPhase) {
         val end = cellAt(position)
-        if (end == longPress.lastCell && !final) return
+        if (end == longPress.lastCell && phase == BoardRightClickPhase.Drag) return
 
-        MouseEvent("contextmenu", MouseEventInit()).onBoardRightClick(
+        emitRightClick(cellAt(longPress.startPosition), end, phase)
+        longPress.lastCell = end
+    }
+
+    private fun refreshRightClickDrag() {
+        val drag = rightClickDrag ?: return
+        val end = drag.lastEnd ?: return
+        emitRightClick(drag.start, end, BoardRightClickPhase.Drag)
+    }
+
+    private fun suppressAltMenuDuringRightClick(event: KeyboardEvent) {
+        if (rightClickDrag != null && (event.altKey || event.key == "Alt")) event.preventDefault()
+    }
+
+    private fun emitRightClick(start: CellCoordinate, end: CellCoordinate, phase: BoardRightClickPhase) {
+        onBoardRightClick(
             BoardRightClickEvent(
-                from = cellAt(longPress.startPosition),
+                from = start,
                 to = end,
-                final = final,
+                phase = phase,
+                modifiers = currentModifierKeys,
             ),
         )
-        longPress.lastCell = end
+    }
+
+    private fun updateModifierKeys(event: MouseEvent) = updateModifierKeys(event.modifierKeys())
+
+    private fun updateModifierKeys(event: KeyboardEvent) = updateModifierKeys(event.modifierKeys())
+
+    private fun updateModifierKeys(modifiers: BoardModifierKeys): Boolean {
+        if (currentModifierKeys == modifiers) return false
+        currentModifierKeys = modifiers
+        return true
+    }
+
+    private fun syncModifierKeys(event: MouseEvent) {
+        currentModifierKeys = event.modifierKeys()
+    }
+
+    private fun MouseEvent.modifierKeys() = BoardModifierKeys(
+        ctrlKey = ctrlKey,
+        altKey = altKey,
+        shiftKey = shiftKey,
+    )
+
+    private fun KeyboardEvent.modifierKeys() = BoardModifierKeys(
+        ctrlKey = ctrlKey,
+        altKey = altKey,
+        shiftKey = shiftKey,
+    )
+
+    private fun finishMouseInteractions() {
+        lastDragPosition = null
+        rightClickDrag = null
     }
 
     private fun beginTouchPinch(touches: List<Point>) {
@@ -503,6 +588,8 @@ private class BoardEventListeners(
 
     private data class Pinch(val center: Point, val distance: Double)
     private data class PinchGesture(val start: Pinch, val viewport: BoardViewport)
+    private data class ListenerRegistration(val type: String, val listener: (Event) -> Unit)
+    private data class RightClickDrag(val start: CellCoordinate, val lastEnd: CellCoordinate? = null)
     private data class LongPress(
         val startPosition: Point,
         var lastPosition: Point,
