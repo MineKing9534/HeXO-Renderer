@@ -56,7 +56,7 @@ data class LineHighlight(val start: CellCoordinate, val direction: Direction, va
     }
 
     companion object {
-        const val MAX_LENGTH = 10
+        const val MAX_LENGTH = 12
     }
 }
 

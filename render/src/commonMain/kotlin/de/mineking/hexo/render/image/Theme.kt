@@ -74,7 +74,7 @@ data class BasicTheme(
     }
 
     override fun LineHighlight.color() = Theme.ElementColors(
-        color.color(default = highlightColor).withAlpha(220),
+        color.color(default = highlightColor).withAlpha(240),
         cellBorderColor.withAlpha(128),
     )
     override fun Cell.backgroundColor() = Theme.ElementColors(owner.color(default = emptyCellBackgroundColor), cellBorderColor)
@@ -96,7 +96,7 @@ data class BasicTheme(
             6.0,
             2.0,
             backgroundColor = Color.rgb(0x0f172a),
-            cellBorderColor = Color.rgb(0x202a3d),
+            cellBorderColor = Color.rgb(0x232d43),
             highlightColor = Color.rgb(0xec6fb1),
             focusColor = Color.rgb(0xffffff),
             emptyCellBackgroundColor = Color.Transparent,
