@@ -89,14 +89,19 @@ fun InteractiveBoard(
         onCellClick = {
             onBoardInteraction(BoardInteraction.PlaceCell(it))
         },
-        onBoardRightClick = { (from, to, final) ->
+        onBoardRightClick = { (from, to, phase) ->
+            if (phase == BoardRightClickPhase.Abort) {
+                temporaryLine = null
+                return@RawBoard
+            }
+
             val color = when {
                 ctrlKey -> CellOwner.X
                 altKey -> CellOwner.O
                 else -> null
             }
 
-            if (from == to && final) {
+            if (from == to && phase == BoardRightClickPhase.Commit) {
                 val line = board.findTopHighlightLineAt(to)
                 if (line == null) {
                     val highlight = if (board.cells[to]?.highlight == null) CellHighlight(color) else null
@@ -109,7 +114,7 @@ fun InteractiveBoard(
                 val (direction, length) = from.findClosestLineTo(to)
                 val line = LineHighlight(from, direction, length, color)
 
-                if (final) {
+                if (phase == BoardRightClickPhase.Commit) {
                     onBoardInteraction(BoardInteraction.HighlightLine(line, isRemove = false))
                     temporaryLine = null
                 } else if (from != to) {
