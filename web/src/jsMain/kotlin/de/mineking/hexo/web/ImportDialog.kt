@@ -181,8 +181,8 @@ private fun ConfirmButton(
     }
 }
 
-private val FORMATION_URL = """^$URL/sandbox/(.*)$""".toRegex()
-private val GAME_URL = """^$URL/games/(.*?)(?:\?move=(\d+))?$""".toRegex()
+private val FORMATION_URL = """^https?://.*?/sandbox/(.*)$""".toRegex()
+private val GAME_URL = """^https?://.*?/games/(.*?)(?:\?move=(\d+))?$""".toRegex()
 private suspend fun String.urlToBoard(
     formationRepository: FormationRepository,
     finishedGameRepository: FinishedGameRepository,

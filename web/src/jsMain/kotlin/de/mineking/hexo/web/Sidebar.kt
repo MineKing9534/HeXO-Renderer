@@ -9,8 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.web.events.SyntheticMouseEvent
-import de.mineking.hexo.api.formation.FormationRepository
-import de.mineking.hexo.api.game.FinishedGameRepository
+import de.mineking.hexo.api.HexoRepositories
 import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.parse.parseRectilinearStateBKETurnNotation
 import de.mineking.hexo.render.RectilinearNotationType
@@ -49,8 +48,7 @@ enum class BoardUpdateCause {
 
 @Composable
 fun Sidebar(
-    formationRepository: FormationRepository,
-    finishedGameRepository: FinishedGameRepository,
+    repositories: HexoRepositories?,
     placementMode: MutableState<CellPlacementMode>,
     board: HexoBoard,
     onBoardChange: (BoardUpdateCause, HexoBoard) -> Unit,
@@ -94,8 +92,7 @@ fun Sidebar(
 
         Div({ classes("flex", "flex-col", "gap-2") }) {
             NotationField(
-                formationRepository = formationRepository,
-                finishedGameRepository = finishedGameRepository,
+                repositories = repositories,
                 notation = notation,
                 parseError = parseError,
                 onChange = { cause, value ->
@@ -237,8 +234,7 @@ private fun ParseStatus(valid: Boolean) {
 
 @Composable
 private fun NotationField(
-    formationRepository: FormationRepository,
-    finishedGameRepository: FinishedGameRepository,
+    repositories: HexoRepositories?,
     notation: String,
     parseError: String?,
     onChange: (BoardUpdateCause, String) -> Unit,
@@ -257,7 +253,7 @@ private fun NotationField(
                     "before:bg-linear-to-r", "before:from-transparent", "before:to-slate-900/95", "before:content-['']",
                 )
             }) {
-                NotationActions(formationRepository, finishedGameRepository, notation, onChange)
+                NotationActions(repositories, notation, onChange)
             }
         }
 
@@ -282,8 +278,7 @@ private fun NotationField(
 
 @Composable
 private fun NotationActions(
-    formationRepository: FormationRepository,
-    finishedGameRepository: FinishedGameRepository,
+    repositories: HexoRepositories?,
     notation: String,
     onChange: (BoardUpdateCause, String) -> Unit,
 ) {
@@ -328,13 +323,15 @@ private fun NotationActions(
             }
         }
 
-        Button("Import Position") { importDialogOpen = true }
+        if (repositories != null) {
+            Button("Import Position") { importDialogOpen = true }
+        }
     }
 
-    if (importDialogOpen) {
+    if (importDialogOpen && repositories != null) {
         ImportDialog(
-            formationRepository = formationRepository,
-            finishedGameRepository = finishedGameRepository,
+            formationRepository = repositories.formations,
+            finishedGameRepository = repositories.finishedGames,
             onClose = { importDialogOpen = false },
             onConfirm = {
                 importDialogOpen = false

@@ -33,9 +33,6 @@ import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.url.URLSearchParams
 
-const val URL = "https://hexo.did.science"
-private const val PROXY = "https://hexo.mineking.dev/proxy"
-
 fun main() {
     val params = URLSearchParams(window.location.search)
     val initial = params.get("position")?.replace("_", "/") ?: ""
@@ -58,7 +55,7 @@ fun main() {
     renderComposable(root = rootElement) {
         var error by remember { mutableStateOf(initialError) }
 
-        val client = remember { HexoApiClient(host = PROXY, socketIOOptions = null) }
+        val client = remember { BuildConfig.API_PROXY?.let { HexoApiClient(host = it, socketIOOptions = null) } }
         MainLayout(client, initialBoard)
 
         if (error != null) {
@@ -82,8 +79,8 @@ enum class CellPlacementMode {
 }
 
 @Composable
-private fun MainLayout(client: HexoApiClient, initialBoard: Board) {
-    val repositories = remember(client) { client.createRepositories() }
+private fun MainLayout(client: HexoApiClient?, initialBoard: Board) {
+    val repositories = remember(client) { client?.createRepositories() }
 
     val viewport = remember { mutableStateOf<BoardViewport?>(null) }
     val placementMode = remember {
@@ -121,8 +118,7 @@ private fun MainLayout(client: HexoApiClient, initialBoard: Board) {
             },
         )
         Sidebar(
-            formationRepository = repositories.formations,
-            finishedGameRepository = repositories.finishedGames,
+            repositories = repositories,
             placementMode = placementMode,
             board = transformedBoard,
             onBoardChange = { cause, updated ->

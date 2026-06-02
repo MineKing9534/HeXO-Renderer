@@ -5,6 +5,7 @@ kotlin-coroutines = "1.11.0"
 kotlin-atomicfu = "0.32.1"
 compose = "1.9.3"
 
+buildconfig = "6.0.9"
 kotlin-poet = "2.3.0"
 ksp = "2.3.7"
 node = "7.1.0"
@@ -75,6 +76,8 @@ exposed = [ "exposed-jdbc", "exposed-datetime", "exposed-migration" ]
 [plugins]
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-atomicfu = { id = "org.jetbrains.kotlinx.atomicfu", version.ref = "kotlin-atomicfu" }
+
+buildconfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildconfig"}
 
 kotlin-compose = { id = "org.jetbrains.compose", version.ref = "compose" }
 kotlin-compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

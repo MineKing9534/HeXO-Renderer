@@ -1,8 +1,11 @@
 import org.apache.tools.ant.filters.ReplaceTokens
+import com.github.gmazzo.buildconfig.BuildConfigValue.Expression
 
 plugins {
-    id("kotlin-multiplatform")
+    id("kotlin-common")
+    kotlin("multiplatform")
 
+    alias(libs.plugins.buildconfig)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.compose.compiler)
 
@@ -12,13 +15,6 @@ plugins {
 repositories {
     google()
 }
-
-val webBasePath = providers.gradleProperty("web.basePath")
-    .orElse("/")
-    .map { path ->
-        val prefixed = if (path.startsWith("/")) path else "/$path"
-        prefixed.removeSuffix("/")
-    }
 
 kotlin {
     js {
@@ -50,9 +46,16 @@ kotlin {
 }
 
 tailwindcss {
-    resourceTask = tasks.jsProcessResources
+    resourceTask = tasks.named<Copy>("jsProcessResources")
     resourcePath = "/"
 }
+
+val webBasePath = providers.gradleProperty("web.basePath")
+    .orElse("/")
+    .map { path ->
+        val prefixed = if (path.startsWith("/")) path else "/$path"
+        prefixed.removeSuffix("/")
+    }
 
 tasks.named<Copy>("jsProcessResources") {
     inputs.property("webBasePath", webBasePath)
@@ -62,4 +65,19 @@ tasks.named<Copy>("jsProcessResources") {
             "tokens" to mapOf("WEB_BASE_PATH" to webBasePath.get()),
         )
     }
+}
+
+val webApiProxy = providers.gradleProperty("web.apiProxy")
+    .orElse(provider { null })
+    .map {
+        when {
+            it.isBlank() -> null
+            else -> Expression("\"$it\"")
+        }
+    }
+
+buildConfig {
+    buildConfigField<String?>("API_PROXY", webApiProxy)
+
+    packageName("$group.web")
 }

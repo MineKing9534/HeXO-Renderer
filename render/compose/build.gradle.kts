@@ -15,7 +15,6 @@ repositories {
 kotlin {
     js { browser() }
 
-
     sourceSets.jsMain {
         dependencies {
             implementation(projects.board)
