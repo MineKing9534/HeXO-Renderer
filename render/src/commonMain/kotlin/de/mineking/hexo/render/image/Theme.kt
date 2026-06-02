@@ -55,7 +55,7 @@ interface Theme {
     fun Cell.labelColor(): Color
 }
 
-class BasicTheme(
+data class BasicTheme(
     override val gap: Double,
     override val borderThickness: Double,
     override val backgroundColor: Color,
