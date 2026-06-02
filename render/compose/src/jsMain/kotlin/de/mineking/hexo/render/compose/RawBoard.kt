@@ -67,7 +67,7 @@ fun RawBoard(
     }
 
     ResizeHandler(element) { redraw() }
-    LaunchedEffect(effectiveViewport, layout, hoveredCell) { redraw() }
+    LaunchedEffect(effectiveViewport, layout, hoveredCell, theme, font) { redraw() }
 
     BoardInteractions(
         element = element,
