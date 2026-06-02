@@ -31,7 +31,6 @@ import org.jetbrains.compose.web.dom.Canvas
 import org.jetbrains.compose.web.dom.ContentBuilder
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
-import org.w3c.dom.events.MouseEvent
 
 private const val BOARD_LAYOUT_RADIUS = 255.0
 private val cellHoverColor = Color.rgb(0x7dd3fc)
@@ -43,8 +42,8 @@ fun RawBoard(
     onViewportChange: (BoardViewport) -> Unit,
     theme: Theme = BasicTheme.Default,
     font: CanvasFont = DefaultCanvasFont,
-    onCellClick: (MouseEvent.(CellCoordinate) -> Unit)? = null,
-    onBoardRightClick: (MouseEvent.(BoardRightClickEvent) -> Unit)? = null,
+    onCellClick: ((CellCoordinate) -> Unit)? = null,
+    onBoardRightClick: ((BoardRightClickEvent) -> Unit)? = null,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
     content: ContentBuilder<HTMLCanvasElement>? = null,
 ) {
@@ -76,8 +75,8 @@ fun RawBoard(
         onViewportChange = onViewportChange,
         onDraggingChange = { dragging = it },
         onCellHoverChange = { hoveredCell = it },
-        onCellClick = { onCellClick?.invoke(this, it) },
-        onBoardRightClick = { onBoardRightClick?.invoke(this, it) },
+        onCellClick = { onCellClick?.invoke(it) },
+        onBoardRightClick = { onBoardRightClick?.invoke(it) },
     )
 
     Canvas({

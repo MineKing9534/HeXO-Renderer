@@ -26,7 +26,6 @@ import de.mineking.hexo.render.image.Theme
 import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.ContentBuilder
 import org.w3c.dom.HTMLCanvasElement
-import org.w3c.dom.events.MouseEvent
 
 sealed interface BoardInteraction {
     data class PlaceCell(val coordinate: CellCoordinate) : BoardInteraction
@@ -60,7 +59,7 @@ fun InteractiveBoard(
     board: Board,
     viewport: BoardViewport?,
     onViewportChange: (BoardViewport) -> Unit,
-    onBoardInteraction: MouseEvent.(BoardInteraction) -> Unit,
+    onBoardInteraction: (BoardInteraction) -> Unit,
     theme: Theme = BasicTheme.Default,
     font: CanvasFont = DefaultCanvasFont,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
@@ -89,15 +88,15 @@ fun InteractiveBoard(
         onCellClick = {
             onBoardInteraction(BoardInteraction.PlaceCell(it))
         },
-        onBoardRightClick = { (from, to, phase) ->
+        onBoardRightClick = { (from, to, phase, modifiers) ->
             if (phase == BoardRightClickPhase.Abort) {
                 temporaryLine = null
                 return@RawBoard
             }
 
             val color = when {
-                ctrlKey -> CellOwner.X
-                altKey -> CellOwner.O
+                modifiers.ctrlKey -> CellOwner.X
+                modifiers.altKey || modifiers.shiftKey -> CellOwner.O
                 else -> null
             }
 

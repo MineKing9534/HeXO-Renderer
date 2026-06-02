@@ -30,7 +30,6 @@ import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextArea
 import org.jetbrains.compose.web.renderComposable
 import org.w3c.dom.HTMLDivElement
-import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.url.URLSearchParams
 
 fun main() {
@@ -203,7 +202,7 @@ private fun Board.findNextTurn(): Pair<CellOwner, Int> {
 private fun BoardPane(
     board: Board,
     viewport: MutableState<BoardViewport?>,
-    onBoardInteraction: MouseEvent.(BoardInteraction) -> Unit,
+    onBoardInteraction: (BoardInteraction) -> Unit,
 ) {
     var viewport by viewport
     Div({ classes("min-h-0", "min-w-0", "flex-1", "p-3", "md:p-6") }) {
