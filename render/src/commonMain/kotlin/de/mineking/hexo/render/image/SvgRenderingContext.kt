@@ -9,16 +9,22 @@ import dev.jamesyox.svg4k.attr.AttributeContainer
 import dev.jamesyox.svg4k.attr.attrs.DominantBaseline
 import dev.jamesyox.svg4k.attr.attrs.FontSize
 import dev.jamesyox.svg4k.attr.attrs.FontWeight
+import dev.jamesyox.svg4k.attr.attrs.MaskType
 import dev.jamesyox.svg4k.attr.attrs.StrokeLinecap
+import dev.jamesyox.svg4k.attr.attrs.StrokeLinejoin
 import dev.jamesyox.svg4k.attr.attrs.TextAnchor
 import dev.jamesyox.svg4k.attr.attrs.ViewBox
 import dev.jamesyox.svg4k.attr.attrs.dominantBaseline
 import dev.jamesyox.svg4k.attr.attrs.fill
 import dev.jamesyox.svg4k.attr.attrs.fontFamily
 import dev.jamesyox.svg4k.attr.attrs.fontWeight
+import dev.jamesyox.svg4k.attr.attrs.id
+import dev.jamesyox.svg4k.attr.attrs.mask
+import dev.jamesyox.svg4k.attr.attrs.maskType
 import dev.jamesyox.svg4k.attr.attrs.points
 import dev.jamesyox.svg4k.attr.attrs.stroke
 import dev.jamesyox.svg4k.attr.attrs.strokeLinecap
+import dev.jamesyox.svg4k.attr.attrs.strokeLinejoin
 import dev.jamesyox.svg4k.attr.attrs.strokeWidth
 import dev.jamesyox.svg4k.attr.attrs.textAnchor
 import dev.jamesyox.svg4k.attr.attrs.transform
@@ -30,13 +36,18 @@ import dev.jamesyox.svg4k.attr.attrs.y
 import dev.jamesyox.svg4k.attr.attrs.y1
 import dev.jamesyox.svg4k.attr.attrs.y2
 import dev.jamesyox.svg4k.attr.types.obj.SvgColor
+import dev.jamesyox.svg4k.attr.types.obj.SvgId
 import dev.jamesyox.svg4k.attr.types.obj.none
+import dev.jamesyox.svg4k.attr.types.obj.pct
 import dev.jamesyox.svg4k.attr.types.obj.px
 import dev.jamesyox.svg4k.consumers.svgString
+import dev.jamesyox.svg4k.tags.Mask
 import dev.jamesyox.svg4k.tags.categories.container.AllElementContainer
 import dev.jamesyox.svg4k.tags.categories.container.ElementContainer
 import dev.jamesyox.svg4k.tags.categories.container.unaryPlus
+import dev.jamesyox.svg4k.tags.defs
 import dev.jamesyox.svg4k.tags.line
+import dev.jamesyox.svg4k.tags.mask
 import dev.jamesyox.svg4k.tags.polygon
 import dev.jamesyox.svg4k.tags.rect
 import dev.jamesyox.svg4k.tags.svg
@@ -82,27 +93,62 @@ fun Board.renderToSvg(
 
                 val context = SvgRenderingContext { it() }
                 context.drawBoard(layout, theme, middleLayer)
+
+                context.finish()
             }
         }
     }
 }
 
-class SvgRenderingContext(private val configure: (context(TagConsumer<*>, @SvgTagDSL Group) () -> Unit) -> Unit) : RenderingContext {
+class SvgRenderingContext(
+    private val configure: (context(TagConsumer<*>, @SvgTagDSL Group) () -> Unit) -> Unit,
+) : RenderingContext {
+    companion object {
+        private val MASK_ID = SvgId("text-mask")
+    }
+
+    @Suppress("ContextReceiverMapping")
+    private val maskConfigurations = mutableListOf<context(TagConsumer<*>, @SvgTagDSL Mask) () -> Unit>()
+
+    context(_: TagConsumer<*>, _: ElementContainer.Defs)
+    fun finish() {
+        defs {
+            mask {
+                id = MASK_ID
+                maskType = MaskType.Luminance
+
+                rect {
+                    x = 0.none
+                    y = 0.none
+                    w = 100.pct
+                    h = 100.pct
+
+                    fill(Color.rgb(0xffffff).svg)
+                }
+                maskConfigurations.forEach { it() }
+            }
+        }
+    }
+
     override fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke?) {
         configure {
-            line {
-                x1 = from.x.none
-                y1 = from.y.none
-                x2 = to.x.none
-                y2 = to.y.none
+            fun drawLinePart(stroke: Stroke) {
+                line {
+                    x1 = from.x.none
+                    y1 = from.y.none
+                    x2 = to.x.none
+                    y2 = to.y.none
 
-                stroke(stroke.color.svg)
-                strokeWidth = stroke.width.none
+                    stroke(stroke.color.svg)
+                    strokeWidth = stroke.width.none
+                    strokeLinecap = StrokeLinecap.Round
 
-                strokeLinecap = StrokeLinecap.Round
-
-                // TODO outline
+                    mask(MASK_ID)
+                }
             }
+
+            if (outline != null) drawLinePart(Stroke(outline.color, stroke.width + outline.width))
+            drawLinePart(stroke)
         }
     }
 
@@ -120,9 +166,17 @@ class SvgRenderingContext(private val configure: (context(TagConsumer<*>, @SvgTa
     }
 
     override fun drawString(point: Point, text: String, fontSize: Float, color: Color) {
-        configure {
+        context(_: TagConsumer<*>, _: ElementContainer.Text)
+        fun drawText(color: Color?, stroke: Stroke?) {
             text {
-                fill(color.svg)
+                if (color != null) fill(color.svg)
+                if (stroke != null) {
+                    stroke(stroke.color.svg)
+                    strokeWidth = stroke.width.none
+                    strokeLinecap = StrokeLinecap.Round
+                    strokeLinejoin = StrokeLinejoin.Round
+                }
+
                 fontWeight = FontWeight.Numeric(800)
                 fontFamily = "system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
                 fs = FontSize.Value(fontSize.px)
@@ -134,8 +188,13 @@ class SvgRenderingContext(private val configure: (context(TagConsumer<*>, @SvgTa
                 y = listOf(point.y.none)
 
                 +text
-                // TODO outline
             }
+        }
+
+        configure { drawText(color, null) }
+        maskConfigurations += {
+            drawText(null, Stroke(Color.rgb(0x333333), fontSize / 6))
+            drawText(Color.rgb(0x000000), null)
         }
     }
 }
