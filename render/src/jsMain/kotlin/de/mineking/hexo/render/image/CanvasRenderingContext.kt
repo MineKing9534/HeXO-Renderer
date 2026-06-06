@@ -94,7 +94,7 @@ class CanvasRenderingContext(
         }
     }
 
-    override fun drawString(point: Point, text: String, fontSize: Float, color: Color?) {
+    override fun drawString(point: Point, text: String, fontSize: Float, color: Color) {
         val font = font.getFont(fontSize)
 
         canvas.font = font
@@ -110,10 +110,8 @@ class CanvasRenderingContext(
 
         textExclusions += TextExclusion(text, font, textX, textY, margin)
 
-        if (color != null) {
-            canvas.fillStyle = color.css
-            canvas.fillText(text, textX, textY)
-        }
+        canvas.fillStyle = color.css
+        canvas.fillText(text, textX, textY)
     }
 
     private fun CanvasRenderingContext2D.strokeSegment(from: Point, to: Point) {

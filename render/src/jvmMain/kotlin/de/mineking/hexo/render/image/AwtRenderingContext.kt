@@ -86,7 +86,7 @@ class AwtRenderingContext(private val graphics: Graphics2D) : RenderingContext {
         }
     }
 
-    override fun drawString(point: Point, text: String, fontSize: Float, color: Color?) {
+    override fun drawString(point: Point, text: String, fontSize: Float, color: Color) {
         graphics.font = BOLD_FONT.deriveFont(Font.BOLD, fontSize)
 
         val fm = graphics.fontMetrics
@@ -102,10 +102,8 @@ class AwtRenderingContext(private val graphics: Graphics2D) : RenderingContext {
             subtract(Area(shape))
         })
 
-        if (color != null) {
-            graphics.color = color.awt
-            graphics.fill(shape)
-        }
+        graphics.color = color.awt
+        graphics.fill(shape)
     }
 
     private fun drawLinePart(shape: Area, color: Color) {

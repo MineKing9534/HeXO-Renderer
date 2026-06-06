@@ -19,6 +19,7 @@ import de.mineking.hexo.render.image.DefaultCanvasFont
 import de.mineking.hexo.render.image.Stroke
 import de.mineking.hexo.render.image.Theme
 import de.mineking.hexo.render.image.center
+import de.mineking.hexo.render.image.createHex
 import de.mineking.hexo.render.image.createRenderLayout
 import de.mineking.hexo.render.image.div
 import de.mineking.hexo.render.image.drawBoard
@@ -132,7 +133,7 @@ private fun HTMLCanvasElement.drawBoard(
         val cell = layout.board.cells[hoveredCell]
 
         renderingContext.drawPolygon(
-            shape = hoveredCell.createHex(),
+            shape = hoveredCell.toPixel().createHex(hexSize),
             color = cellHoverColor.withAlpha(48),
             outline = if (cell != null && (cell.highlight != null || cell.focused)) null else Stroke(cellHoverColor.withAlpha(140), 2f),
         )

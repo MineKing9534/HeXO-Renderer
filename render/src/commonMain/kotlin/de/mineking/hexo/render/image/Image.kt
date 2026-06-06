@@ -37,8 +37,8 @@ class InternalBoardRenderer(
         private val FOCUS = MutableCell(focused = true)
     }
 
-    private val hexSize = layout.size.layoutRadius * (1 - theme.gap / 64)
-    private val borderThickness = (layout.size.layoutRadius * theme.borderThickness / 64).toFloat()
+    val hexSize = layout.size.layoutRadius * (1 - theme.gap / 64)
+    val borderThickness = (layout.size.layoutRadius * theme.borderThickness / 64).toFloat()
 
     fun drawLine(line: LineHighlight) {
         val (backgroundColor, borderColor) = theme.run { line.color() }
@@ -51,7 +51,8 @@ class InternalBoardRenderer(
     }
 
     fun drawCell(position: CellCoordinate, cell: Cell) {
-        val hex = position.createHex()
+        val pixel = position.toPixel()
+        val hex = pixel.createHex(hexSize)
 
         val (backgroundColor, borderColor) = theme.run { cell.backgroundColor() }
         renderingContext.drawPolygon(hex, backgroundColor, Stroke(borderColor, borderThickness))
@@ -84,12 +85,10 @@ class InternalBoardRenderer(
     fun CellCoordinate.toPixel() = layout.size.run {
         toPixel().let { (x, y) -> Point(x - layout.boundingBox.minX, y - layout.boundingBox.minY) }
     }
-
-    fun CellCoordinate.createHex() = toPixel().createHex(hexSize)
 }
 
 private const val DEGREES_TO_RADIANS = 0.017453292519943295
-internal fun Point.createHex(radius: Double) = Polygon((0 until 6).map {
+fun Point.createHex(radius: Double) = Polygon((0 until 6).map {
     val angle = DEGREES_TO_RADIANS * (60.0 * it - 30)
 
     val x = x + radius * cos(angle)
