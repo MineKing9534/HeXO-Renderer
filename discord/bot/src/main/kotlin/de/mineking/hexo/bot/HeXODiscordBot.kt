@@ -42,7 +42,6 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
 import net.dv8tion.jda.api.interactions.Interaction
 import net.dv8tion.jda.api.interactions.callbacks.IModalCallback
 import net.dv8tion.jda.api.utils.messages.MessageRequest
-import java.awt.image.BufferedImage
 import java.time.Duration
 
 internal val logger = KotlinLogging.logger {}
@@ -54,7 +53,7 @@ class HeXODiscordBot(
     private val accountLinkRepository: AccountLinkRepository?,
     private val discordUserAuthenticationRepository: DiscordUserAuthenticationRepository?,
     val notationParser: BoardParser,
-    val boardRenderer: BoardRenderer<BufferedImage>,
+    val boardRenderer: BoardRenderer<ByteArray>,
     val linkedRolesUrl: String?,
     token: String,
 ) {
