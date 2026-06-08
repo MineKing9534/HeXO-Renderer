@@ -12,8 +12,8 @@ dependencies {
     implementation(projects.discord.link)
     implementation(projects.server)
 
-    implementation(projects.parse)
-    implementation(projects.render)
+    implementation(projects.board.parse)
+    implementation(projects.board.render)
 
     implementation(libs.kotlin.serialization.properties)
 

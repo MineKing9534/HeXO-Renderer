@@ -14,11 +14,11 @@ import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.board.clone
 import de.mineking.hexo.board.focusWinningRows
+import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
+import de.mineking.hexo.board.render.compose.BoardInteraction
+import de.mineking.hexo.board.render.compose.BoardViewport
+import de.mineking.hexo.board.render.compose.InteractiveBoard
 import de.mineking.hexo.core.CellOwner
-import de.mineking.hexo.parse.parseRectilinearStateBKETurnNotation
-import de.mineking.hexo.render.compose.BoardInteraction
-import de.mineking.hexo.render.compose.BoardViewport
-import de.mineking.hexo.render.compose.InteractiveBoard
 import de.mineking.hexo.web.components.Dialog
 import kotlinx.browser.document
 import kotlinx.browser.window

@@ -15,11 +15,10 @@ rootProject.name = "HeXO"
 
 include(":core")
 include(":board")
+include(":board:parse")
+include(":board:render")
 
-include(":parse")
-include(":render")
-
-include(":render:compose")
+include(":board:render:compose")
 include(":web")
 
 include(":api")

@@ -50,6 +50,8 @@ import de.mineking.hexo.api.game.GameId
 import de.mineking.hexo.api.game.isGuest
 import de.mineking.hexo.api.utils.TimeControl
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.render.RectilinearNotationType
+import de.mineking.hexo.board.render.renderRectilinearNotation
 import de.mineking.hexo.bot.CustomEmoji
 import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.main
@@ -58,8 +60,6 @@ import de.mineking.hexo.bot.utils.asMediaGalleryItem
 import de.mineking.hexo.bot.utils.effectiveLocale
 import de.mineking.hexo.bot.utils.respond
 import de.mineking.hexo.core.CellOwner
-import de.mineking.hexo.render.RectilinearNotationType
-import de.mineking.hexo.render.renderRectilinearNotation
 import dev.freya02.jda.emojis.unicode.Emojis
 import net.dv8tion.jda.api.EmbedBuilder.ZERO_WIDTH_SPACE
 import net.dv8tion.jda.api.components.actionrow.ActionRow

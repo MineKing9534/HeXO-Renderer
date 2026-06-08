@@ -3,6 +3,12 @@ package de.mineking.hexo.launcher
 import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.HexoRepositories
 import de.mineking.hexo.api.caching.createCachingRepositories
+import de.mineking.hexo.board.parse.BoardParser
+import de.mineking.hexo.board.parse.RectilinearStateBKETurnNotationParser
+import de.mineking.hexo.board.parse.cached
+import de.mineking.hexo.board.render.BoardRenderer
+import de.mineking.hexo.board.render.cached
+import de.mineking.hexo.board.render.image.ImageBoardRenderer
 import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.utils.LinkedRolesUpdateService
 import de.mineking.hexo.bot.utils.SandboxFormationOrNotationParser
@@ -11,12 +17,6 @@ import de.mineking.hexo.link.HexoDatabaseManager
 import de.mineking.hexo.link.oauth2.AESTokenTransform
 import de.mineking.hexo.link.oauth2.DiscordOAuth2Client
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
-import de.mineking.hexo.parse.BoardParser
-import de.mineking.hexo.parse.RectilinearStateBKETurnNotationParser
-import de.mineking.hexo.parse.cached
-import de.mineking.hexo.render.BoardRenderer
-import de.mineking.hexo.render.cached
-import de.mineking.hexo.render.image.ImageBoardRenderer
 import de.mineking.hexo.server.HttpServer
 import de.mineking.hexo.server.services.LinkedRolesRedirectWebService
 import de.mineking.hexo.server.services.OAUth2CallbackWebService

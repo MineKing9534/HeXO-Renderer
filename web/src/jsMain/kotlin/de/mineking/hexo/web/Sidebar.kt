@@ -11,10 +11,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.web.events.SyntheticMouseEvent
 import de.mineking.hexo.api.HexoRepositories
 import de.mineking.hexo.board.HexoNotationException
-import de.mineking.hexo.parse.parseRectilinearStateBKETurnNotation
-import de.mineking.hexo.render.RectilinearNotationType
-import de.mineking.hexo.render.renderRectilinearNotation
-import de.mineking.hexo.render.renderRectilinearStateBKETurnNotation
+import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
+import de.mineking.hexo.board.render.RectilinearNotationType
+import de.mineking.hexo.board.render.renderRectilinearNotation
+import de.mineking.hexo.board.render.renderRectilinearStateBKETurnNotation
 import de.mineking.hexo.web.components.Dialog
 import kotlinx.browser.document
 import kotlinx.browser.window

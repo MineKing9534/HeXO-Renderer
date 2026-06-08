@@ -5,9 +5,9 @@ import de.mineking.discord.localization.LocalizationFile
 import de.mineking.discord.localization.Localize
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.HexoNotationException
+import de.mineking.hexo.board.render.image.renderToByteArray
 import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.localization
-import de.mineking.hexo.render.image.renderToByteArray
 import net.dv8tion.jda.api.components.MessageTopLevelComponent
 import net.dv8tion.jda.api.components.mediagallery.MediaGallery
 import net.dv8tion.jda.api.components.mediagallery.MediaGalleryItem
