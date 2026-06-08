@@ -29,6 +29,8 @@ value class Color private constructor(val rgba: Int) {
     override fun toString() = "#${rgba.toHexString()}"
 }
 
+fun Color.isTransparent() = alpha == 0.toUByte()
+
 fun Color.withAlpha(alpha: Int) = Color.rgba(((alpha and 0xff) shl (3 * 8)) or (rgba and 0xffffff))
 
 private const val BRIGHTNESS_FACTOR = 0.35

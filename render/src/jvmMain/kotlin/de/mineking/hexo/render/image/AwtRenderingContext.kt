@@ -14,7 +14,6 @@ import java.awt.geom.Area
 import java.awt.geom.Line2D
 import java.awt.geom.Path2D
 import java.awt.image.BufferedImage
-import kotlin.math.ceil
 
 fun Board.renderToImage(
     layoutRadius: Double,
@@ -25,8 +24,8 @@ fun Board.renderToImage(
     require(cells.isNotEmpty())
 
     val layout = createRenderLayout(layoutRadius, BoardRenderBounds.Compact)
-    val width = ceil(layout.boundingBox.maxX - layout.boundingBox.minX + 2 * padding).toInt()
-    val height = ceil(layout.boundingBox.maxY - layout.boundingBox.minY + 2 * padding).toInt()
+    val width = layout.boundingBox.width + 2 * padding
+    val height = layout.boundingBox.height + 2 * padding
 
     val image = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
     val graphics = image.createGraphics()
@@ -35,11 +34,11 @@ fun Board.renderToImage(
     graphics.fillRect(0, 0, width, height)
 
     graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-    graphics.translate(padding, padding)
+    graphics.translate(padding - layout.boundingBox.minX, padding - layout.boundingBox.minY)
 
     val context = AwtRenderingContext(graphics)
     try {
-        context.drawBoard(layout, theme, middleLayer)
+        context.drawBoard(layout.copy(boundingBox = layout.boundingBox.pad(padding)), theme, middleLayer)
     } finally {
         graphics.dispose()
     }

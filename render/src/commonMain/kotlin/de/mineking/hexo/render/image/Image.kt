@@ -42,6 +42,8 @@ class InternalBoardRenderer(
 
     fun drawLine(line: LineHighlight) {
         val (backgroundColor, borderColor) = theme.run { line.color() }
+        if (backgroundColor.isTransparent() && borderColor.isTransparent()) return
+
         renderingContext.drawLine(
             from = line.start.toPixel(),
             to = line.end.toPixel(),
@@ -54,11 +56,15 @@ class InternalBoardRenderer(
         val pixel = position.toPixel()
         val hex = pixel.createHex(hexSize)
 
+        if (hex.points.none { it in layout.boundingBox }) return
+
         val (backgroundColor, borderColor) = theme.run { cell.backgroundColor() }
         renderingContext.drawPolygon(hex, backgroundColor, Stroke(borderColor, borderThickness))
 
         val (highlightColor, highlightBorderColor) = theme.run { cell.highlightColor() }
-        renderingContext.drawPolygon(hex, highlightColor, Stroke(highlightBorderColor, borderThickness * 3))
+        if (!highlightColor.isTransparent() || !highlightBorderColor.isTransparent()) {
+            renderingContext.drawPolygon(hex, highlightColor, Stroke(highlightBorderColor, borderThickness * 3))
+        }
 
         if (cell.highlight != null && cell.owner != null) {
             val point = position.toPixel()
@@ -74,17 +80,18 @@ class InternalBoardRenderer(
             ?: cell.turn?.toString()
             ?: return
 
+        val color = theme.run { cell.labelColor() }
+        if (color.isTransparent()) return
+
         renderingContext.drawString(
             point = position.toPixel(),
             text = text,
             fontSize = hexSize.toFloat() * 0.7f,
-            color = theme.run { cell.labelColor() },
+            color = color,
         )
     }
 
-    fun CellCoordinate.toPixel() = layout.size.run {
-        toPixel().let { (x, y) -> Point(x - layout.boundingBox.minX, y - layout.boundingBox.minY) }
-    }
+    fun CellCoordinate.toPixel() = layout.size.run { toPixel() }
 }
 
 private const val DEGREES_TO_RADIANS = 0.017453292519943295

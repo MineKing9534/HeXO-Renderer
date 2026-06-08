@@ -10,6 +10,7 @@ import dev.jamesyox.svg4k.attr.attrs.DominantBaseline
 import dev.jamesyox.svg4k.attr.attrs.FontSize
 import dev.jamesyox.svg4k.attr.attrs.FontWeight
 import dev.jamesyox.svg4k.attr.attrs.MaskType
+import dev.jamesyox.svg4k.attr.attrs.MaskUnits
 import dev.jamesyox.svg4k.attr.attrs.StrokeLinecap
 import dev.jamesyox.svg4k.attr.attrs.StrokeLinejoin
 import dev.jamesyox.svg4k.attr.attrs.TextAnchor
@@ -23,6 +24,7 @@ import dev.jamesyox.svg4k.attr.attrs.fontWeight
 import dev.jamesyox.svg4k.attr.attrs.id
 import dev.jamesyox.svg4k.attr.attrs.mask
 import dev.jamesyox.svg4k.attr.attrs.maskType
+import dev.jamesyox.svg4k.attr.attrs.maskUnits
 import dev.jamesyox.svg4k.attr.attrs.points
 import dev.jamesyox.svg4k.attr.attrs.r
 import dev.jamesyox.svg4k.attr.attrs.stroke
@@ -30,7 +32,6 @@ import dev.jamesyox.svg4k.attr.attrs.strokeLinecap
 import dev.jamesyox.svg4k.attr.attrs.strokeLinejoin
 import dev.jamesyox.svg4k.attr.attrs.strokeWidth
 import dev.jamesyox.svg4k.attr.attrs.textAnchor
-import dev.jamesyox.svg4k.attr.attrs.transform
 import dev.jamesyox.svg4k.attr.attrs.viewBox
 import dev.jamesyox.svg4k.attr.attrs.x
 import dev.jamesyox.svg4k.attr.attrs.x1
@@ -56,11 +57,9 @@ import dev.jamesyox.svg4k.tags.polygon
 import dev.jamesyox.svg4k.tags.rect
 import dev.jamesyox.svg4k.tags.svg
 import dev.jamesyox.svg4k.tags.text
-import dev.jamesyox.svg4k.util.translate
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
-import kotlin.math.ceil
 import dev.jamesyox.svg4k.attr.attrs.fontSize as fs
 import dev.jamesyox.svg4k.attr.attrs.height as h
 import dev.jamesyox.svg4k.attr.attrs.width as w
@@ -76,27 +75,25 @@ fun Board.renderToSvg(
     require(cells.isNotEmpty())
 
     val layout = createRenderLayout(layoutRadius, BoardRenderBounds.Compact)
-    val width = ceil(layout.boundingBox.maxX - layout.boundingBox.minX + 2 * padding).toInt()
-    val height = ceil(layout.boundingBox.maxY - layout.boundingBox.minY + 2 * padding).toInt()
+    val width = layout.boundingBox.width + 2 * padding
+    val height = layout.boundingBox.height + 2 * padding
 
     return svgString(prettyPrint) {
         svg {
-            viewBox = ViewBox(0, 0, width, height)
+            val topLeftCorner = layout.boundingBox.topLeft - Point(padding, padding)
+
+            viewBox = ViewBox(topLeftCorner.x, topLeftCorner.y, width, height)
             rect {
-                x = 0.none
-                y = 0.none
-                w = width.none
-                h = height.none
+                x = topLeftCorner.x.none
+                y = topLeftCorner.y.none
+                w = 100.pct
+                h = 100.pct
                 fill(theme.backgroundColor.svg)
             }
 
             group {
-                transform {
-                    translate(padding, padding)
-                }
-
-                val context = SvgRenderingContext { it() }
-                context.drawBoard(layout, theme, middleLayer)
+                val context = SvgRenderingContext(topLeftCorner) { it() }
+                context.drawBoard(layout.copy(boundingBox = layout.boundingBox.pad(padding)), theme, middleLayer)
 
                 context.finish()
             }
@@ -105,31 +102,47 @@ fun Board.renderToSvg(
 }
 
 class SvgRenderingContext(
+    private val topLeftCorner: Point,
     private val configure: (context(TagConsumer<*>, @SvgTagDSL Group) () -> Unit) -> Unit,
 ) : RenderingContext {
     companion object {
-        private val MASK_ID = SvgId("text-mask")
+        private val FULL_MASK = SvgId("full-mask")
+        private val TEXT_MASK = SvgId("text-mask")
     }
 
     @Suppress("ContextReceiverMapping")
-    private val maskConfigurations = mutableListOf<context(TagConsumer<*>, @SvgTagDSL Mask) () -> Unit>()
+    private val textMask = mutableListOf<context(TagConsumer<*>, @SvgTagDSL Mask) () -> Unit>()
 
     context(_: TagConsumer<*>, _: ElementContainer.Defs)
     fun finish() {
         defs {
-            mask {
-                id = MASK_ID
-                maskType = MaskType.Luminance
-
-                rect {
-                    x = 0.none
-                    y = 0.none
+            fun createMask(name: SvgId, config: context(AttributeConsumer, @SvgTagDSL Mask) () -> Unit = {}) {
+                mask {
+                    x = topLeftCorner.x.none
+                    y = topLeftCorner.y.none
                     w = 100.pct
                     h = 100.pct
 
-                    fill(Color.rgb(0xffffff).svg)
+                    id = name
+                    maskType = MaskType.Luminance
+                    maskUnits = MaskUnits.UserSpaceOnUse
+
+                    rect {
+                        x = topLeftCorner.x.none
+                        y = topLeftCorner.y.none
+                        w = 100.pct
+                        h = 100.pct
+
+                        fill(Color.rgb(0xffffff).svg)
+                    }
+
+                    config()
                 }
-                maskConfigurations.forEach { it() }
+            }
+
+            createMask(FULL_MASK)
+            createMask(TEXT_MASK) {
+                textMask.forEach { it() }
             }
         }
     }
@@ -146,7 +159,7 @@ class SvgRenderingContext(
                         fill(stroke.color.svg)
                         r = (stroke.width / 2).none
 
-                        mask(MASK_ID)
+                        mask(TEXT_MASK)
                     }
                 } else {
                     line {
@@ -159,7 +172,7 @@ class SvgRenderingContext(
                         strokeWidth = stroke.width.none
                         strokeLinecap = StrokeLinecap.Round
 
-                        mask(MASK_ID)
+                        mask(TEXT_MASK)
                     }
                 }
             }
@@ -172,7 +185,9 @@ class SvgRenderingContext(
     override fun drawPolygon(shape: Polygon, color: Color?, outline: Stroke?) {
         configure {
             polygon {
+                mask(FULL_MASK)
                 points = shape.points.map { (x, y) -> SvgPoint(x, y) }
+
                 if (color != null) fill(color.svg)
                 if (outline != null) {
                     stroke(outline.color.svg)
@@ -209,7 +224,7 @@ class SvgRenderingContext(
         }
 
         configure { drawText(color, null) }
-        maskConfigurations += {
+        textMask += {
             drawText(null, Stroke(Color.rgb(0x333333), fontSize / 6))
             drawText(Color.rgb(0x000000), null)
         }

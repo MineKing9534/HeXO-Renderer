@@ -23,8 +23,6 @@ import de.mineking.hexo.render.image.createHex
 import de.mineking.hexo.render.image.createRenderLayout
 import de.mineking.hexo.render.image.div
 import de.mineking.hexo.render.image.drawBoard
-import de.mineking.hexo.render.image.plus
-import de.mineking.hexo.render.image.topLeft
 import de.mineking.hexo.render.image.withAlpha
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.dom.AttrBuilderContext
@@ -125,7 +123,7 @@ private fun HTMLCanvasElement.drawBoard(
     drawBoard(
         layout = layout,
         padding = BOARD_RENDER_PADDING,
-        offset = viewport.offset(this) + layout.boundingBox.topLeft,
+        offset = viewport.offset(this),
         theme = theme,
         font = font,
     ) {

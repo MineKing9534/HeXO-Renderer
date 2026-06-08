@@ -1,6 +1,8 @@
 package de.mineking.hexo.render.image
 
 data class Point(val x: Double, val y: Double) {
+    constructor(x: Number, y: Number) : this(x.toDouble(), y.toDouble())
+
     companion object {
         val Zero = Point(0.0, 0.0)
     }

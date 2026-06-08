@@ -4,7 +4,9 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.distanceTo
 import de.mineking.hexo.board.end
+import kotlin.coroutines.EmptyCoroutineContext.get
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -23,12 +25,20 @@ data class BoundingBox(
     val maxY: Double,
 )
 
+fun BoundingBox.pad(padding: Int) = copy(minX = minX - padding, maxX = maxX + padding, minY = minY - padding, maxY = maxY + padding)
+
+operator fun BoundingBox.contains(point: Point) = point.x in minX..maxX && point.y in minY..maxY
+
+val BoundingBox.width get() = ceil(maxX - minX).toInt()
+val BoundingBox.height get() = ceil(maxY - minY).toInt()
+
+val BoundingBox.topLeft get() = Point(minX, minY)
+val BoundingBox.bottomRight get() = Point(maxX, maxY)
+
 val BoundingBox.center get() = Point(
     (maxX + minX) / 2,
     (maxY + minY) / 2,
 )
-
-val BoundingBox.topLeft get() = Point(minX, minY)
 
 data class RenderSize(val layoutRadius: Double) {
     fun CellCoordinate.toPixel(): Point {
@@ -45,8 +55,6 @@ data class BoardRenderLayout(
     val board: Board,
 ) {
     fun Point.toCoordinate(): CellCoordinate {
-        val x = this.x + boundingBox.minX
-        val y = this.y + boundingBox.minY
         val r = y / (size.layoutRadius * 1.5)
         val q = x / (size.layoutRadius * SQRT3) - r / 2.0
 

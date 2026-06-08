@@ -11,7 +11,6 @@ import de.mineking.hexo.render.image.div
 import de.mineking.hexo.render.image.minus
 import de.mineking.hexo.render.image.plus
 import de.mineking.hexo.render.image.times
-import de.mineking.hexo.render.image.topLeft
 import kotlinx.browser.window
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.Event
@@ -565,7 +564,7 @@ private class BoardEventListeners(
         val rect = canvas.getBoundingClientRect()
 
         val canvasTopLeft = Point(rect.left + BOARD_RENDER_PADDING, rect.top + BOARD_RENDER_PADDING)
-        val point = position - canvasTopLeft - viewport.offset(canvas) - renderLayout.boundingBox.topLeft
+        val point = position - canvasTopLeft - viewport.offset(canvas)
         return renderLayout.run { point.toCoordinate() }
     }
 
