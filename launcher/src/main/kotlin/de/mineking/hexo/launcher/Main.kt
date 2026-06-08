@@ -3,6 +3,12 @@ package de.mineking.hexo.launcher
 import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.HexoRepositories
 import de.mineking.hexo.api.caching.createCachingRepositories
+import de.mineking.hexo.board.parse.BoardParser
+import de.mineking.hexo.board.parse.RectilinearStateBKETurnNotationParser
+import de.mineking.hexo.board.parse.cached
+import de.mineking.hexo.board.render.cached
+import de.mineking.hexo.board.render.image.BufferedImageBoardRenderer
+import de.mineking.hexo.board.render.image.outputPngBytes
 import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.utils.LinkedRolesUpdateService
 import de.mineking.hexo.bot.utils.SandboxFormationOrNotationParser
@@ -11,16 +17,9 @@ import de.mineking.hexo.link.HexoDatabaseManager
 import de.mineking.hexo.link.oauth2.AESTokenTransform
 import de.mineking.hexo.link.oauth2.DiscordOAuth2Client
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
-import de.mineking.hexo.parse.BoardParser
-import de.mineking.hexo.parse.RectilinearStateBKETurnNotationParser
-import de.mineking.hexo.parse.cached
-import de.mineking.hexo.render.BoardRenderer
-import de.mineking.hexo.render.cached
-import de.mineking.hexo.render.image.ImageBoardRenderer
 import de.mineking.hexo.server.HttpServer
 import de.mineking.hexo.server.services.LinkedRolesRedirectWebService
 import de.mineking.hexo.server.services.OAUth2CallbackWebService
-import java.awt.image.BufferedImage
 import javax.crypto.spec.SecretKeySpec
 import kotlin.io.encoding.Base64
 
@@ -38,7 +37,7 @@ fun main() {
         discordUserAuthenticationRepository = accountLinking.discordUserAuthenticationRepository,
         linkedRolesUrl = linkedRoles?.url,
         notationParser = repositories.createNotationParser(),
-        boardRenderer = createBoardRenderer(),
+        boardRenderer = BufferedImageBoardRenderer.Default.outputPngBytes().cached(),
         token = config.bot.token,
     )
 
@@ -145,8 +144,6 @@ private fun HexoRepositories.createNotationParser(): BoardParser = SandboxFormat
     formationRepository = formations,
     delegateParser = RectilinearStateBKETurnNotationParser(),
 ).cached()
-
-private fun createBoardRenderer(): BoardRenderer<BufferedImage> = ImageBoardRenderer.Default.cached()
 
 private val ServerConfig.oauth2CallbackUrl get() = "$url/oauth2/callback"
 private val ServerConfig.linkedRolesUrl get() = "$url/linked-roles"

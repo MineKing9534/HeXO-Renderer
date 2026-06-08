@@ -1,5 +1,7 @@
 import org.apache.tools.ant.filters.ReplaceTokens
 import com.github.gmazzo.buildconfig.BuildConfigValue.Expression
+import org.gradle.declarative.dsl.schema.FqName.Empty.packageName
+import org.gradle.internal.execution.caching.CachingState.enabled
 
 plugins {
     id("kotlin-common")
@@ -32,10 +34,10 @@ kotlin {
     sourceSets.jsMain {
         dependencies {
             implementation(projects.board)
-            implementation(projects.render)
-            implementation(projects.render.compose)
+            implementation(projects.board.render)
+            implementation(projects.board.render.compose)
 
-            implementation(projects.parse)
+            implementation(projects.board.parse)
             implementation(projects.api)
 
             implementation(compose.html.core)

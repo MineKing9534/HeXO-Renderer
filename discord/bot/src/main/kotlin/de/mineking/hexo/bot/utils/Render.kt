@@ -7,7 +7,6 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.localization
-import de.mineking.hexo.render.image.renderToByteArray
 import net.dv8tion.jda.api.components.MessageTopLevelComponent
 import net.dv8tion.jda.api.components.mediagallery.MediaGallery
 import net.dv8tion.jda.api.components.mediagallery.MediaGalleryItem
@@ -20,7 +19,7 @@ import kotlin.uuid.Uuid
 
 context(main: HeXODiscordBot)
 suspend fun Board.asMediaGalleryItem() = MediaGalleryItem.fromFile(
-    FileUpload.fromData(main.boardRenderer.run { renderToByteArray() }, "${Uuid.random()}.png"),
+    FileUpload.fromData(main.boardRenderer.run { render() }, "${Uuid.random()}.png"),
 )
 
 context(main: HeXODiscordBot)

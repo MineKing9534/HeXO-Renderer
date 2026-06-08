@@ -4,7 +4,7 @@ import de.mineking.hexo.api.asBoard
 import de.mineking.hexo.api.formation.FormationId
 import de.mineking.hexo.api.formation.FormationRepository
 import de.mineking.hexo.board.Board
-import de.mineking.hexo.parse.BoardParser
+import de.mineking.hexo.board.parse.BoardParser
 
 class SandboxFormationOrNotationParser(
     private val formationRepository: FormationRepository,

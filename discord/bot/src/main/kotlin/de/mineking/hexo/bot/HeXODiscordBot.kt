@@ -10,6 +10,8 @@ import de.mineking.discord.utils.await
 import de.mineking.discord.utils.listen
 import de.mineking.discord.withLocalization
 import de.mineking.hexo.api.HexoRepositories
+import de.mineking.hexo.board.parse.BoardParser
+import de.mineking.hexo.board.render.BoardRenderer
 import de.mineking.hexo.bot.commands.accountLinkCommand
 import de.mineking.hexo.bot.commands.gameCommand
 import de.mineking.hexo.bot.commands.leaderboardCommand
@@ -28,8 +30,6 @@ import de.mineking.hexo.bot.utils.updateLinkedRoleMetadata
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.DiscordUserId
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
-import de.mineking.hexo.parse.BoardParser
-import de.mineking.hexo.render.BoardRenderer
 import dev.freya02.jda.emojis.unicode.Emojis
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
@@ -42,7 +42,6 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
 import net.dv8tion.jda.api.interactions.Interaction
 import net.dv8tion.jda.api.interactions.callbacks.IModalCallback
 import net.dv8tion.jda.api.utils.messages.MessageRequest
-import java.awt.image.BufferedImage
 import java.time.Duration
 
 internal val logger = KotlinLogging.logger {}
@@ -54,7 +53,7 @@ class HeXODiscordBot(
     private val accountLinkRepository: AccountLinkRepository?,
     private val discordUserAuthenticationRepository: DiscordUserAuthenticationRepository?,
     val notationParser: BoardParser,
-    val boardRenderer: BoardRenderer<BufferedImage>,
+    val boardRenderer: BoardRenderer<ByteArray>,
     val linkedRolesUrl: String?,
     token: String,
 ) {

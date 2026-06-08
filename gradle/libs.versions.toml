@@ -26,6 +26,8 @@ jda-emoji = "4.1.0"
 dtk-core = "1.6.1"
 dtk-localization = "1.2.1"
 
+svg = "0.1.0-alpha.3"
+
 logging = "7.0.3"
 logback = "1.5.19"
 
@@ -64,6 +66,8 @@ postgres = { module = "org.postgresql:postgresql", version.ref = "postgres" }
 jda = { module = "net.dv8tion:JDA", version.ref = "jda" }
 jda-emoji = { module = "dev.freya02:jda-emojis", version.ref = "jda-emoji" }
 dtk = { module = "de.mineking:DiscordToolKit", version.ref = "dtk-core" }
+
+svg = { module = "dev.jamesyox:svg4k", version.ref = "svg" }
 
 logging = { module = "io.github.oshai:kotlin-logging", version.ref = "logging" }
 logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }

@@ -9,8 +9,8 @@ plugins {
 dependencies {
     implementation(projects.board)
 
-    implementation(projects.parse)
-    implementation(projects.render)
+    implementation(projects.board.parse)
+    implementation(projects.board.render)
 
     implementation(projects.api)
     implementation(projects.discord.link)
