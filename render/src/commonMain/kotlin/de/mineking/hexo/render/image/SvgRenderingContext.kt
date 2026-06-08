@@ -14,6 +14,8 @@ import dev.jamesyox.svg4k.attr.attrs.StrokeLinecap
 import dev.jamesyox.svg4k.attr.attrs.StrokeLinejoin
 import dev.jamesyox.svg4k.attr.attrs.TextAnchor
 import dev.jamesyox.svg4k.attr.attrs.ViewBox
+import dev.jamesyox.svg4k.attr.attrs.cx
+import dev.jamesyox.svg4k.attr.attrs.cy
 import dev.jamesyox.svg4k.attr.attrs.dominantBaseline
 import dev.jamesyox.svg4k.attr.attrs.fill
 import dev.jamesyox.svg4k.attr.attrs.fontFamily
@@ -22,6 +24,7 @@ import dev.jamesyox.svg4k.attr.attrs.id
 import dev.jamesyox.svg4k.attr.attrs.mask
 import dev.jamesyox.svg4k.attr.attrs.maskType
 import dev.jamesyox.svg4k.attr.attrs.points
+import dev.jamesyox.svg4k.attr.attrs.r
 import dev.jamesyox.svg4k.attr.attrs.stroke
 import dev.jamesyox.svg4k.attr.attrs.strokeLinecap
 import dev.jamesyox.svg4k.attr.attrs.strokeLinejoin
@@ -45,6 +48,7 @@ import dev.jamesyox.svg4k.tags.Mask
 import dev.jamesyox.svg4k.tags.categories.container.AllElementContainer
 import dev.jamesyox.svg4k.tags.categories.container.ElementContainer
 import dev.jamesyox.svg4k.tags.categories.container.unaryPlus
+import dev.jamesyox.svg4k.tags.circle
 import dev.jamesyox.svg4k.tags.defs
 import dev.jamesyox.svg4k.tags.line
 import dev.jamesyox.svg4k.tags.mask
@@ -133,17 +137,30 @@ class SvgRenderingContext(
     override fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke?) {
         configure {
             fun drawLinePart(stroke: Stroke) {
-                line {
-                    x1 = from.x.none
-                    y1 = from.y.none
-                    x2 = to.x.none
-                    y2 = to.y.none
+                // For some reason drawing a line with the same start and end point doesn't work properly
+                if (from == to) {
+                    circle {
+                        cx = from.x.none
+                        cy = from.y.none
 
-                    stroke(stroke.color.svg)
-                    strokeWidth = stroke.width.none
-                    strokeLinecap = StrokeLinecap.Round
+                        fill(stroke.color.svg)
+                        r = (stroke.width / 2).none
 
-                    mask(MASK_ID)
+                        mask(MASK_ID)
+                    }
+                } else {
+                    line {
+                        x1 = from.x.none
+                        y1 = from.y.none
+                        x2 = to.x.none
+                        y2 = to.y.none
+
+                        stroke(stroke.color.svg)
+                        strokeWidth = stroke.width.none
+                        strokeLinecap = StrokeLinecap.Round
+
+                        mask(MASK_ID)
+                    }
                 }
             }
 
