@@ -21,7 +21,7 @@ fun Board.renderToImage(
     theme: Theme = BasicTheme.Default,
     middleLayer: InternalBoardRenderer.() -> Unit = {},
 ): BufferedImage {
-    require(cells.isNotEmpty())
+    require(cells.isNotEmpty() || lineHighlights.isNotEmpty())
 
     val layout = createRenderLayout(layoutRadius, BoardRenderBounds.Compact)
     val width = layout.boundingBox.width + 2 * padding

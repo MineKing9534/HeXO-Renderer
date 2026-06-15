@@ -37,6 +37,8 @@ fun String.parseRectilinearNotation(focusWinningRows: Boolean = true): Board {
         board.focusWinningRows()
     }
 
+    requireHexo(board.cells.isNotEmpty() || board.lineHighlights.isNotEmpty()) { "Cannot parse an empty board" }
+
     return board
 }
 
