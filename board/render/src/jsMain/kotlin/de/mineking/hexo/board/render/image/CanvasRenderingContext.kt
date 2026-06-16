@@ -13,17 +13,11 @@ import org.w3c.dom.LEFT
 import org.w3c.dom.MITER
 import org.w3c.dom.ROUND
 
-fun interface CanvasFont {
-    fun getFont(size: Float): String
-}
-val DefaultCanvasFont = CanvasFont { "800 ${it}px system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif" }
-
 fun HTMLCanvasElement.drawBoard(
     layout: BoardRenderLayout,
     padding: Int,
     offset: Point = Point.Zero,
     theme: Theme = BasicTheme.Default,
-    font: CanvasFont = DefaultCanvasFont,
     middleLayer: InternalBoardRenderer.() -> Unit = {},
 ) {
     val context = getContext("2d") as CanvasRenderingContext2D
@@ -33,13 +27,10 @@ fun HTMLCanvasElement.drawBoard(
     context.fillRect(0.0, 0.0, width.toDouble(), height.toDouble())
     context.translate(padding.toDouble() + offset.x, padding.toDouble() + offset.y)
 
-    CanvasRenderingContext(context, font).drawBoard(layout, theme, middleLayer)
+    CanvasRenderingContext(context).drawBoard(layout, theme, middleLayer)
 }
 
-class CanvasRenderingContext(
-    val canvas: CanvasRenderingContext2D,
-    val font: CanvasFont = DefaultCanvasFont,
-) : RenderingContext {
+class CanvasRenderingContext(val canvas: CanvasRenderingContext2D) : RenderingContext {
     private data class TextExclusion(
         val text: String,
         val font: String,
@@ -94,8 +85,8 @@ class CanvasRenderingContext(
         }
     }
 
-    override fun drawString(point: Point, text: String, fontSize: Float, color: Color) {
-        val font = font.getFont(fontSize)
+    override fun drawString(point: Point, text: String, fontSize: Float, bold: Boolean, color: Color) {
+        val font = "${if (bold) 800 else "normal"} ${fontSize}px system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
 
         canvas.font = font
         canvas.textAlign = CanvasTextAlign.LEFT

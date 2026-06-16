@@ -197,7 +197,7 @@ class SvgRenderingContext(
         }
     }
 
-    override fun drawString(point: Point, text: String, fontSize: Float, color: Color) {
+    override fun drawString(point: Point, text: String, fontSize: Float, bold: Boolean, color: Color) {
         context(_: TagConsumer<*>, _: ElementContainer.Text)
         fun drawText(color: Color?, stroke: Stroke?) {
             text {
@@ -209,7 +209,7 @@ class SvgRenderingContext(
                     strokeLinejoin = StrokeLinejoin.Round
                 }
 
-                fontWeight = FontWeight.Numeric(800)
+                fontWeight = if (bold) FontWeight.Numeric(800) else FontWeight.Normal
                 fontFamily = "system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
                 fs = FontSize.Value(fontSize.px)
 

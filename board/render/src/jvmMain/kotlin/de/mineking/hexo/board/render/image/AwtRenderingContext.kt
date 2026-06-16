@@ -49,6 +49,7 @@ fun Board.renderToImage(
 class AwtRenderingContext(private val graphics: Graphics2D) : RenderingContext {
     companion object {
         private val BOLD_FONT = Font.createFont(Font.TRUETYPE_FONT, javaClass.getResourceAsStream("/fonts/open-sans.extrabold.ttf"))
+        private val NORMAL_FONT = Font.createFont(Font.TRUETYPE_FONT, javaClass.getResourceAsStream("/fonts/open-sans.regular.ttf"))
         const val TEXT_MARGIN_ALPHA = 0.2f
     }
 
@@ -85,8 +86,11 @@ class AwtRenderingContext(private val graphics: Graphics2D) : RenderingContext {
         }
     }
 
-    override fun drawString(point: Point, text: String, fontSize: Float, color: Color) {
-        graphics.font = BOLD_FONT.deriveFont(Font.BOLD, fontSize)
+    override fun drawString(point: Point, text: String, fontSize: Float, bold: Boolean, color: Color) {
+        graphics.font = when {
+            bold -> BOLD_FONT.deriveFont(Font.BOLD, fontSize)
+            else -> NORMAL_FONT.deriveFont(fontSize)
+        }
 
         val fm = graphics.fontMetrics
         val textX = point.x - fm.stringWidth(text) / 2.0

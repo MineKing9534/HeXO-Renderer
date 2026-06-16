@@ -13,9 +13,7 @@ import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.render.image.BasicTheme
 import de.mineking.hexo.board.render.image.BoardRenderBounds
 import de.mineking.hexo.board.render.image.BoardRenderLayout
-import de.mineking.hexo.board.render.image.CanvasFont
 import de.mineking.hexo.board.render.image.Color
-import de.mineking.hexo.board.render.image.DefaultCanvasFont
 import de.mineking.hexo.board.render.image.Stroke
 import de.mineking.hexo.board.render.image.Theme
 import de.mineking.hexo.board.render.image.center
@@ -40,7 +38,6 @@ fun RawBoard(
     viewport: BoardViewport?,
     onViewportChange: (BoardViewport) -> Unit,
     theme: Theme = BasicTheme.Default,
-    font: CanvasFont = DefaultCanvasFont,
     onCellClick: ((CellCoordinate) -> Unit)? = null,
     onBoardRightClick: ((BoardRightClickEvent) -> Unit)? = null,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
@@ -60,12 +57,11 @@ fun RawBoard(
             viewport = effectiveViewport,
             hoveredCell = hoveredCell,
             theme = theme,
-            font = font,
         )
     }
 
     ResizeHandler(element) { redraw() }
-    LaunchedEffect(effectiveViewport, layout, hoveredCell, theme, font) { redraw() }
+    LaunchedEffect(effectiveViewport, layout, hoveredCell, theme) { redraw() }
 
     BoardInteractions(
         element = element,
@@ -115,7 +111,6 @@ private fun HTMLCanvasElement.drawBoard(
     viewport: BoardViewport,
     hoveredCell: CellCoordinate?,
     theme: Theme,
-    font: CanvasFont,
 ) {
     width = clientWidth
     height = clientHeight
@@ -125,7 +120,6 @@ private fun HTMLCanvasElement.drawBoard(
         padding = BOARD_RENDER_PADDING,
         offset = viewport.offset(this),
         theme = theme,
-        font = font,
     ) {
         if (hoveredCell == null) return@drawBoard
         val cell = layout.board.cells[hoveredCell]
