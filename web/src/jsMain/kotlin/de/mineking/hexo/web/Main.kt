@@ -14,7 +14,7 @@ import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.board.clone
 import de.mineking.hexo.board.focusWinningRows
-import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
+import de.mineking.hexo.board.parse.parseCombinedHexoNotation
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.compose.InteractiveBoard
@@ -40,7 +40,7 @@ fun main() {
     val (initialBoard, initialError) = try {
         val board = when {
             initial.isBlank() -> Board()
-            else -> initial.parseRectilinearStateBKETurnNotation(focusWinningRows = false)
+            else -> initial.parseCombinedHexoNotation(focusWinningRows = false)
         }
 
         board to null

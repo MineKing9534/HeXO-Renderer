@@ -5,15 +5,15 @@ import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.LineHighlight
-import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
+import de.mineking.hexo.board.parse.parseCombinedHexoNotation
 import de.mineking.hexo.core.CellOwner
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class RectilinearStateBKETurnParserTest {
+class CombinedHexoNotationParserTest {
     @Test
     fun `test 1`() {
-        val board = ".x/xx, b@(1,0): o A0 A1 x B3.1 B3.2".parseRectilinearStateBKETurnNotation()
+        val board = ".x/xx, b@(1,0): o A0 A1 x B3.1 B3.2".parseCombinedHexoNotation()
         assertEquals(
             mapOf(
                 CellCoordinate(1, 0) to Cell(CellOwner.X),
@@ -32,7 +32,7 @@ class RectilinearStateBKETurnParserTest {
 
     @Test
     fun `test highlight lines`() {
-        val board = "x(!)(>)x, > x A1 B1".parseRectilinearStateBKETurnNotation()
+        val board = "x(!)(>)x, > x A1 B1".parseCombinedHexoNotation()
         assertEquals(
             mapOf(
                 CellCoordinate(0, 0) to Cell(CellOwner.X, highlight = CellHighlight(null)),

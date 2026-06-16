@@ -11,7 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.web.events.SyntheticMouseEvent
 import de.mineking.hexo.api.HexoRepositories
 import de.mineking.hexo.board.HexoNotationException
-import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
+import de.mineking.hexo.board.parse.parseCombinedHexoNotation
 import de.mineking.hexo.board.render.RectilinearNotationType
 import de.mineking.hexo.board.render.renderRectilinearNotation
 import de.mineking.hexo.board.render.renderRectilinearStateBKETurnNotation
@@ -103,7 +103,7 @@ fun Sidebar(
                     }
 
                     try {
-                        onBoardChange(cause, value.parseRectilinearStateBKETurnNotation(focusWinningRows = false))
+                        onBoardChange(cause, value.parseCombinedHexoNotation(focusWinningRows = false))
                         parseError = null
                     } catch (e: HexoNotationException) {
                         parseError = e.message

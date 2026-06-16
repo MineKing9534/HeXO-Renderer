@@ -4,7 +4,7 @@ import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.HexoRepositories
 import de.mineking.hexo.api.caching.createCachingRepositories
 import de.mineking.hexo.board.parse.BoardParser
-import de.mineking.hexo.board.parse.RectilinearStateBKETurnNotationParser
+import de.mineking.hexo.board.parse.CombinedHexoNotationParser
 import de.mineking.hexo.board.parse.cached
 import de.mineking.hexo.board.render.cached
 import de.mineking.hexo.board.render.image.BufferedImageBoardRenderer
@@ -142,7 +142,7 @@ private fun installShutdownHook(bot: HeXODiscordBot, httpServer: HttpServer?) {
 
 private fun HexoRepositories.createNotationParser(): BoardParser = SandboxFormationOrNotationParser(
     formationRepository = formations,
-    delegateParser = RectilinearStateBKETurnNotationParser(),
+    delegateParser = CombinedHexoNotationParser(),
 ).cached()
 
 private val ServerConfig.oauth2CallbackUrl get() = "$url/oauth2/callback"
