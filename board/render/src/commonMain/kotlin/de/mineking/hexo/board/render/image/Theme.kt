@@ -59,6 +59,11 @@ interface Theme {
     fun Cell.label(): Label?
 }
 
+enum class DefaultTheme(val theme: Theme) {
+    HDS(BasicTheme.Default),
+    HTTTX(HTTTXTheme),
+}
+
 data class BasicTheme(
     override val gap: Double,
     override val borderThickness: Double,

@@ -83,7 +83,7 @@ fun Sidebar(
         var notation by remember { mutableStateOf("") }
 
         LaunchedEffect(board) {
-            notation = board.renderRectilinearStateBKETurnNotation(RectilinearNotationType.Compact)
+            notation = board.renderRectilinearStateBKETurnNotation()
             parseError = null
         }
 

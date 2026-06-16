@@ -12,11 +12,11 @@ import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.times
 import de.mineking.hexo.core.CellOwner
 
-class RectilinearStateBKETurnNotationBoardRenderer(val type: RectilinearNotationType) : BoardRenderer<String> {
-    override suspend fun Board.render() = renderRectilinearStateBKETurnNotation(type)
+object RectilinearStateBKETurnNotationBoardRenderer : BoardRenderer<Unit, String> {
+    override suspend fun render(board: Board, param: Unit) = board.renderRectilinearStateBKETurnNotation()
 }
 
-fun Board.renderRectilinearStateBKETurnNotation(type: RectilinearNotationType): String {
+fun Board.renderRectilinearStateBKETurnNotation(): String {
     val turns = mutableMapOf<Int, Pair<CellOwner, MutableList<CellCoordinate>>>()
     val board = clone()
     cells.forEach { (coordinate, cell) ->
@@ -33,7 +33,7 @@ fun Board.renderRectilinearStateBKETurnNotation(type: RectilinearNotationType): 
         board.cells[coordinate]?.owner = null
     }
 
-    val renderedState = board.renderRectilinearNotationInternal(type)
+    val renderedState = board.renderRectilinearNotationInternal(RectilinearNotationType.Compact)
     val state = renderedState.notation
     if (turns.isEmpty()) return state
 

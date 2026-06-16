@@ -10,6 +10,7 @@ import de.mineking.hexo.board.render.cached
 import de.mineking.hexo.board.render.image.BufferedImageBoardRenderer
 import de.mineking.hexo.board.render.image.outputPngBytes
 import de.mineking.hexo.bot.HeXODiscordBot
+import de.mineking.hexo.bot.outputBoardAttachment
 import de.mineking.hexo.bot.utils.LinkedRolesUpdateService
 import de.mineking.hexo.bot.utils.SandboxFormationOrNotationParser
 import de.mineking.hexo.link.AccountLinkRepository
@@ -31,13 +32,15 @@ fun main() {
     val accountLinking = config.createAccountLinking()
     val linkedRoles = createLinkedRolesFeature(config, repositories, accountLinking)
 
+    val pngRenderer = BufferedImageBoardRenderer.Default.outputPngBytes().cached()
+
     val bot = HeXODiscordBot(
         repositories = repositories,
         accountLinkRepository = accountLinking.accountLinkRepository,
         discordUserAuthenticationRepository = accountLinking.discordUserAuthenticationRepository,
         linkedRolesUrl = linkedRoles?.url,
         notationParser = repositories.createNotationParser(),
-        boardRenderer = BufferedImageBoardRenderer.Default.outputPngBytes().cached(),
+        boardRenderer = pngRenderer.outputBoardAttachment("png"),
         token = config.bot.token,
     )
 

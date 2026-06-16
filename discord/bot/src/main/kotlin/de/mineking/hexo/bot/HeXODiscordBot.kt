@@ -12,6 +12,7 @@ import de.mineking.discord.withLocalization
 import de.mineking.hexo.api.HexoRepositories
 import de.mineking.hexo.board.parse.BoardParser
 import de.mineking.hexo.board.render.BoardRenderer
+import de.mineking.hexo.board.render.image.Theme
 import de.mineking.hexo.bot.commands.accountLinkCommand
 import de.mineking.hexo.bot.commands.gameCommand
 import de.mineking.hexo.bot.commands.leaderboardCommand
@@ -54,7 +55,7 @@ class HeXODiscordBot(
     private val accountLinkRepository: AccountLinkRepository?,
     private val discordUserAuthenticationRepository: DiscordUserAuthenticationRepository?,
     val notationParser: BoardParser,
-    val boardRenderer: BoardRenderer<ByteArray>,
+    val boardRenderer: BoardRenderer<Theme, BoardAttachment>,
     val linkedRolesUrl: String?,
     token: String,
 ) {
