@@ -16,6 +16,7 @@ import de.mineking.hexo.board.render.RectilinearNotationType
 import de.mineking.hexo.board.render.renderRectilinearNotation
 import de.mineking.hexo.board.render.renderRectilinearStateBKETurnNotation
 import de.mineking.hexo.web.components.Dialog
+import de.mineking.hexo.web.components.Select
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.dom.addClass
@@ -127,32 +128,7 @@ private fun PlacementMode(placementMode: MutableState<CellPlacementMode>) {
             Text("Placement Mode")
         }
 
-        Div({ classes("flex", "gap-3") }) {
-            CellPlacementMode.entries.forEach { mode ->
-                Button({
-                    classes(
-                        "rounded-full", "px-8", "py-1.25", "m-px", "text-xs", "font-medium", "ring-1", "backdrop-blur-sm", "transition-all",
-                        "duration-200", "hover:shadow-lg",
-                    )
-
-                    if (mode == placementMode) {
-                        classes(
-                            "bg-amber-400/12", "ring-amber-200/40", "text-amber-300", "shadow-amber-950/30",
-                            "hover:bg-amber-400/18", "hover:ring-amber-200/60", "hover:text-amber-200",
-                        )
-                    } else {
-                        classes(
-                            "bg-slate-800/40", "ring-slate-600/60", "text-slate-300",
-                            "hover:bg-slate-700/50", "hover:ring-slate-500/60", "hover:text-slate-100",
-                        )
-                    }
-
-                    onClick { placementMode = mode }
-                }) {
-                    Text(mode.name)
-                }
-            }
-        }
+        Select(CellPlacementMode.entries, current = placementMode, onChange = { placementMode = it })
     }
 }
 
