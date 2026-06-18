@@ -32,7 +32,9 @@ import de.mineking.hexo.api.leaderboard.Leaderboard
 import de.mineking.hexo.api.leaderboard.LeaderboardEntry
 import de.mineking.hexo.api.leaderboard.LeaderboardRepository
 import de.mineking.hexo.api.profile.ProfileId
+import de.mineking.hexo.bot.escapeMarkdown
 import de.mineking.hexo.bot.utils.effectiveLocale
+import de.mineking.hexo.link.AccountLinkRepository
 import dev.freya02.jda.emojis.unicode.Emojis
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -54,6 +56,7 @@ import javax.imageio.ImageIO
 
 fun UIManager.leaderboardMenu(
     leaderboardRepository: LeaderboardRepository,
+    accountLinkRepository: AccountLinkRepository?,
     profileMenu: MessageMenu<ProfileMenuParameter, *>,
 ) = registerLocalizedMenu<Interaction, LeaderboardMenuLocalization>("leaderboard") { localization ->
     val reloadButton = register(button("reload", emoji = Emojis.RECYCLE) {
@@ -73,7 +76,7 @@ fun UIManager.leaderboardMenu(
 
         val entries = renderValue {
             val leaderboard = leaderboardRepository.getLeaderboard()
-            +leaderboardEntries(localization, locale, leaderboard)
+            +leaderboardEntries(localization, locale, accountLinkRepository, leaderboard)
 
             leaderboard.players
         } ?: emptyList()
@@ -105,6 +108,7 @@ fun UIManager.leaderboardMenu(
 private suspend fun MessageMenuConfig<*, *>.leaderboardEntries(
     localization: LeaderboardMenuLocalization,
     locale: DiscordLocale,
+    accountLinkRepository: AccountLinkRepository?,
     leaderboard: Leaderboard,
 ) = coroutineScope {
     val scalingService = setup { ImageScalingService() }
@@ -114,6 +118,10 @@ private suspend fun MessageMenuConfig<*, *>.leaderboardEntries(
             FileUpload.fromData(data, "${it.profileId}.png")
         }
     }
+
+    val discordProfiles = accountLinkRepository
+        ?.getDiscordProfiles(leaderboard.players.map { it.profileId })
+        ?: emptyMap()
 
     createMessageComponent(
         leaderboard.players.mapIndexed { index, entry ->
@@ -128,7 +136,11 @@ private suspend fun MessageMenuConfig<*, *>.leaderboardEntries(
                             else -> "${index + 1}."
                         }
                         append("$rank ")
-                        append(entry.displayName)
+                        append(entry.displayName.escapeMarkdown())
+
+                        discordProfiles[entry.profileId]?.also {
+                            append(" (${it.asMention})")
+                        }
                     }
                     append(localization.playerDetails(locale, entry))
                 },

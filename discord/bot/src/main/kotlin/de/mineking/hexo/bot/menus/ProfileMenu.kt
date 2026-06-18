@@ -28,10 +28,12 @@ import de.mineking.discord.ui.state
 import de.mineking.discord.ui.terminateRender
 import de.mineking.hexo.api.profile.ProfileId
 import de.mineking.hexo.api.profile.ProfileRepository
+import de.mineking.hexo.bot.escapeMarkdown
 import de.mineking.hexo.bot.utils.MessageColor
 import de.mineking.hexo.bot.utils.effectiveLocale
 import de.mineking.hexo.bot.utils.respond
 import de.mineking.hexo.link.AccountLinkRepository
+import de.mineking.hexo.link.getDiscordProfile
 import dev.freya02.jda.emojis.unicode.Emojis
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -96,7 +98,9 @@ fun UIManager.profileMenu(
                         }
 
                         append("$rank ")
-                        append(linkedAccount?.asMention ?: profile.displayName)
+                        append(profile.displayName.escapeMarkdown())
+
+                        if (linkedAccount != null) append(" (${linkedAccount.asMention})")
 
                         append(" ".repeat(5))
                         append(ZERO_WIDTH_SPACE)
