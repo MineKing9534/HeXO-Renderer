@@ -99,7 +99,7 @@ class ImageRenderTest {
         val renderedBytes = ByteArrayOutputStream()
         ImageIO.write(renderedImage, "png", renderedBytes)
 
-        val expected = javaClass.getResourceAsStream("/httx.png")?.readAllBytes()
+        val expected = javaClass.getResourceAsStream("/htttx.png")?.readAllBytes()
 
         assertTrue(expected.contentEquals(renderedBytes.toByteArray()))
     }

@@ -85,8 +85,11 @@ class CanvasRenderingContext(val canvas: CanvasRenderingContext2D) : RenderingCo
         }
     }
 
-    override fun drawString(point: Point, text: String, fontSize: Float, bold: Boolean, color: Color) {
-        val font = "${if (bold) 800 else "normal"} ${fontSize}px system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
+    override fun drawString(point: Point, text: String, fontSize: Float, font: FontType, color: Color) {
+        val font = when (font) {
+            FontType.SansSerifBold -> "800 system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
+            FontType.MonospaceRegular -> "normal consolas, monospace, sans-serif"
+        }
 
         canvas.font = font
         canvas.textAlign = CanvasTextAlign.LEFT

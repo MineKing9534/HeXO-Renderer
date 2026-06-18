@@ -1,11 +1,9 @@
 package de.mineking.hexo.board.render.image
 
 import de.mineking.hexo.board.Board
-import dev.jamesyox.svg4k.SvgTag
 import dev.jamesyox.svg4k.SvgTagDSL
 import dev.jamesyox.svg4k.TagConsumer
 import dev.jamesyox.svg4k.attr.AttributeConsumer
-import dev.jamesyox.svg4k.attr.AttributeContainer
 import dev.jamesyox.svg4k.attr.attrs.DominantBaseline
 import dev.jamesyox.svg4k.attr.attrs.FontSize
 import dev.jamesyox.svg4k.attr.attrs.FontWeight
@@ -45,21 +43,19 @@ import dev.jamesyox.svg4k.attr.types.obj.none
 import dev.jamesyox.svg4k.attr.types.obj.pct
 import dev.jamesyox.svg4k.attr.types.obj.px
 import dev.jamesyox.svg4k.consumers.svgString
+import dev.jamesyox.svg4k.tags.Group
 import dev.jamesyox.svg4k.tags.Mask
-import dev.jamesyox.svg4k.tags.categories.container.AllElementContainer
 import dev.jamesyox.svg4k.tags.categories.container.ElementContainer
 import dev.jamesyox.svg4k.tags.categories.container.unaryPlus
 import dev.jamesyox.svg4k.tags.circle
 import dev.jamesyox.svg4k.tags.defs
+import dev.jamesyox.svg4k.tags.g
 import dev.jamesyox.svg4k.tags.line
 import dev.jamesyox.svg4k.tags.mask
 import dev.jamesyox.svg4k.tags.polygon
 import dev.jamesyox.svg4k.tags.rect
 import dev.jamesyox.svg4k.tags.svg
 import dev.jamesyox.svg4k.tags.text
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
 import dev.jamesyox.svg4k.attr.attrs.fontSize as fs
 import dev.jamesyox.svg4k.attr.attrs.height as h
 import dev.jamesyox.svg4k.attr.attrs.width as w
@@ -78,10 +74,13 @@ fun Board.renderToSvg(
     val width = layout.boundingBox.width + 2 * padding
     val height = layout.boundingBox.height + 2 * padding
 
+    val topLeftCorner = layout.boundingBox.topLeft - Point(padding, padding)
+
+    val context = SvgRenderingContext(topLeftCorner)
+    context.drawBoard(layout.copy(boundingBox = layout.boundingBox.pad(padding)), theme, middleLayer)
+
     return svgString(prettyPrint) {
         svg {
-            val topLeftCorner = layout.boundingBox.topLeft - Point(padding, padding)
-
             viewBox = ViewBox(topLeftCorner.x, topLeftCorner.y, width, height)
             rect {
                 x = topLeftCorner.x.none
@@ -91,20 +90,12 @@ fun Board.renderToSvg(
                 fill(theme.backgroundColor.svg)
             }
 
-            group {
-                val context = SvgRenderingContext(topLeftCorner) { it() }
-                context.drawBoard(layout.copy(boundingBox = layout.boundingBox.pad(padding)), theme, middleLayer)
-
-                context.finish()
-            }
+            context.appendHere()
         }
     }
 }
 
-class SvgRenderingContext(
-    private val topLeftCorner: Point,
-    private val configure: (context(TagConsumer<*>, @SvgTagDSL Group) () -> Unit) -> Unit,
-) : RenderingContext {
+class SvgRenderingContext(private val topLeftCorner: Point) : RenderingContext {
     companion object {
         private val FULL_MASK = SvgId("full-mask")
         private val TEXT_MASK = SvgId("text-mask")
@@ -112,9 +103,15 @@ class SvgRenderingContext(
 
     @Suppress("ContextReceiverMapping")
     private val textMask = mutableListOf<context(TagConsumer<*>, @SvgTagDSL Mask) () -> Unit>()
+    @Suppress("ContextReceiverMapping")
+    private val mainContent = mutableListOf<context(TagConsumer<*>, @SvgTagDSL Group) () -> Unit>()
 
-    context(_: TagConsumer<*>, _: ElementContainer.Defs)
-    fun finish() {
+    private fun configure(block: context(TagConsumer<*>, @SvgTagDSL Group) () -> Unit) {
+        mainContent += block
+    }
+
+    context(_: TagConsumer<*>, _: T)
+    fun <T> appendHere() where T : ElementContainer.Defs, T : ElementContainer.G {
         defs {
             fun createMask(name: SvgId, config: context(AttributeConsumer, @SvgTagDSL Mask) () -> Unit = {}) {
                 mask {
@@ -145,59 +142,59 @@ class SvgRenderingContext(
                 textMask.forEach { it() }
             }
         }
-    }
 
-    override fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke?) {
-        configure {
-            fun drawLinePart(stroke: Stroke) {
-                // For some reason drawing a line with the same start and end point doesn't work properly
-                if (from == to) {
-                    circle {
-                        cx = from.x.none
-                        cy = from.y.none
-
-                        fill(stroke.color.svg)
-                        r = (stroke.width / 2).none
-
-                        mask(TEXT_MASK)
-                    }
-                } else {
-                    line {
-                        x1 = from.x.none
-                        y1 = from.y.none
-                        x2 = to.x.none
-                        y2 = to.y.none
-
-                        stroke(stroke.color.svg)
-                        strokeWidth = stroke.width.none
-                        strokeLinecap = StrokeLinecap.Round
-
-                        mask(TEXT_MASK)
-                    }
-                }
-            }
-
-            if (outline != null) drawLinePart(Stroke(outline.color, stroke.width + outline.width))
-            drawLinePart(stroke)
+        g {
+            mask(FULL_MASK)
+            mainContent.forEach { it() }
         }
     }
 
-    override fun drawPolygon(shape: Polygon, color: Color?, outline: Stroke?) {
-        configure {
-            polygon {
-                mask(FULL_MASK)
-                points = shape.points.map { (x, y) -> SvgPoint(x, y) }
+    override fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke?) = configure {
+        fun drawLinePart(stroke: Stroke) {
+            // For some reason drawing a line with the same start and end point doesn't work properly
+            if (from == to) {
+                circle {
+                    cx = from.x.none
+                    cy = from.y.none
 
-                if (color != null) fill(color.svg)
-                if (outline != null) {
-                    stroke(outline.color.svg)
-                    strokeWidth = outline.width.none
+                    fill(stroke.color.svg)
+                    r = (stroke.width / 2).none
+
+                    mask(TEXT_MASK)
                 }
+            } else {
+                line {
+                    x1 = from.x.none
+                    y1 = from.y.none
+                    x2 = to.x.none
+                    y2 = to.y.none
+
+                    stroke(stroke.color.svg)
+                    strokeWidth = stroke.width.none
+                    strokeLinecap = StrokeLinecap.Round
+
+                    mask(TEXT_MASK)
+                }
+            }
+        }
+
+        if (outline != null) drawLinePart(Stroke(outline.color, stroke.width + outline.width))
+        drawLinePart(stroke)
+    }
+
+    override fun drawPolygon(shape: Polygon, color: Color?, outline: Stroke?) = configure {
+        polygon {
+            points = shape.points.map { (x, y) -> SvgPoint(x, y) }
+
+            if (color != null) fill(color.svg)
+            if (outline != null) {
+                stroke(outline.color.svg)
+                strokeWidth = outline.width.none
             }
         }
     }
 
-    override fun drawString(point: Point, text: String, fontSize: Float, bold: Boolean, color: Color) {
+    override fun drawString(point: Point, text: String, fontSize: Float, font: FontType, color: Color) {
         context(_: TagConsumer<*>, _: ElementContainer.Text)
         fun drawText(color: Color?, stroke: Stroke?) {
             text {
@@ -209,12 +206,21 @@ class SvgRenderingContext(
                     strokeLinejoin = StrokeLinejoin.Round
                 }
 
-                fontWeight = if (bold) FontWeight.Numeric(800) else FontWeight.Normal
-                fontFamily = "system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+                when (font) {
+                    FontType.SansSerifBold -> {
+                        fontWeight = FontWeight.Numeric(800)
+                        fontFamily = "system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+                    }
+                    FontType.MonospaceRegular -> {
+                        fontWeight = FontWeight.Normal
+                        fontFamily = "consolas, monospace, sans-serif"
+                    }
+                }
+
                 fs = FontSize.Value(fontSize.px)
 
                 textAnchor = TextAnchor.Middle
-                dominantBaseline = DominantBaseline.Middle
+                dominantBaseline = DominantBaseline.Central
 
                 x = listOf(point.x.none)
                 y = listOf(point.y.none)
@@ -229,27 +235,6 @@ class SvgRenderingContext(
             drawText(Color.rgb(0x000000), null)
         }
     }
-}
-
-@OptIn(ExperimentalContracts::class)
-@IgnorableReturnValue
-context(tagConsumer: TagConsumer<T>, _: ElementContainer.Text)
-private fun <T> group(content: context(AttributeConsumer, @SvgTagDSL Group) () -> Unit): T {
-    contract {
-        callsInPlace(content, InvocationKind.EXACTLY_ONCE)
-    }
-
-    tagConsumer.onTagStart(Group)
-    content(tagConsumer.attributeConsumer, Group)
-    tagConsumer.onTagEnd(Group)
-    return tagConsumer.output()
-}
-
-object Group :
-    SvgTag,
-    AllElementContainer,
-    AttributeContainer.Transform {
-    override val tagName = "g"
 }
 
 private val Color.svg get() = SvgRgbaColor(this)

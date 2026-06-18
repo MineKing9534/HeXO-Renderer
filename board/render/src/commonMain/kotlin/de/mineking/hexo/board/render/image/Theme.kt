@@ -47,9 +47,14 @@ fun Color.darker() = Color.of(
     alpha,
 )
 
+enum class FontType {
+    SansSerifBold,
+    MonospaceRegular,
+}
+
 interface Theme {
     data class ElementColors(val backgroundColor: Color, val borderColor: Color)
-    data class Font(val fontSize: Float, val bold: Boolean)
+    data class Font(val fontSize: Float, val type: FontType)
     data class Label(val value: String, val color: Color, val font: Font)
 
     val gap: Double
@@ -111,7 +116,7 @@ data class BasicTheme(
         Theme.Label(
             value = label,
             color = owner.color(default = emptyCellLabelColor) { it.darker() },
-            font = Theme.Font(fontSize = 0.7f, bold = true),
+            font = Theme.Font(fontSize = 0.7f, type = FontType.SansSerifBold),
         )
     }
 
@@ -164,7 +169,7 @@ object HTTTXTheme : Theme {
                 CellOwner.O -> Color.rgb(0x0383e1)
                 null -> backgroundColor
             },
-            font = Theme.Font(fontSize = 0.85f, bold = false),
+            font = Theme.Font(fontSize = 0.85f, type = FontType.MonospaceRegular),
         )
     }
 }

@@ -84,7 +84,7 @@ class InternalBoardRenderer(
             point = position.toPixel(),
             text = label,
             fontSize = hexSize.toFloat() * font.fontSize,
-            bold = font.bold,
+            font = font.type,
             color = color,
         )
     }
