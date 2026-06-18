@@ -41,6 +41,7 @@ import net.dv8tion.jda.api.entities.UserSnowflake
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
 import net.dv8tion.jda.api.interactions.Interaction
 import net.dv8tion.jda.api.interactions.callbacks.IModalCallback
+import net.dv8tion.jda.api.utils.MarkdownSanitizer
 import net.dv8tion.jda.api.utils.messages.MessageRequest
 import java.time.Duration
 
@@ -81,7 +82,7 @@ class HeXODiscordBot(
 
             gameMenu = gameMenu(repositories.finishedGames)
             profileMenu = profileMenu(repositories.profiles, accountLinkRepository)
-            leaderboardMenu = leaderboardMenu(repositories.leaderboard, profileMenu)
+            leaderboardMenu = leaderboardMenu(repositories.leaderboard, accountLinkRepository, profileMenu)
             if (discordUserAuthenticationRepository != null && accountLinkRepository != null) {
                 accountLinkMenu = accountLinkMenu(
                     discordAuthRepository = discordUserAuthenticationRepository,
@@ -147,3 +148,5 @@ private fun JDA.registerMessageDeleteListener() {
 
 inline fun <reified L : LocalizationFile> HeXODiscordBot.localization() = dtk.localizationManager.read<L>()
 val UserSnowflake.userId get() = DiscordUserId(idLong)
+
+fun String.escapeMarkdown() = MarkdownSanitizer.sanitize(this, MarkdownSanitizer.SanitizationStrategy.ESCAPE)

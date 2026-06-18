@@ -10,6 +10,7 @@ import de.mineking.hexo.api.profile.ProfileRepository
 import de.mineking.hexo.api.profile.RichProfile
 import de.mineking.hexo.api.utils.awaitBothOrNull
 import de.mineking.hexo.link.AccountLinkRepository
+import de.mineking.hexo.link.getDiscordProfile
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
 import de.mineking.hexo.link.oauth2.LinkedRoleMetadataKey
 import de.mineking.hexo.link.oauth2.LinkedRoleMetadataType

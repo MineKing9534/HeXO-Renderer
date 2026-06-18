@@ -3,6 +3,7 @@ package de.mineking.hexo.link
 import de.mineking.hexo.api.profile.ProfileId
 import de.mineking.hexo.link.database.AccountLinkTable
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.select
@@ -17,13 +18,11 @@ class AccountLinkRepository(private val database: HexoDatabaseManager) {
             ?.get(AccountLinkTable.linkedProfileId)
     }
 
-    suspend fun getDiscordProfile(profileId: ProfileId) = database.transaction {
+    suspend fun getDiscordProfiles(profileIds: Collection<ProfileId>): Map<ProfileId, DiscordUserId> = database.transaction {
         AccountLinkTable
-            .select(AccountLinkTable.id)
-            .where(AccountLinkTable.linkedProfileId eq profileId)
-            .firstOrNull()
-            ?.get(AccountLinkTable.id)
-            ?.value
+            .select(AccountLinkTable.linkedProfileId, AccountLinkTable.id)
+            .where(AccountLinkTable.linkedProfileId inList profileIds)
+            .associate { it[AccountLinkTable.linkedProfileId] to it[AccountLinkTable.id].value }
     }
 
     @IgnorableReturnValue
@@ -44,3 +43,5 @@ class AccountLinkRepository(private val database: HexoDatabaseManager) {
         }
     }
 }
+
+suspend fun AccountLinkRepository.getDiscordProfile(profileId: ProfileId) = getDiscordProfiles(listOf(profileId))[profileId]
