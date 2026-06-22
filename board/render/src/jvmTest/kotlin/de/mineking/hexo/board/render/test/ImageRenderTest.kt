@@ -4,6 +4,9 @@ import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.MutableBoard
+import de.mineking.hexo.board.clone
+import de.mineking.hexo.board.parse.parseHTTTXNotation
+import de.mineking.hexo.board.render.image.HTTTXTheme
 import de.mineking.hexo.board.render.image.renderToImage
 import de.mineking.hexo.core.CellOwner
 import java.io.ByteArrayOutputStream
@@ -71,6 +74,32 @@ class ImageRenderTest {
         ImageIO.write(renderedImage, "png", renderedBytes)
 
         val expected = javaClass.getResourceAsStream("/highlight_lines.png")?.readAllBytes()
+
+        assertTrue(expected.contentEquals(renderedBytes.toByteArray()))
+    }
+
+    @Test
+    fun `htttx theme`() {
+        val board = """
+            version[1];
+            1. [0,1][1,-1];
+            2. [1,0][-1,0];
+            3. [2,0][-4,0];
+        """.trimIndent().parseHTTTXNotation().clone()
+
+        board[-4, 0].highlight = CellHighlight(null)
+        board[-3, 0].highlight = CellHighlight(null)
+
+        val renderedImage = board.renderToImage(
+            layoutRadius = 64.0,
+            padding = 32,
+            theme = HTTTXTheme,
+        )
+
+        val renderedBytes = ByteArrayOutputStream()
+        ImageIO.write(renderedImage, "png", renderedBytes)
+
+        val expected = javaClass.getResourceAsStream("/htttx.png")?.readAllBytes()
 
         assertTrue(expected.contentEquals(renderedBytes.toByteArray()))
     }

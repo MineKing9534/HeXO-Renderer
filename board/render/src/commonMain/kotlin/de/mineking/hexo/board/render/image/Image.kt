@@ -5,6 +5,7 @@ import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.board.MutableCell
 import de.mineking.hexo.board.end
+import dev.jamesyox.svg4k.tags.text
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -76,17 +77,14 @@ class InternalBoardRenderer(
     }
 
     private fun drawCellLabel(position: CellCoordinate, cell: Cell) {
-        val text = cell.label.takeIf { it.isNotBlank() }
-            ?: cell.turn?.toString()
-            ?: return
-
-        val color = theme.run { cell.labelColor() }
+        val (label, color, font) = theme.run { cell.label() } ?: return
         if (color.isTransparent()) return
 
         renderingContext.drawString(
             point = position.toPixel(),
-            text = text,
-            fontSize = hexSize.toFloat() * 0.7f,
+            text = label,
+            fontSize = hexSize.toFloat() * font.fontSize,
+            font = font.type,
             color = color,
         )
     }

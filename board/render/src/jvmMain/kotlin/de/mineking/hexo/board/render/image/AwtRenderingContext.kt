@@ -48,7 +48,8 @@ fun Board.renderToImage(
 
 class AwtRenderingContext(private val graphics: Graphics2D) : RenderingContext {
     companion object {
-        private val BOLD_FONT = Font.createFont(Font.TRUETYPE_FONT, javaClass.getResourceAsStream("/fonts/open-sans.extrabold.ttf"))
+        private val OPENSANS_BOLD_FONT = Font.createFont(Font.TRUETYPE_FONT, javaClass.getResourceAsStream("/fonts/open-sans.extrabold.ttf"))
+        private val CONSOLAS_FONT = Font.createFont(Font.TRUETYPE_FONT, javaClass.getResourceAsStream("/fonts/consolas.regular.ttf"))
         const val TEXT_MARGIN_ALPHA = 0.2f
     }
 
@@ -85,14 +86,19 @@ class AwtRenderingContext(private val graphics: Graphics2D) : RenderingContext {
         }
     }
 
-    override fun drawString(point: Point, text: String, fontSize: Float, color: Color) {
-        graphics.font = BOLD_FONT.deriveFont(Font.BOLD, fontSize)
-
-        val fm = graphics.fontMetrics
-        val textX = point.x - fm.stringWidth(text) / 2.0
-        val textY = point.y + (fm.ascent - fm.descent) / 2.0
+    override fun drawString(point: Point, text: String, fontSize: Float, font: FontType, color: Color) {
+        graphics.font = when (font) {
+            FontType.SansSerifBold -> OPENSANS_BOLD_FONT
+            FontType.MonospaceRegular -> CONSOLAS_FONT
+        }.deriveFont(fontSize)
 
         val layout = TextLayout(text, graphics.font, graphics.fontRenderContext)
+
+        // Aligning horizontally with fm and vertically with bounds gives the best results for some reason
+        val fm = graphics.fontMetrics
+        val textX = point.x - fm.stringWidth(text) / 2.0
+        val textY = point.y + layout.bounds.height / 2
+
         val shape = layout.getOutline(AffineTransform.getTranslateInstance(textX, textY))
         val margin = BasicStroke(fontSize / 6, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND).createStrokedShape(shape)
 

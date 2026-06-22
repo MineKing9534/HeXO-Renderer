@@ -6,11 +6,13 @@ import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.plus
 
-class RectilinearStateBKETurnNotationParser(val focusWinningRows: Boolean = true) : BoardParser {
-    override suspend fun parse(notation: String) = notation.parseRectilinearStateBKETurnNotation(focusWinningRows)
+class CombinedHexoNotationParser(val focusWinningRows: Boolean = true) : BoardParser {
+    override suspend fun parse(notation: String) = notation.parseCombinedHexoNotation(focusWinningRows)
 }
 
-fun String.parseRectilinearStateBKETurnNotation(focusWinningRows: Boolean = true): Board {
+fun String.parseCombinedHexoNotation(focusWinningRows: Boolean = true): Board {
+    parseHTTTXNotationOrNull(focusWinningRows)?.let { return it }
+
     val parts = split(",\\s*".toRegex(), limit = 2)
 
     val board = if (parts.size == 1) {

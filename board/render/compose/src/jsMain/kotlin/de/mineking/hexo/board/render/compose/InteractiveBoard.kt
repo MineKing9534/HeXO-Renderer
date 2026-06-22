@@ -19,8 +19,6 @@ import de.mineking.hexo.board.contains
 import de.mineking.hexo.board.distanceTo
 import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.render.image.BasicTheme
-import de.mineking.hexo.board.render.image.CanvasFont
-import de.mineking.hexo.board.render.image.DefaultCanvasFont
 import de.mineking.hexo.board.render.image.Theme
 import de.mineking.hexo.core.CellOwner
 import org.jetbrains.compose.web.dom.AttrBuilderContext
@@ -61,7 +59,6 @@ fun InteractiveBoard(
     onViewportChange: (BoardViewport) -> Unit,
     onBoardInteraction: (BoardInteraction) -> Unit,
     theme: Theme = BasicTheme.Default,
-    font: CanvasFont = DefaultCanvasFont,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
     content: ContentBuilder<HTMLCanvasElement>? = null,
 ) {
@@ -84,7 +81,6 @@ fun InteractiveBoard(
         viewport = viewport,
         onViewportChange = onViewportChange,
         theme = theme,
-        font = font,
         onCellClick = {
             onBoardInteraction(BoardInteraction.PlaceCell(it))
         },
@@ -134,7 +130,6 @@ fun BoardView(
     viewport: BoardViewport?,
     onViewportChange: (BoardViewport) -> Unit,
     theme: Theme = BasicTheme.Default,
-    font: CanvasFont = DefaultCanvasFont,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
     content: ContentBuilder<HTMLCanvasElement>? = null,
 ) {
@@ -153,7 +148,6 @@ fun BoardView(
             }
         },
         theme = theme,
-        font = font,
         attrs = attrs,
         content = content,
     )

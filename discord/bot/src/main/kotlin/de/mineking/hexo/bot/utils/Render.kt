@@ -5,6 +5,7 @@ import de.mineking.discord.localization.LocalizationFile
 import de.mineking.discord.localization.Localize
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.HexoNotationException
+import de.mineking.hexo.board.render.image.DefaultTheme
 import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.localization
 import net.dv8tion.jda.api.components.MessageTopLevelComponent
@@ -14,19 +15,15 @@ import net.dv8tion.jda.api.components.separator.Separator
 import net.dv8tion.jda.api.components.textdisplay.TextDisplay
 import net.dv8tion.jda.api.interactions.DiscordLocale
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback
-import net.dv8tion.jda.api.utils.FileUpload
-import kotlin.uuid.Uuid
 
 context(main: HeXODiscordBot)
-suspend fun Board.asMediaGalleryItem() = MediaGalleryItem.fromFile(
-    FileUpload.fromData(main.boardRenderer.run { render() }, "${Uuid.random()}.png"),
-)
+suspend fun Board.asMediaGalleryItem(theme: DefaultTheme) = main.boardRenderer.render(this, theme.theme).toMediaGalleryItem()
 
 context(main: HeXODiscordBot)
-suspend fun IReplyCallback.replyRichHexoNotation(content: String) {
+suspend fun IReplyCallback.replyRichHexoNotation(content: String, theme: DefaultTheme) {
     deferReply().queue()
 
-    val components = content.renderToComponents().layout()
+    val components = content.renderToComponents(theme).layout()
     if (components.filterIsInstance<MediaGallery>().isEmpty()) {
         val errorMessage = renderAsComponent(MessageColor.Error, main.localization<RenderLocalization>().responseError(userLocale))
         hook.editOriginalComponents(errorMessage).useComponentsV2().queue()
@@ -76,14 +73,14 @@ private class ComponentParserState {
 }
 
 context(main: HeXODiscordBot)
-private suspend fun String.renderToComponents(): List<MessageTopLevelComponent> {
-    val state = internalRender()
+private suspend fun String.renderToComponents(theme: DefaultTheme): List<MessageTopLevelComponent> {
+    val state = context(theme) { internalRender() }
     state.flush()
 
     return state.result
 }
 
-context(main: HeXODiscordBot)
+context(main: HeXODiscordBot, theme: DefaultTheme)
 private suspend fun String.internalRender(): ComponentParserState {
     val state = ComponentParserState()
 
@@ -98,7 +95,7 @@ private suspend fun String.internalRender(): ComponentParserState {
     return state
 }
 
-context(main: HeXODiscordBot)
+context(main: HeXODiscordBot, theme: DefaultTheme)
 private suspend fun ComponentParserState.handle(str: String, type: SegmentParser?) {
     if (type == null) {
         val c = str[position]
@@ -129,11 +126,11 @@ private suspend fun ComponentParserState.handle(str: String, type: SegmentParser
 
 private enum class SegmentParser(val symbol: String, val keepAsText: Boolean) {
     CodeBlock("```", keepAsText = false) {
-        context(main: HeXODiscordBot)
+        context(main: HeXODiscordBot, theme: DefaultTheme)
         override suspend fun handle(content: String, state: ComponentParserState) {
             val (code, lang) = content.decodeCodeAndLanguage()
             state.result += try {
-                MediaGallery.of(main.notationParser.parse(code).asMediaGalleryItem())
+                MediaGallery.of(main.notationParser.parse(code).asMediaGalleryItem(theme))
             } catch (_: HexoNotationException) {
                 TextDisplay.of("$symbol${lang?.let { "$it\n" } ?: ""}$code$symbol")
             }
@@ -151,16 +148,16 @@ private enum class SegmentParser(val symbol: String, val keepAsText: Boolean) {
         }
     },
     Code("`", keepAsText = true) {
-        context(main: HeXODiscordBot)
+        context(main: HeXODiscordBot, theme: DefaultTheme)
         override suspend fun handle(content: String, state: ComponentParserState) {
             try {
-                state.afterParagraph += main.notationParser.parse(content).asMediaGalleryItem()
+                state.afterParagraph += main.notationParser.parse(content).asMediaGalleryItem(theme)
             } catch (_: HexoNotationException) {
             }
         }
     },
     Spoiler("||", keepAsText = false) {
-        context(main: HeXODiscordBot)
+        context(main: HeXODiscordBot, theme: DefaultTheme)
         override suspend fun handle(content: String, state: ComponentParserState) {
             val innerState = content.internalRender()
             if (innerState.temp.isNotEmpty()) {
@@ -178,6 +175,6 @@ private enum class SegmentParser(val symbol: String, val keepAsText: Boolean) {
     },
     ;
 
-    context(main: HeXODiscordBot)
+    context(main: HeXODiscordBot, theme: DefaultTheme)
     abstract suspend fun handle(content: String, state: ComponentParserState)
 }

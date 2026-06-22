@@ -11,11 +11,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.web.events.SyntheticMouseEvent
 import de.mineking.hexo.api.HexoRepositories
 import de.mineking.hexo.board.HexoNotationException
-import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
+import de.mineking.hexo.board.clone
+import de.mineking.hexo.board.parse.parseCombinedHexoNotation
 import de.mineking.hexo.board.render.RectilinearNotationType
 import de.mineking.hexo.board.render.renderRectilinearNotation
 import de.mineking.hexo.board.render.renderRectilinearStateBKETurnNotation
 import de.mineking.hexo.web.components.Dialog
+import de.mineking.hexo.web.components.Select
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.dom.addClass
@@ -44,6 +46,7 @@ private const val GITHUB_URL = "https://github.com/MineKing9534/HeXO-Renderer"
 enum class BoardUpdateCause {
     NotationInput,
     Import,
+    RemoveTurnData,
 }
 
 @Composable
@@ -83,7 +86,7 @@ fun Sidebar(
         var notation by remember { mutableStateOf("") }
 
         LaunchedEffect(board) {
-            notation = board.renderRectilinearStateBKETurnNotation(RectilinearNotationType.Compact)
+            notation = board.renderRectilinearStateBKETurnNotation()
             parseError = null
         }
 
@@ -103,14 +106,14 @@ fun Sidebar(
                     }
 
                     try {
-                        onBoardChange(cause, value.parseRectilinearStateBKETurnNotation(focusWinningRows = false))
+                        onBoardChange(cause, value.parseCombinedHexoNotation(focusWinningRows = false))
                         parseError = null
                     } catch (e: HexoNotationException) {
                         parseError = e.message
                     }
                 },
             )
-            SidebarNotationInfo(board, parseError)
+            SidebarNotationInfo(board, onBoardChange, parseError)
         }
 
         PlacementMode(placementMode)
@@ -127,32 +130,7 @@ private fun PlacementMode(placementMode: MutableState<CellPlacementMode>) {
             Text("Placement Mode")
         }
 
-        Div({ classes("flex", "gap-3") }) {
-            CellPlacementMode.entries.forEach { mode ->
-                Button({
-                    classes(
-                        "rounded-full", "px-8", "py-1.25", "m-px", "text-xs", "font-medium", "ring-1", "backdrop-blur-sm", "transition-all",
-                        "duration-200", "hover:shadow-lg",
-                    )
-
-                    if (mode == placementMode) {
-                        classes(
-                            "bg-amber-400/12", "ring-amber-200/40", "text-amber-300", "shadow-amber-950/30",
-                            "hover:bg-amber-400/18", "hover:ring-amber-200/60", "hover:text-amber-200",
-                        )
-                    } else {
-                        classes(
-                            "bg-slate-800/40", "ring-slate-600/60", "text-slate-300",
-                            "hover:bg-slate-700/50", "hover:ring-slate-500/60", "hover:text-slate-100",
-                        )
-                    }
-
-                    onClick { placementMode = mode }
-                }) {
-                    Text(mode.name)
-                }
-            }
-        }
+        Select(CellPlacementMode.entries, current = placementMode, onChange = { placementMode = it })
     }
 }
 
@@ -277,30 +255,30 @@ private fun NotationField(
 }
 
 @Composable
+fun ActionButton(label: String, enabled: Boolean = true, onClick: () -> Unit) {
+    Button({
+        if (!enabled) disabled()
+        classes(
+            "rounded-md", "border", "border-slate-700", "bg-slate-950", "px-2.5", "py-1", "text-nowrap",
+            "text-xs", "font-medium", "text-slate-300", "disabled:text-slate-400", "transition",
+            "not-disabled:hover:bg-slate-800", "not-disabled:hover:text-slate-100",
+        )
+        onClick { onClick() }
+    }) {
+        Text(label)
+    }
+}
+
+@Composable
 private fun NotationActions(
     repositories: HexoRepositories?,
     notation: String,
     onChange: (BoardUpdateCause, String) -> Unit,
 ) {
-    @Composable
-    fun Button(label: String, enabled: Boolean = true, onClick: () -> Unit) {
-        Button({
-            if (!enabled) disabled()
-            classes(
-                "rounded-md", "border", "border-slate-700", "bg-slate-950", "px-2.5", "py-1", "text-nowrap",
-                "text-xs", "font-medium", "text-slate-300", "disabled:text-slate-400", "transition",
-                "not-disabled:hover:bg-slate-800", "not-disabled:hover:text-slate-100",
-            )
-            onClick { onClick() }
-        }) {
-            Text(label)
-        }
-    }
-
     var importDialogOpen by remember { mutableStateOf(false) }
     Div({ classes("flex", "max-w-full", "justify-end", "gap-2") }) {
         var link by remember { mutableStateOf<String?>(null) }
-        Button("Copy Link", enabled = notation.isNotBlank()) {
+        ActionButton("Copy Link", enabled = notation.isNotBlank()) {
             val url = URL(window.location.href)
             url.searchParams.set("position", notation.replace("/", "_"))
             link = url.toString()
@@ -324,7 +302,7 @@ private fun NotationActions(
         }
 
         if (repositories != null) {
-            Button("Import Position") { importDialogOpen = true }
+            ActionButton("Import Position") { importDialogOpen = true }
         }
     }
 
@@ -342,16 +320,26 @@ private fun NotationActions(
 }
 
 @Composable
-private fun SidebarNotationInfo(board: HexoBoard, parseError: String?) {
-    Div({
-        classes("min-h-5", "text-sm", "leading-relaxed")
-        if (parseError == null) {
-            classes("text-slate-500")
-        } else {
-            classes("text-rose-400")
+private fun SidebarNotationInfo(board: HexoBoard, onBoardChange: (BoardUpdateCause, HexoBoard) -> Unit, parseError: String?) {
+    Div({ classes("flex", "justify-between", "w-full", "h-6") }) {
+        Div({
+            classes("min-h-5", "text-sm", "leading-relaxed")
+            if (parseError == null) {
+                classes("text-slate-500")
+            } else {
+                classes("text-rose-400")
+            }
+        }) {
+            Text(parseError ?: (if (board.cells.size == 1) "1 cell" else "${board.cells.size} cells"))
         }
-    }) {
-        Text(parseError ?: (if (board.cells.size == 1) "1 cell" else "${board.cells.size} cells"))
+
+        if (parseError == null && board.cells.any { it.value.turn != null }) {
+            ActionButton("Remove Turn Data") {
+                onBoardChange(BoardUpdateCause.RemoveTurnData, board.clone().apply {
+                    cells.values.forEach { it.turn = null }
+                })
+            }
+        }
     }
 }
 

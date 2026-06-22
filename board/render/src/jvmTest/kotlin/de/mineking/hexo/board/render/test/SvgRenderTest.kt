@@ -4,6 +4,9 @@ import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.MutableBoard
+import de.mineking.hexo.board.clone
+import de.mineking.hexo.board.parse.parseHTTTXNotation
+import de.mineking.hexo.board.render.image.HTTTXTheme
 import de.mineking.hexo.board.render.image.renderToSvg
 import de.mineking.hexo.core.CellOwner
 import kotlin.test.Test
@@ -55,6 +58,24 @@ class SvgRenderTest {
 
         val rendered = board.renderToSvg(padding = 32)
         val expected = javaClass.getResourceAsStream("/highlight_lines.svg")?.bufferedReader()?.readText()
+
+        assertEquals(expected, rendered)
+    }
+
+    @Test
+    fun `htttx theme`() {
+        val board = """
+            version[1];
+            1. [0,1][1,-1];
+            2. [1,0][-1,0];
+            3. [2,0][-4,0];
+        """.trimIndent().parseHTTTXNotation().clone()
+
+        board[-4, 0].highlight = CellHighlight(null)
+        board[-3, 0].highlight = CellHighlight(null)
+
+        val rendered = board.renderToSvg(padding = 32, theme = HTTTXTheme)
+        val expected = javaClass.getResourceAsStream("/htttx.svg")?.bufferedReader()?.readText()
 
         assertEquals(expected, rendered)
     }

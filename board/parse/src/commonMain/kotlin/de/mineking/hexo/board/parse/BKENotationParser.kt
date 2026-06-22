@@ -63,17 +63,15 @@ fun String.parseBKENotation(
     }
 
     turns.forEachIndexed { index, (player, moves) ->
-        fun CellCoordinate.applyMove() {
-            board[this].apply {
+        moves.forEach {
+            val coordinate = it.toCellCoordinate(origin, zeroOffsetLine, chirality)
+            requireHexo(coordinate !in board.cells) { "Duplicate BKE move at $this" }
+            board[coordinate].apply {
                 owner = player
                 turn = index + 1
 
                 focused = index == turns.lastIndex
             }
-        }
-
-        moves.forEach {
-            it.toCellCoordinate(origin, zeroOffsetLine, chirality).applyMove()
         }
     }
 

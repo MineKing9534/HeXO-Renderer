@@ -14,10 +14,12 @@ import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.board.clone
 import de.mineking.hexo.board.focusWinningRows
-import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
+import de.mineking.hexo.board.parse.parseCombinedHexoNotation
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.compose.InteractiveBoard
+import de.mineking.hexo.board.render.image.DefaultTheme
+import de.mineking.hexo.board.render.image.Theme
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.web.components.Dialog
 import kotlinx.browser.document
@@ -40,7 +42,7 @@ fun main() {
     val (initialBoard, initialError) = try {
         val board = when {
             initial.isBlank() -> Board()
-            else -> initial.parseRectilinearStateBKETurnNotation(focusWinningRows = false)
+            else -> initial.parseCombinedHexoNotation(focusWinningRows = false)
         }
 
         board to null
@@ -82,6 +84,7 @@ private fun MainLayout(client: HexoApiClient?, initialBoard: Board) {
     val repositories = remember(client) { client?.createRepositories() }
 
     val viewport = remember { mutableStateOf<BoardViewport?>(null) }
+    val theme = remember { mutableStateOf(DefaultTheme.HDS) }
     val placementMode = remember {
         mutableStateOf(
             when {
@@ -106,6 +109,7 @@ private fun MainLayout(client: HexoApiClient?, initialBoard: Board) {
     }) {
         BoardPane(
             board = transformedBoard,
+            theme = theme.value.theme,
             viewport = viewport,
             onBoardInteraction = { interaction ->
                 board = board.clone().also {
@@ -201,6 +205,7 @@ private fun Board.findNextTurn(): Pair<CellOwner, Int> {
 @Composable
 private fun BoardPane(
     board: Board,
+    theme: Theme,
     viewport: MutableState<BoardViewport?>,
     onBoardInteraction: (BoardInteraction) -> Unit,
 ) {
@@ -209,6 +214,7 @@ private fun BoardPane(
         Div({ classes("relative", "h-full", "overflow-hidden", "rounded-2xl", "border", "border-slate-800", "bg-slate-900", "shadow-2xl") }) {
             InteractiveBoard(
                 board = board,
+                theme = theme,
                 viewport = viewport,
                 onViewportChange = { viewport = it },
                 onBoardInteraction = onBoardInteraction,
@@ -222,7 +228,10 @@ private fun BoardPane(
             @Composable
             fun Edge(attrs: AttrBuilderContext<HTMLDivElement>? = null) {
                 Div({
-                    classes("pointer-events-none", "absolute", "z-10", "from-slate-900", "via-transparent", "to-transparent")
+                    style {
+                        variable("--hexo-background", theme.backgroundColor.toString())
+                    }
+                    classes("pointer-events-none", "absolute", "z-10", "from-[var(--hexo-background)]", "to-transparent")
                     attrs?.invoke(this)
                 })
             }

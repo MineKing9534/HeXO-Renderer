@@ -24,8 +24,8 @@ enum class RectilinearNotationType(
     open fun String.postprocess() = this
 }
 
-class RectilinearNotationBoardRenderer(val type: RectilinearNotationType) : BoardRenderer<String> {
-    override suspend fun Board.render() = renderRectilinearNotation(type)
+object RectilinearNotationBoardRenderer : BoardRenderer<RectilinearNotationType, String> {
+    override suspend fun render(board: Board, param: RectilinearNotationType) = board.renderRectilinearNotation(param)
 }
 
 fun Board.renderRectilinearNotation(type: RectilinearNotationType) = renderRectilinearNotationInternal(type).notation

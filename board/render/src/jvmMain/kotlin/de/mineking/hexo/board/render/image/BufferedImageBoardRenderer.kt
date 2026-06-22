@@ -9,8 +9,7 @@ import javax.imageio.ImageIO
 class BufferedImageBoardRenderer(
     private val layoutRadius: Double,
     private val padding: Int,
-    private val theme: Theme = BasicTheme.Default,
-) : BoardRenderer<BufferedImage> {
+) : BoardRenderer<Theme, BufferedImage> {
     companion object {
         val Default = BufferedImageBoardRenderer(
             layoutRadius = 64.0,
@@ -18,19 +17,19 @@ class BufferedImageBoardRenderer(
         )
     }
 
-    override suspend fun Board.render() = renderToImage(
+    override suspend fun render(board: Board, param: Theme) = board.renderToImage(
         layoutRadius = layoutRadius,
         padding = padding,
-        theme = theme,
+        theme = param,
     )
 }
 
-fun BoardRenderer<BufferedImage>.outputPngBytes() = object : BoardRenderer<ByteArray> {
-    override suspend fun Board.render() = this@outputPngBytes.run { render() }.toPngBytes()
+fun <P> BoardRenderer<P, BufferedImage>.outputPngBytes() = object : BoardRenderer<P, ByteArray> {
+    override suspend fun render(board: Board, param: P) = this@outputPngBytes.render(board, param).toPngBytes()
 }
 
-context(renderer: BoardRenderer<BufferedImage>)
-suspend fun Board.renderPngBytes() = renderer.run { render() }.toPngBytes()
+suspend fun <P> BoardRenderer<P, BufferedImage>.renderPngBytes(board: Board, param: P) = render(board, param).toPngBytes()
+suspend fun BoardRenderer<Unit, BufferedImage>.renderPngBytes(board: Board) = renderPngBytes(board, Unit)
 
 private fun BufferedImage.toPngBytes(): ByteArray = ByteArrayOutputStream().apply {
     ImageIO.write(this@toPngBytes, "png", this@apply)

@@ -6,12 +6,11 @@ import de.mineking.hexo.board.render.BoardRenderer
 class SvgBoardRenderer(
     private val padding: Int,
     private val layoutRadius: Double = 64.0,
-    private val theme: Theme = BasicTheme.Default,
     private val prettyPrint: Boolean = false,
-) : BoardRenderer<String> {
+) : BoardRenderer<Theme, String> {
     companion object {
         val Default = SvgBoardRenderer(padding = 32)
     }
 
-    override suspend fun Board.render() = renderToSvg(padding, layoutRadius, prettyPrint, theme)
+    override suspend fun render(board: Board, param: Theme) = board.renderToSvg(padding, layoutRadius, prettyPrint, param)
 }

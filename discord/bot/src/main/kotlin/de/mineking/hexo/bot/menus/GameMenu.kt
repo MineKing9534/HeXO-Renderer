@@ -51,6 +51,7 @@ import de.mineking.hexo.api.game.isGuest
 import de.mineking.hexo.api.utils.TimeControl
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.render.RectilinearNotationType
+import de.mineking.hexo.board.render.image.DefaultTheme
 import de.mineking.hexo.board.render.renderRectilinearNotation
 import de.mineking.hexo.bot.CustomEmoji
 import de.mineking.hexo.bot.HeXODiscordBot
@@ -125,7 +126,7 @@ fun UIManager.gameMenu(
                 +match.gameDetails(localization, locale)
 
                 +separator(spacing = Separator.Spacing.LARGE)
-                +mediaGallery(board.asMediaGalleryItem())
+                +mediaGallery(board.asMediaGalleryItem(DefaultTheme.HDS))
                 +separator(spacing = Separator.Spacing.LARGE)
             }
         }

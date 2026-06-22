@@ -26,7 +26,12 @@ value class Color private constructor(val rgba: Int) {
         )
     }
 
-    override fun toString() = "#${rgba.toHexString()}"
+    override fun toString() = "#${(rgba and 0xffffff).toHexString(HexFormat {
+        number {
+            minLength = 6
+            removeLeadingZeros = true
+        }
+    })}${alpha.toHexString()}"
 }
 
 fun Color.isTransparent() = alpha == 0.toUByte()
@@ -42,8 +47,15 @@ fun Color.darker() = Color.of(
     alpha,
 )
 
+enum class FontType {
+    SansSerifBold,
+    MonospaceRegular,
+}
+
 interface Theme {
     data class ElementColors(val backgroundColor: Color, val borderColor: Color)
+    data class Font(val fontSize: Float, val type: FontType)
+    data class Label(val value: String, val color: Color, val font: Font)
 
     val gap: Double
     val borderThickness: Double
@@ -54,7 +66,12 @@ interface Theme {
     fun Cell.backgroundColor(): ElementColors
     fun Cell.highlightColor(): ElementColors
 
-    fun Cell.labelColor(): Color
+    fun Cell.label(): Label?
+}
+
+enum class DefaultTheme(val theme: Theme) {
+    HDS(BasicTheme.Default),
+    HTTTX(HTTTXTheme),
 }
 
 data class BasicTheme(
@@ -91,12 +108,22 @@ data class BasicTheme(
         return Theme.ElementColors(color.withAlpha(alpha), color)
     }
 
-    override fun Cell.labelColor() = owner.color(default = emptyCellLabelColor) { it.darker() }
+    private fun Cell.labelText() = label
+        .takeIf { it.isNotBlank() }
+        ?: turn?.toString()
+
+    override fun Cell.label() = labelText()?.let { label ->
+        Theme.Label(
+            value = label,
+            color = owner.color(default = emptyCellLabelColor) { it.darker() },
+            font = Theme.Font(fontSize = 0.7f, type = FontType.SansSerifBold),
+        )
+    }
 
     companion object {
         val Default = BasicTheme(
-            6.0,
-            2.0,
+            gap = 6.0,
+            borderThickness = 2.0,
             backgroundColor = Color.rgb(0x0f172a),
             cellBorderColor = Color.rgb(0x232d43),
             highlightColor = Color.rgb(0xec6fb1),
@@ -105,6 +132,44 @@ data class BasicTheme(
             emptyCellLabelColor = Color.rgb(0xb1c1e0),
             playerXColor = Color.rgb(0xfbc139),
             playerOColor = Color.rgb(0x38bdf8),
+        )
+    }
+}
+
+object HTTTXTheme : Theme {
+    override val gap = 3.0
+    override val borderThickness = 0.0
+    override val backgroundColor = Color.rgb(0x24213a)
+
+    override fun LineHighlight.color() = Theme.ElementColors(Color.Transparent, Color.Transparent)
+
+    override fun Cell.backgroundColor() = Theme.ElementColors(
+        backgroundColor = when (owner) {
+            CellOwner.X -> Color.rgb(0x5e2f1d)
+            CellOwner.O -> Color.rgb(0x163a65)
+            null -> Color.rgb(0x1f1729)
+        },
+        borderColor = Color.Transparent,
+    )
+
+    override fun Cell.highlightColor() = Theme.ElementColors(
+        backgroundColor = if (highlight == null) Color.Transparent else Color.rgb(if (owner == null) 0x491628 else 0x651527),
+        borderColor = Color.Transparent,
+    )
+
+    private fun Cell.labelText() = label
+        .takeIf { it.isNotBlank() }
+        ?: turn?.let { (it + 1) / 2 }?.toString()
+
+    override fun Cell.label() = labelText()?.let { label ->
+        Theme.Label(
+            value = label,
+            color = when (owner) {
+                CellOwner.X -> Color.rgb(0xd25a06)
+                CellOwner.O -> Color.rgb(0x0383e1)
+                null -> backgroundColor
+            },
+            font = Theme.Font(fontSize = 0.85f, type = FontType.MonospaceRegular),
         )
     }
 }
