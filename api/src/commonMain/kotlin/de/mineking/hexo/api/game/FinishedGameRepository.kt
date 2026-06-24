@@ -8,8 +8,6 @@ import io.ktor.client.request.parameter
 import io.ktor.http.isSuccess
 import kotlinx.serialization.Serializable
 
-// TODO support ongoing games
-
 interface FinishedGameRepository {
     suspend fun getGame(id: GameId): FinishedGame?
 

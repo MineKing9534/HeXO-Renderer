@@ -1,5 +1,6 @@
 package de.mineking.hexo.api.game
 
+import de.mineking.hexo.api.AbstractGamePosition
 import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.InternalHexoApi
 import de.mineking.hexo.api.profile.ProfileId
@@ -9,9 +10,11 @@ import de.mineking.hexo.api.tournament.TournamentId
 import de.mineking.hexo.api.tournament.TournamentMatchId
 import de.mineking.hexo.api.tournament.TournamentRepository
 import de.mineking.hexo.api.utils.Duration
+import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.core.CellOwner
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
+import kotlin.time.Instant
 
 @JvmInline
 @Serializable
@@ -25,21 +28,32 @@ class GameReference(
     private val repository: FinishedGameRepository,
     val id: GameId,
 ) {
-    @OptIn(InternalHexoApi::class)
     suspend fun retrieveGame() = repository.getGame(id)
+}
+
+interface Game : AbstractGamePosition {
+    val id: GameId
+    val startedAt: Instant
+    val result: GameResult?
+    val options: GameOptions
+    val tournamentInfo: TournamentMatchSnapshot?
+    override val moves: List<GameMove>
+    val moveCount: Int
+    val players: List<Player>
 }
 
 class FinishedGame(
     @property:InternalHexoApi val client: HexoApiClient,
-    val id: GameId,
+    override val id: GameId,
+    override val startedAt: Instant,
     val url: String,
-    val result: GameResult,
-    val options: GameOptions,
-    val tournamentInfo: TournamentMatchSnapshot?,
-    val moves: List<Move>,
-    val moveCount: Int,
-    val players: List<Player>,
-) {
+    override val result: GameResult,
+    override val options: GameOptions,
+    override val tournamentInfo: TournamentMatchSnapshot?,
+    override val moves: List<GameMove>,
+    override val moveCount: Int,
+    override val players: List<FinishedGamePlayer>,
+) : Game {
     companion object {
         private fun FinishedGameDto.createPlayerList(repository: ProfileRepository) = players.map { data ->
             val color = playerTiles[data.playerId]?.color ?: error("Player tile for ${data.playerId} not defined")
@@ -49,7 +63,7 @@ class FinishedGame(
                 else -> error("Unrecognized color '${color.format()}'")
             }
 
-            Player(
+            FinishedGamePlayer(
                 repository = repository,
                 playerId = data.playerId,
                 profileId = data.profileId.takeIf { it.value != data.playerId.value },
@@ -57,7 +71,6 @@ class FinishedGame(
                 elo = data.elo,
                 eloChange = data.eloChange,
                 color = owner,
-                isWinner = result.winningPlayerId == data.playerId,
                 tournamentMatchWins = tournament?.let {
                     when (data.profileId) {
                         it.leftProfileId -> it.leftWins
@@ -67,22 +80,6 @@ class FinishedGame(
                 },
             )
         }.sortedBy { player -> moves.indexOfFirst { it.playerId == player.playerId } }
-
-        private fun TournamentMatchSnapshotDto.toTournamentMatchSnapshot(
-            host: String,
-            repository: () -> TournamentRepository,
-        ) = TournamentMatchSnapshot(
-            repository = repository,
-            tournamentId = tournamentId,
-            tournamentUrl = "$host/tournaments/${tournamentId.value}",
-            tournamentName = tournamentName,
-            matchId = matchId,
-            bracket = bracket,
-            round = round,
-            order = order,
-            bestOf = bestOf,
-            currentGameNumber = currentGameNumber,
-        )
 
         internal fun of(
             client: HexoApiClient,
@@ -96,11 +93,17 @@ class FinishedGame(
             return FinishedGame(
                 client = client,
                 id = dto.id,
+                startedAt = dto.startedAt,
                 url = "${client.host}/finished-games/${dto.id.value}",
                 result = GameResult(playersById[dto.result.winningPlayerId], dto.result.duration, dto.result.reason),
                 options = dto.options,
-                tournamentInfo = dto.tournament?.toTournamentMatchSnapshot(client.host, tournamentRepository),
-                moves = dto.moves.map { Move(playersById[it.playerId]!!, it.q, it.r) },
+                tournamentInfo = dto.tournament?.let { TournamentMatchSnapshot.of(it, client.host, tournamentRepository) },
+                moves = dto.moves.map {
+                    GameMove(
+                        coordinate = CellCoordinate(it.q, it.r),
+                        player = playersById[it.playerId]!!,
+                    )
+                },
                 moveCount = dto.moveCount,
                 players = players,
             )
@@ -108,16 +111,33 @@ class FinishedGame(
     }
 }
 
-class Player(
+class FinishedGamePlayer(
+    repository: ProfileRepository,
+    playerId: PlayerId,
+    profileId: ProfileId?,
+    displayName: String,
+    elo: Int,
+    val eloChange: Int?,
+    color: CellOwner,
+    tournamentMatchWins: Int?,
+) : Player(
+    repository = repository,
+    playerId = playerId,
+    profileId = profileId,
+    displayName = displayName,
+    elo = elo,
+    color = color,
+    tournamentMatchWins = tournamentMatchWins,
+)
+
+abstract class Player(
     private val repository: ProfileRepository,
     val playerId: PlayerId,
     val profileId: ProfileId?,
     val displayName: String,
     val elo: Int,
-    val eloChange: Int?,
     val color: CellOwner,
     val tournamentMatchWins: Int?,
-    val isWinner: Boolean,
 ) {
     @OptIn(InternalHexoApi::class)
     suspend fun fetchProfile() = profileId?.let { repository.getProfile(it) }
@@ -142,6 +162,25 @@ class TournamentMatchSnapshot(
 
     @OptIn(InternalHexoApi::class)
     fun observeTournament() = repository().observeTournament(tournamentId)
+
+    companion object {
+        internal fun of(
+            dto: TournamentMatchSnapshotDto,
+            host: String,
+            repository: () -> TournamentRepository,
+        ) = TournamentMatchSnapshot(
+            repository = repository,
+            tournamentId = dto.tournamentId,
+            tournamentUrl = "$host/tournaments/${dto.tournamentId.value}",
+            tournamentName = dto.tournamentName,
+            matchId = dto.matchId,
+            bracket = dto.bracket,
+            round = dto.round,
+            order = dto.order,
+            bestOf = dto.bestOf,
+            currentGameNumber = dto.currentGameNumber,
+        )
+    }
 }
 
 data class GameResult(
@@ -150,8 +189,14 @@ data class GameResult(
     val reason: GameFinishReason,
 )
 
-data class Move(
+interface Move {
+    val coordinate: CellCoordinate
+    val owner: CellOwner
+}
+
+data class GameMove(
+    override val coordinate: CellCoordinate,
     val player: Player,
-    val q: Int,
-    val r: Int,
-)
+) : Move {
+    override val owner = player.color
+}

@@ -1,8 +1,8 @@
 package de.mineking.hexo.api.tournament
 
 import de.mineking.hexo.api.game.GameId
-import de.mineking.hexo.api.game.SessionId
 import de.mineking.hexo.api.profile.ProfileId
+import de.mineking.hexo.api.session.SessionId
 import de.mineking.hexo.api.utils.Instant
 import de.mineking.hexo.api.utils.TimeControl
 import kotlinx.serialization.SerialName

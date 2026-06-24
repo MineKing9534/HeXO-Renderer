@@ -8,6 +8,8 @@ import de.mineking.hexo.api.leaderboard.LeaderboardRepository
 import de.mineking.hexo.api.leaderboard.LeaderboardRepositoryImpl
 import de.mineking.hexo.api.profile.ProfileRepository
 import de.mineking.hexo.api.profile.ProfileRepositoryImpl
+import de.mineking.hexo.api.session.SessionRepository
+import de.mineking.hexo.api.session.SessionRepositoryImpl
 import de.mineking.hexo.api.tournament.TournamentRepository
 import de.mineking.hexo.api.tournament.TournamentRepositoryImpl
 
@@ -17,6 +19,7 @@ data class HexoRepositories(
     val finishedGames: FinishedGameRepository,
     val tournaments: TournamentRepository,
     val formations: FormationRepository,
+    val sessions: SessionRepository,
 )
 
 interface RepositoryWrapper {
@@ -25,6 +28,7 @@ interface RepositoryWrapper {
     fun FinishedGameRepository.wrap(): FinishedGameRepository
     fun TournamentRepository.wrap(): TournamentRepository
     fun FormationRepository.wrap(): FormationRepository
+    fun SessionRepository.wrap(): SessionRepository
 
     companion object {
         val Default = object : RepositoryWrapper {
@@ -33,6 +37,7 @@ interface RepositoryWrapper {
             override fun FinishedGameRepository.wrap() = this
             override fun TournamentRepository.wrap() = this
             override fun FormationRepository.wrap() = this
+            override fun SessionRepository.wrap() = this
         }
     }
 }
@@ -49,10 +54,16 @@ fun HexoApiClient.createRepositories(wrapper: RepositoryWrapper = RepositoryWrap
         client = this@createRepositories,
         profileRepository = profileRepository,
     ).wrap()
+    val sessionRepository = SessionRepositoryImpl(
+        client = this@createRepositories,
+        profileRepository = profileRepository,
+        tournamentRepository = { tournamentRepository },
+    ).wrap()
     tournamentRepository = TournamentRepositoryImpl(
         client = this@createRepositories,
         profileRepository = profileRepository,
         finishedGameRepository = finishedGameRepository,
+        sessionRepository = sessionRepository,
     ).wrap()
     val formationRepository = FormationRepositoryImpl(client = this@createRepositories).wrap()
 
@@ -62,5 +73,6 @@ fun HexoApiClient.createRepositories(wrapper: RepositoryWrapper = RepositoryWrap
         finishedGames = finishedGameRepository,
         tournaments = tournamentRepository,
         formations = formationRepository,
+        sessions = sessionRepository,
     )
 }

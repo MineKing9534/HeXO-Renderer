@@ -1,5 +1,6 @@
 package de.mineking.hexo.api.formation
 
+import de.mineking.hexo.api.AbstractGamePosition
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
 
@@ -12,7 +13,9 @@ class Formation(
     val url: String,
     val name: String,
     val gamePosition: GamePosition,
-) {
+) : AbstractGamePosition {
+    override val moves get() = gamePosition.cells
+
     companion object {
         internal fun of(host: String, dto: FormationDto): Formation {
             return Formation(

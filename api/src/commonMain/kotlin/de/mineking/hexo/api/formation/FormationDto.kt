@@ -1,5 +1,7 @@
 package de.mineking.hexo.api.formation
 
+import de.mineking.hexo.api.game.Move
+import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.core.CellOwner
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
@@ -23,8 +25,25 @@ data class GamePosition(
     val cells: List<GamePositionCell>,
 )
 
-@Serializable
+@Serializable(with = GamePositionCellSerializer::class)
 data class GamePositionCell(
+    override val coordinate: CellCoordinate,
+    override val owner: CellOwner,
+) : Move
+
+internal object GamePositionCellSerializer : KSerializer<GamePositionCell> {
+    override val descriptor = GamePositionCell.serializer().descriptor
+    override fun deserialize(decoder: Decoder) = GamePositionCellDto.serializer().deserialize(decoder).let {
+        GamePositionCell(
+            coordinate = CellCoordinate(it.q, it.r),
+            owner = it.player,
+        )
+    }
+    override fun serialize(encoder: Encoder, value: GamePositionCell) = throw UnsupportedOperationException()
+}
+
+@Serializable
+internal data class GamePositionCellDto(
     @SerialName("x") val q: Int,
     @SerialName("y") val r: Int,
     val player: @Serializable(with = FormationCellOwnerSerializer::class) CellOwner,

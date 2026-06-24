@@ -3,7 +3,8 @@ package de.mineking.hexo.api.tournament
 import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.game.FinishedGameRepository
 import de.mineking.hexo.api.profile.ProfileRepository
-import de.mineking.hexo.api.socket.HexoSocketEvent
+import de.mineking.hexo.api.session.SessionRepository
+import de.mineking.hexo.api.socket.TournamentUpdate
 import de.mineking.hexo.api.utils.EntityState
 import de.mineking.hexo.api.utils.withLock
 import io.ktor.client.call.body
@@ -23,14 +24,17 @@ internal class TournamentRepositoryImpl(
     private val client: HexoApiClient,
     private val profileRepository: ProfileRepository,
     private val finishedGameRepository: FinishedGameRepository,
+    private val sessionRepository: SessionRepository,
 ) : TournamentRepository {
     init {
-        client.coroutineScope.launch {
-            client.events
-                .filterIsInstance<HexoSocketEvent.TournamentUpdate>()
-                .collect { event ->
-                    val _ = getTournament(event.tournamentId)
-                }
+        if (client.socketClient != null) {
+            client.coroutineScope.launch {
+                client.socketClient.events
+                    .filterIsInstance<TournamentUpdate>()
+                    .collect { event ->
+                        val _ = getTournament(event.tournamentId)
+                    }
+            }
         }
     }
 
@@ -40,7 +44,7 @@ internal class TournamentRepositoryImpl(
     private val requester = client.entityRequesterFactory.createEntityRequester<TournamentId, Tournament> { id ->
         val response = client.request("/tournaments/${id.value}")
         val tournament = when {
-            response.status.isSuccess() -> Tournament.of(client, profileRepository, finishedGameRepository, response.body())
+            response.status.isSuccess() -> Tournament.of(client, profileRepository, finishedGameRepository, sessionRepository, response.body())
             else -> null
         }
 
@@ -59,6 +63,8 @@ internal class TournamentRepositoryImpl(
     override suspend fun getTournament(id: TournamentId) = requester.fetch(id)
 
     override fun observeTournament(id: TournamentId): StateFlow<EntityState<Tournament>> {
+        if (client.socketClient == null) error("Cannot observe tournaments without a SocketIO connection")
+
         var shouldStartFetch = false
         val flow = cacheLock.withLock {
             cache.getOrPut(id) {

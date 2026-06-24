@@ -4,9 +4,10 @@ import de.mineking.hexo.api.HexoApiClient
 import de.mineking.hexo.api.InternalHexoApi
 import de.mineking.hexo.api.game.FinishedGameRepository
 import de.mineking.hexo.api.game.GameReference
-import de.mineking.hexo.api.game.SessionId
 import de.mineking.hexo.api.profile.ProfileId
 import de.mineking.hexo.api.profile.ProfileRepository
+import de.mineking.hexo.api.session.SessionReference
+import de.mineking.hexo.api.session.SessionRepository
 import de.mineking.hexo.api.utils.Instant
 import de.mineking.hexo.api.utils.TimeControl
 import kotlinx.serialization.Serializable
@@ -21,7 +22,7 @@ value class TournamentId(val value: Uuid)
 @Serializable
 value class TournamentMatchId(val value: String)
 
-class Tournament(
+class Tournament private constructor(
     @property:InternalHexoApi val client: HexoApiClient,
     val id: TournamentId,
     val url: String,
@@ -57,7 +58,8 @@ class Tournament(
         }
 
         private fun TournamentDto.createMatchList(
-            repository: FinishedGameRepository,
+            finishedGameRepository: FinishedGameRepository,
+            sessionRepository: SessionRepository,
             participants: List<TournamentParticipant>,
         ): List<TournamentMatch> {
             val participantsById = participants.associateBy { it.profileId }
@@ -88,8 +90,8 @@ class Tournament(
                     waitingForPlayers = match.waitingForPlayers,
                     startedAt = match.startedAt,
                     resolvedAt = match.resolvedAt,
-                    pastGames = match.gameIds.map { GameReference(repository, it) },
-                    sessionId = match.sessionId,
+                    pastGames = match.gameIds.map { GameReference(finishedGameRepository, it) },
+                    session = match.sessionId?.let { SessionReference(sessionRepository, it) },
                     players = players,
                     winner = participantsById[match.winnerProfileId],
                 )
@@ -100,10 +102,11 @@ class Tournament(
             client: HexoApiClient,
             profileRepository: ProfileRepository,
             finishedGameRepository: FinishedGameRepository,
+            sessionRepository: SessionRepository,
             dto: TournamentDto,
         ): Tournament {
             val participants = dto.createParticipantList(profileRepository)
-            val matches = dto.createMatchList(finishedGameRepository, participants)
+            val matches = dto.createMatchList(finishedGameRepository, sessionRepository, participants)
 
             return Tournament(
                 client = client,
@@ -148,7 +151,6 @@ data class TournamentMatchPlayer(
     val isWinner: Boolean,
 )
 
-// TODO allow fetching current session
 data class TournamentMatch(
     val id: TournamentMatchId,
     val bracket: TournamentBracket,
@@ -163,5 +165,5 @@ data class TournamentMatch(
     val resolvedAt: Instant?,
     val players: List<TournamentMatchPlayer>,
     val pastGames: List<GameReference>,
-    val sessionId: SessionId?,
+    val session: SessionReference?,
 )

@@ -13,7 +13,7 @@ typealias Duration = @Serializable(with = DurationAsMillisecondsSerializer::clas
 typealias Instant = @Serializable(with = InstantAsEpochSerializer::class) kotlin.time.Instant
 
 @Serializable(with = ColorSerializer::class)
-data class Color(val red: Int, val green: Int, val blue: Int) {
+internal data class Color(val red: Int, val green: Int, val blue: Int) {
     init {
         require(red in 0..255 && green in 0..255 && blue in 0..255)
     }

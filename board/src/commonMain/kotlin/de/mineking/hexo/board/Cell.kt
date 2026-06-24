@@ -1,6 +1,7 @@
 package de.mineking.hexo.board
 
 import de.mineking.hexo.core.CellOwner
+import kotlinx.serialization.Serializable
 import kotlin.math.abs
 
 sealed interface Cell {
@@ -33,6 +34,7 @@ data class MutableCell(
 
 data class CellHighlight(val color: CellOwner?)
 
+@Serializable
 data class CellCoordinate(val q: Int, val r: Int) {
     companion object {
         val Zero = CellCoordinate(0, 0)

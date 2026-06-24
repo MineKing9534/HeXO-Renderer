@@ -26,7 +26,7 @@ import kotlin.io.encoding.Base64
 
 fun main() {
     val config = Config.fromEnvironment()
-    val client = HexoApiClient(socketIOOptions = null)
+    val client = HexoApiClient(socketClient = null)
     val repositories = client.createCachingRepositories()
 
     val accountLinking = config.createAccountLinking()

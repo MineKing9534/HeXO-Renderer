@@ -1,39 +1,70 @@
 package de.mineking.hexo.api.socket
 
-import de.mineking.hexo.api.game.SessionId
+import de.mineking.hexo.api.session.SessionDto
+import de.mineking.hexo.api.session.SessionGameStateDto
+import de.mineking.hexo.api.session.SessionId
+import de.mineking.hexo.api.session.SessionMoveDto
+import de.mineking.hexo.api.session.SessionPlayerDto
+import de.mineking.hexo.api.session.SessionStateDto
 import de.mineking.hexo.api.tournament.TournamentId
 import de.mineking.hexo.api.utils.Instant
-import de.mineking.hexo.api.utils.TimeControl
 import kotlinx.serialization.Serializable
+import kotlin.reflect.KClass
 
 internal annotation class SocketEventName(val name: String)
 
 sealed interface SocketEvent
 
-sealed interface HexoSocketEvent : SocketEvent {
-    @Serializable
-    @SocketEventName("tournament-updated")
-    data class TournamentUpdate(
-        val tournamentId: TournamentId,
-        val updatedAt: Instant,
-    ) : HexoSocketEvent
+sealed interface HexoSocketEvent : SocketEvent
 
-    @Serializable
-    @SocketEventName("lobby-updated")
-    data class LobbyUpdate(
-        val id: SessionId,
-        val timeControl: TimeControl,
-        val rated: Boolean,
-        val createdAt: Instant,
-        val startedAt: Instant?,
-    ) : HexoSocketEvent
+@Serializable
+@SocketEventName("tournament-updated")
+internal data class TournamentUpdate(
+    val tournamentId: TournamentId,
+    val updatedAt: Instant,
+) : HexoSocketEvent
 
+@Serializable
+@SocketEventName("session-watch-started")
+internal data class SessionWatchStarted(
+    val session: SessionDto,
+    val gameState: SessionGameStateDto,
+) : HexoSocketEvent
+
+@Serializable
+@SocketEventName("session-watch-error")
+internal data class SessionWatchError(
+    val sessionId: SessionId,
+    val message: String,
+) : HexoSocketEvent
+
+@Serializable
+@SocketEventName("session-updated")
+internal data class SessionUpdated(
+    val sessionId: SessionId,
+    val session: PartialSessionDto,
+) : HexoSocketEvent {
     @Serializable
-    @SocketEventName("lobby-removed")
-    data class LobbyRemove(
-        val id: SessionId,
-    ) : HexoSocketEvent
+    data class PartialSessionDto(
+        val state: SessionStateDto? = null,
+        val players: List<SessionPlayerDto>? = null,
+    )
 }
+
+@Serializable
+@SocketEventName("game-state")
+internal data class GameStateUpdated(
+    val sessionId: SessionId,
+    val gameState: SessionGameStateDto,
+) : HexoSocketEvent
+
+@Serializable
+@SocketEventName("game-cell-place")
+internal data class GameCellPlace(
+    val sessionId: SessionId,
+    val state: SessionGameStateDto,
+    val cell: SessionMoveDto,
+) : HexoSocketEvent
 
 sealed interface ProtocolSocketEvent : SocketEvent {
     @Serializable
@@ -56,3 +87,6 @@ sealed interface ProtocolSocketEvent : SocketEvent {
     @SocketEventName("connect_error")
     data class ConnectError(val message: String) : ProtocolSocketEvent
 }
+
+val KClass<out SocketEvent>.eventName get() = SocketEventRegistry.eventNames[this]
+    ?: error("eventName for $this not found, this should never happen")

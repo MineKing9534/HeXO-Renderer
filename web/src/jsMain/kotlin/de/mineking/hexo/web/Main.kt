@@ -53,10 +53,10 @@ fun main() {
     val rootElement = document.getElementById("root")!!
     rootElement.innerHTML = ""
 
+    val client = BuildConfig.API_PROXY?.let { HexoApiClient(host = it, socketClient = null) }
     renderComposable(root = rootElement) {
         var error by remember { mutableStateOf(initialError) }
 
-        val client = remember { BuildConfig.API_PROXY?.let { HexoApiClient(host = it, socketIOOptions = null) } }
         MainLayout(client, initialBoard)
 
         if (error != null) {

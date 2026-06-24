@@ -63,4 +63,10 @@ internal actual class SocketIOClientDriver actual constructor(
             }
         }
     }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    actual fun request(request: SocketRequest) {
+        val serializer = json.serializersModule.serializer(request::class, emptyList(), false)
+        socket.emit(request.requestName, JSON.parse(json.encodeToString(serializer, request)))
+    }
 }

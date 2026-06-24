@@ -6,6 +6,7 @@ import de.mineking.hexo.api.tournament.TournamentId
 import de.mineking.hexo.api.tournament.TournamentMatchId
 import de.mineking.hexo.api.utils.Color
 import de.mineking.hexo.api.utils.Duration
+import de.mineking.hexo.api.utils.Instant
 import de.mineking.hexo.api.utils.TimeControl
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -13,6 +14,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 internal data class FinishedGameDto(
     val id: GameId,
+    val startedAt: Instant,
     val players: List<PlayerDto>,
     val playerTiles: Map<PlayerId, PlayerTile>,
     @SerialName("gameResult") val result: GameResultDto,
@@ -75,7 +77,14 @@ internal data class GameResultDto(
 )
 
 @Serializable
+enum class GameVisibility {
+    @SerialName("public") Public,
+    @SerialName("private") Private,
+}
+
+@Serializable
 data class GameOptions(
     val rated: Boolean,
+    val visibility: GameVisibility,
     val timeControl: TimeControl,
 )
