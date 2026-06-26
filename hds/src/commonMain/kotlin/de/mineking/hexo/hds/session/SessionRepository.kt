@@ -24,6 +24,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
 
@@ -71,7 +72,7 @@ internal class SessionRepositoryImpl(
             is LobbyUpdated -> {
                 val oldLobby = lobbies.value[event.id]
                 val newLobby = LobbySession.of(this, event.data)
-                lobbies.value += event.id to newLobby
+                lobbies.update { it + (event.id to newLobby) }
 
                 if (oldLobby == null || !(!oldLobby.hasStarted() && newLobby.hasStarted())) return
                 sessionsLock.withLock {
@@ -82,12 +83,13 @@ internal class SessionRepositoryImpl(
                 }
             }
             is LobbyRemoved -> {
-                lobbies.value -= event.id
+                lobbies.update { it - event.id }
                 sessionsLock.withLock {
-                    val state = sessions[event.id]?.value ?: return
-                    if (state is EntityState.Data && state.value is LobbySession) {
-                        sessions[event.id]?.value = EntityState.NotFound
+                    sessions[event.id]?.update {
+                        if (it !is EntityState.Data || it.value !is LobbySession) return
+
                         sessions -= event.id
+                        EntityState.NotFound
                     }
                 }
             }
@@ -158,33 +160,34 @@ internal class SessionRepositoryImpl(
         client.listen<SessionUpdated> { event ->
             if (event.sessionId != id) return@listen
 
-            val state = this@connectSocket.value
-            if (state !is EntityState.Data) {
-                logger.warn { "Received session-updated event for unconnected session ${event.sessionId.value}" }
-                return@listen
-            }
+            update { state ->
+                if (state !is EntityState.Data) {
+                    logger.warn { "Received session-updated event for unconnected session ${event.sessionId.value}" }
+                    return@listen
+                }
 
-            val value = state.value as? LiveSession ?: return@listen
+                val value = state.value as? LiveSession ?: return@listen
 
-            val session = LiveSession.of(
-                repository = this@SessionRepositoryImpl,
-                client = this@SessionRepositoryImpl.client,
-                dto = value.dto.copy(
-                    state = event.session.state ?: value.dto.state,
-                    players = event.session.players ?: value.dto.players,
-                ),
-                lastState = value.createLastState(),
-                gameState = value.gameState,
-                profileRepository = profileRepository,
-                tournamentRepository = tournamentRepository,
-            )
+                val session = LiveSession.of(
+                    repository = this@SessionRepositoryImpl,
+                    client = this@SessionRepositoryImpl.client,
+                    dto = value.dto.copy(
+                        state = event.session.state ?: value.dto.state,
+                        players = event.session.players ?: value.dto.players,
+                    ),
+                    lastState = value.createLastState(),
+                    gameState = value.gameState,
+                    profileRepository = profileRepository,
+                    tournamentRepository = tournamentRepository,
+                )
 
-            this@connectSocket.value = EntityState.Data(session)
+                if (event.session.state !is SessionStateDto.Finished) return@listen
+                if (session.players.any { it.connectionStatus == SessionPlayerConnectionStatus.Disconnected }) {
+                    logger.info { "Session ${id.value} removed because it has finished; Disconnecting SocketIO fork..." }
+                    cleanup()
+                }
 
-            if (event.session.state !is SessionStateDto.Finished) return@listen
-            if (session.players.any { it.connectionStatus == SessionPlayerConnectionStatus.Disconnected }) {
-                logger.info { "Session ${id.value} removed because it has finished; Disconnecting SocketIO fork..." }
-                cleanup()
+                EntityState.Data(session)
             }
         }
 
@@ -208,46 +211,47 @@ internal class SessionRepositoryImpl(
         }
 
         client.listen<GameCellPlace> { event ->
-            val state = this@populate.value
-            if (state !is EntityState.Data || event.sessionId != state.value.id) {
-                logger.warn { "Received game-cell-place event for unconnected session ${event.sessionId.value}" }
-                return@listen
+            update { state ->
+                if (state !is EntityState.Data || event.sessionId != state.value.id) {
+                    logger.warn { "Received game-cell-place event for unconnected session ${event.sessionId.value}" }
+                    return@listen
+                }
+
+                val value = state.value as? LiveSession ?: return@listen
+
+                EntityState.Data(LiveSession.of(
+                    repository = this@SessionRepositoryImpl,
+                    client = this@SessionRepositoryImpl.client,
+                    dto = value.dto,
+                    lastState = value.createLastState(),
+                    gameState = event.state.copy(
+                        cells = (value.gameState.cells ?: emptyList()) + event.cell,
+                        playerTiles = value.gameState.playerTiles,
+                    ),
+                    profileRepository = profileRepository,
+                    tournamentRepository = tournamentRepository,
+                ))
             }
-
-            val value = state.value as? LiveSession ?: return@listen
-
-            this@populate.value = EntityState.Data(LiveSession.of(
-                repository = this@SessionRepositoryImpl,
-                client = this@SessionRepositoryImpl.client,
-                dto = value.dto,
-                lastState = value.createLastState(),
-                gameState = event.state.copy(
-                    cells = (value.gameState.cells ?: emptyList()) + event.cell,
-                    playerTiles = value.gameState.playerTiles,
-                ),
-                profileRepository = profileRepository,
-                tournamentRepository = tournamentRepository,
-            ))
         }
 
         client.listen<GameStateUpdated> { event ->
-            val state = this@populate.value
-            if (state !is EntityState.Data || event.sessionId != state.value.id) {
-                logger.warn { "Received game-state event for unconnected session ${event.sessionId.value}" }
-                return@listen
+            update { state ->
+                if (state !is EntityState.Data || event.sessionId != state.value.id) {
+                    logger.warn { "Received game-state event for unconnected session ${event.sessionId.value}" }
+                    return@listen
+                }
+
+                val value = state.value as? LiveSession ?: return@listen
+                EntityState.Data(LiveSession.of(
+                    repository = this@SessionRepositoryImpl,
+                    client = this@SessionRepositoryImpl.client,
+                    dto = value.dto,
+                    lastState = value.createLastState(),
+                    gameState = event.gameState,
+                    profileRepository = profileRepository,
+                    tournamentRepository = tournamentRepository,
+                ))
             }
-
-            val value = state.value as? LiveSession ?: return@listen
-
-            this@populate.value = EntityState.Data(LiveSession.of(
-                repository = this@SessionRepositoryImpl,
-                client = this@SessionRepositoryImpl.client,
-                dto = value.dto,
-                lastState = value.createLastState(),
-                gameState = event.gameState,
-                profileRepository = profileRepository,
-                tournamentRepository = tournamentRepository,
-            ))
         }
 
         client.connect()

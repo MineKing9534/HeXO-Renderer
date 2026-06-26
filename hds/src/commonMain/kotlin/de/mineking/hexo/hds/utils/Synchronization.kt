@@ -6,6 +6,7 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
+@IgnorableReturnValue
 @Suppress("WRONG_INVOCATION_KIND")
 @OptIn(ExperimentalContracts::class)
 inline fun <T> SynchronizedObject.withLock(block: () -> T): T {
