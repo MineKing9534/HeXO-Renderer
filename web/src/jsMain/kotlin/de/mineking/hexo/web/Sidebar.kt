@@ -9,13 +9,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.web.events.SyntheticMouseEvent
-import de.mineking.hexo.api.HexoRepositories
 import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.clone
 import de.mineking.hexo.board.parse.parseCombinedHexoNotation
 import de.mineking.hexo.board.render.RectilinearNotationType
 import de.mineking.hexo.board.render.renderRectilinearNotation
 import de.mineking.hexo.board.render.renderRectilinearStateBKETurnNotation
+import de.mineking.hexo.hds.HexoRepositories
 import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.components.Select
 import kotlinx.browser.document

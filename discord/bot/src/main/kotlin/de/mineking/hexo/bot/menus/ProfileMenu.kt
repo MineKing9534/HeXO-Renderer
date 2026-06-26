@@ -26,12 +26,12 @@ import de.mineking.discord.ui.render
 import de.mineking.discord.ui.setValue
 import de.mineking.discord.ui.state
 import de.mineking.discord.ui.terminateRender
-import de.mineking.hexo.api.profile.ProfileId
-import de.mineking.hexo.api.profile.ProfileRepository
 import de.mineking.hexo.bot.escapeMarkdown
 import de.mineking.hexo.bot.utils.MessageColor
 import de.mineking.hexo.bot.utils.effectiveLocale
 import de.mineking.hexo.bot.utils.respond
+import de.mineking.hexo.hds.profile.ProfileId
+import de.mineking.hexo.hds.profile.ProfileRepository
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.getDiscordProfile
 import dev.freya02.jda.emojis.unicode.Emojis

@@ -7,12 +7,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import de.mineking.hexo.api.asBoard
-import de.mineking.hexo.api.formation.FormationId
-import de.mineking.hexo.api.formation.FormationRepository
-import de.mineking.hexo.api.game.FinishedGameRepository
-import de.mineking.hexo.api.game.GameId
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.hds.asBoard
+import de.mineking.hexo.hds.formation.FormationId
+import de.mineking.hexo.hds.formation.FormationRepository
+import de.mineking.hexo.hds.game.FinishedGameRepository
+import de.mineking.hexo.hds.game.GameId
 import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.components.LoadingIndicator
 import kotlinx.coroutines.launch

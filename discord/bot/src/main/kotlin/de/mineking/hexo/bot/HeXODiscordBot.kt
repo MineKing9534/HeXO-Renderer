@@ -9,7 +9,6 @@ import de.mineking.discord.ui.message.MessageMenu
 import de.mineking.discord.utils.await
 import de.mineking.discord.utils.listen
 import de.mineking.discord.withLocalization
-import de.mineking.hexo.api.HexoRepositories
 import de.mineking.hexo.board.parse.BoardParser
 import de.mineking.hexo.board.render.BoardRenderer
 import de.mineking.hexo.board.render.image.Theme
@@ -28,6 +27,7 @@ import de.mineking.hexo.bot.menus.leaderboardMenu
 import de.mineking.hexo.bot.menus.profileMenu
 import de.mineking.hexo.bot.utils.installErrorHandling
 import de.mineking.hexo.bot.utils.updateLinkedRoleMetadata
+import de.mineking.hexo.hds.HexoRepositories
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.DiscordUserId
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository

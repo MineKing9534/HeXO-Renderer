@@ -6,8 +6,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import de.mineking.hexo.api.HexoApiClient
-import de.mineking.hexo.api.createRepositories
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.HexoNotationException
@@ -21,6 +19,8 @@ import de.mineking.hexo.board.render.compose.InteractiveBoard
 import de.mineking.hexo.board.render.image.DefaultTheme
 import de.mineking.hexo.board.render.image.Theme
 import de.mineking.hexo.core.CellOwner
+import de.mineking.hexo.hds.HdsApiClient
+import de.mineking.hexo.hds.createRepositories
 import de.mineking.hexo.web.components.Dialog
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -53,7 +53,7 @@ fun main() {
     val rootElement = document.getElementById("root")!!
     rootElement.innerHTML = ""
 
-    val client = BuildConfig.API_PROXY?.let { HexoApiClient(host = it, socketClient = null) }
+    val client = BuildConfig.API_PROXY?.let { HdsApiClient(host = it, socketClient = null) }
     renderComposable(root = rootElement) {
         var error by remember { mutableStateOf(initialError) }
 
@@ -80,7 +80,7 @@ enum class CellPlacementMode {
 }
 
 @Composable
-private fun MainLayout(client: HexoApiClient?, initialBoard: Board) {
+private fun MainLayout(client: HdsApiClient?, initialBoard: Board) {
     val repositories = remember(client) { client?.createRepositories() }
 
     val viewport = remember { mutableStateOf<BoardViewport?>(null) }

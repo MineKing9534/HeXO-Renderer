@@ -1,8 +1,5 @@
 package de.mineking.hexo.launcher
 
-import de.mineking.hexo.api.HexoApiClient
-import de.mineking.hexo.api.HexoRepositories
-import de.mineking.hexo.api.caching.createCachingRepositories
 import de.mineking.hexo.board.parse.BoardParser
 import de.mineking.hexo.board.parse.CombinedHexoNotationParser
 import de.mineking.hexo.board.parse.cached
@@ -13,6 +10,9 @@ import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.outputBoardAttachment
 import de.mineking.hexo.bot.utils.LinkedRolesUpdateService
 import de.mineking.hexo.bot.utils.SandboxFormationOrNotationParser
+import de.mineking.hexo.hds.HdsApiClient
+import de.mineking.hexo.hds.HexoRepositories
+import de.mineking.hexo.hds.caching.createCachingRepositories
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.HexoDatabaseManager
 import de.mineking.hexo.link.oauth2.AESTokenTransform
@@ -26,7 +26,7 @@ import kotlin.io.encoding.Base64
 
 fun main() {
     val config = Config.fromEnvironment()
-    val client = HexoApiClient(socketClient = null)
+    val client = HdsApiClient(socketClient = null)
     val repositories = client.createCachingRepositories()
 
     val accountLinking = config.createAccountLinking()

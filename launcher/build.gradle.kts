@@ -7,7 +7,7 @@ plugins {
 }
 
 dependencies {
-    implementation(projects.api)
+    implementation(projects.hds)
     implementation(projects.discord.bot)
     implementation(projects.discord.link)
     implementation(projects.server)

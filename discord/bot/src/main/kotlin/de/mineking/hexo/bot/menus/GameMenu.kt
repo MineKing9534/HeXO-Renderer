@@ -42,13 +42,6 @@ import de.mineking.discord.ui.render
 import de.mineking.discord.ui.setValue
 import de.mineking.discord.ui.state
 import de.mineking.discord.ui.terminateRender
-import de.mineking.hexo.api.asBoard
-import de.mineking.hexo.api.game.FinishedGame
-import de.mineking.hexo.api.game.FinishedGameRepository
-import de.mineking.hexo.api.game.GameFinishReason
-import de.mineking.hexo.api.game.GameId
-import de.mineking.hexo.api.game.isGuest
-import de.mineking.hexo.api.utils.TimeControl
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.render.RectilinearNotationType
 import de.mineking.hexo.board.render.image.DefaultTheme
@@ -61,6 +54,13 @@ import de.mineking.hexo.bot.utils.asMediaGalleryItem
 import de.mineking.hexo.bot.utils.effectiveLocale
 import de.mineking.hexo.bot.utils.respond
 import de.mineking.hexo.core.CellOwner
+import de.mineking.hexo.hds.asBoard
+import de.mineking.hexo.hds.game.FinishedGame
+import de.mineking.hexo.hds.game.FinishedGameRepository
+import de.mineking.hexo.hds.game.GameFinishReason
+import de.mineking.hexo.hds.game.GameId
+import de.mineking.hexo.hds.game.isGuest
+import de.mineking.hexo.hds.utils.TimeControl
 import dev.freya02.jda.emojis.unicode.Emojis
 import net.dv8tion.jda.api.EmbedBuilder.ZERO_WIDTH_SPACE
 import net.dv8tion.jda.api.components.actionrow.ActionRow

@@ -1,10 +1,10 @@
 package de.mineking.hexo.bot.utils
 
-import de.mineking.hexo.api.asBoard
-import de.mineking.hexo.api.formation.FormationId
-import de.mineking.hexo.api.formation.FormationRepository
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.parse.BoardParser
+import de.mineking.hexo.hds.asBoard
+import de.mineking.hexo.hds.formation.FormationId
+import de.mineking.hexo.hds.formation.FormationRepository
 
 class SandboxFormationOrNotationParser(
     private val formationRepository: FormationRepository,

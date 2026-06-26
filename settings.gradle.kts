@@ -21,8 +21,8 @@ include(":board:render")
 include(":board:render:compose")
 include(":web")
 
-include(":api")
-include(":api:processor")
+include(":hds")
+include(":hds:processor")
 
 include(":discord:link")
 include(":discord:bot")
