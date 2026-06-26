@@ -3,7 +3,6 @@ package de.mineking.hexo.hds.session
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.hds.HdsApiClient
-import de.mineking.hexo.hds.InternalHexoApi
 import de.mineking.hexo.hds.game.Game
 import de.mineking.hexo.hds.game.GameId
 import de.mineking.hexo.hds.game.GameMove
@@ -16,6 +15,8 @@ import de.mineking.hexo.hds.game.TournamentMatchSnapshot
 import de.mineking.hexo.hds.profile.ProfileId
 import de.mineking.hexo.hds.profile.ProfileRepository
 import de.mineking.hexo.hds.tournament.TournamentRepository
+import de.mineking.hexo.hds.utils.EntityState
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
 import kotlin.time.Duration
@@ -38,23 +39,29 @@ interface SessionPlayer {
     val elo: Int
 }
 
+fun SessionPlayer.isGuest() = profileId != null
+
 interface Session {
     val id: SessionId
     val gameOptions: GameOptions
     val players: List<SessionPlayer>
 
-    // TODO observe
+    fun observe(): SharedFlow<EntityState<Session>>
 }
 
 class LobbySession(
+    private val repository: SessionRepository,
     override val id: SessionId,
     override val gameOptions: GameOptions,
     override val players: List<SessionPlayer>,
     val createdAt: Instant,
     val startedAt: Instant?,
 ) : Session {
+    override fun observe() = repository.observeSession(id)
+
     companion object {
-        internal fun of(dto: LobbyInfoDto) = LobbySession(
+        internal fun of(repository: SessionRepository, dto: LobbyInfoDto) = LobbySession(
+            repository = repository,
             id = dto.id,
             gameOptions = GameOptions(
                 rated = dto.rated,
@@ -68,8 +75,10 @@ class LobbySession(
     }
 }
 
+fun LobbySession.hasStarted() = startedAt != null
+
 class LiveSession private constructor(
-    @property:InternalHexoApi val client: HdsApiClient,
+    private val repository: SessionRepository,
     override val id: SessionId,
     override val gameOptions: GameOptions,
     override val players: List<LiveSessionPlayer>,
@@ -80,6 +89,8 @@ class LiveSession private constructor(
     internal val lastState: Pair<Instant, SessionStateDto.InGame>?,
     internal val gameState: SessionGameStateDto,
 ) : Session {
+    override fun observe() = repository.observeSession(id)
+
     companion object {
         private fun SessionDto.createPlayerList(
             repository: ProfileRepository,
@@ -135,6 +146,7 @@ class LiveSession private constructor(
 
         internal fun of(
             client: HdsApiClient,
+            repository: SessionRepository,
             dto: SessionDto,
             lastState: Pair<Instant, SessionStateDto.InGame>?,
             gameState: SessionGameStateDto,
@@ -147,7 +159,7 @@ class LiveSession private constructor(
             val tournament = dto.tournament?.let { TournamentMatchSnapshot.of(it, client.host, tournamentRepository) }
 
             return LiveSession(
-                client = client,
+                repository = repository,
                 id = dto.id,
                 gameOptions = dto.gameOptions,
                 players = players,
@@ -200,9 +212,9 @@ class LiveSessionPlayer(
     color = color,
     tournamentMatchWins = tournamentMatchWins,
 ) {
-    override val profileId = super<Player>.profileId
-    override val displayName = super<Player>.displayName
-    override val elo = super<Player>.elo
+    override val profileId = super.profileId
+    override val displayName = super.displayName
+    override val elo = super.elo
 }
 
 sealed interface SessionState {

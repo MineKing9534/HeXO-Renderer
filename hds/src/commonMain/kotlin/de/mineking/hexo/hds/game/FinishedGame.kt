@@ -4,7 +4,6 @@ import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.hds.AbstractGamePosition
 import de.mineking.hexo.hds.HdsApiClient
-import de.mineking.hexo.hds.InternalHexoApi
 import de.mineking.hexo.hds.profile.ProfileId
 import de.mineking.hexo.hds.profile.ProfileRepository
 import de.mineking.hexo.hds.tournament.TournamentBracket
@@ -43,7 +42,6 @@ interface Game : AbstractGamePosition {
 }
 
 class FinishedGame(
-    @property:InternalHexoApi val client: HdsApiClient,
     override val id: GameId,
     override val startedAt: Instant,
     val url: String,
@@ -91,7 +89,6 @@ class FinishedGame(
             val playersById = players.associateBy { it.playerId }
 
             return FinishedGame(
-                client = client,
                 id = dto.id,
                 startedAt = dto.startedAt,
                 url = "${client.host}/finished-games/${dto.id.value}",
@@ -139,7 +136,6 @@ abstract class Player(
     val color: CellOwner,
     val tournamentMatchWins: Int?,
 ) {
-    @OptIn(InternalHexoApi::class)
     suspend fun fetchProfile() = profileId?.let { repository.getProfile(it) }
 }
 
@@ -157,10 +153,7 @@ class TournamentMatchSnapshot(
     val bestOf: Int,
     val currentGameNumber: Int,
 ) {
-    @OptIn(InternalHexoApi::class)
     suspend fun retrieveTournament() = repository().getTournament(tournamentId)
-
-    @OptIn(InternalHexoApi::class)
     fun observeTournament() = repository().observeTournament(tournamentId)
 
     companion object {

@@ -1,7 +1,6 @@
 package de.mineking.hexo.hds.tournament
 
 import de.mineking.hexo.hds.HdsApiClient
-import de.mineking.hexo.hds.InternalHexoApi
 import de.mineking.hexo.hds.game.FinishedGameRepository
 import de.mineking.hexo.hds.game.GameReference
 import de.mineking.hexo.hds.profile.ProfileId
@@ -23,7 +22,6 @@ value class TournamentId(val value: Uuid)
 value class TournamentMatchId(val value: String)
 
 class Tournament private constructor(
-    @property:InternalHexoApi val client: HdsApiClient,
     val id: TournamentId,
     val url: String,
     val name: String,
@@ -109,7 +107,6 @@ class Tournament private constructor(
             val matches = dto.createMatchList(finishedGameRepository, sessionRepository, participants)
 
             return Tournament(
-                client = client,
                 id = dto.id,
                 url = "${client.host}/tournaments/${dto.id.value}",
                 name = dto.name,
@@ -139,7 +136,6 @@ class TournamentParticipant(
     val seed: Int?,
     val standing: TournamentStanding,
 ) {
-    @OptIn(InternalHexoApi::class)
     suspend fun fetchProfile() = repository.getProfile(profileId)
 }
 

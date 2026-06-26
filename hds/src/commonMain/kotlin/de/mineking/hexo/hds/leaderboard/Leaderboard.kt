@@ -1,6 +1,5 @@
 package de.mineking.hexo.hds.leaderboard
 
-import de.mineking.hexo.hds.InternalHexoApi
 import de.mineking.hexo.hds.profile.ProfileId
 import de.mineking.hexo.hds.profile.ProfileRepository
 import de.mineking.hexo.hds.profile.ProfileStatistics
@@ -42,6 +41,5 @@ class LeaderboardEntry(
     val elo: Int,
     val totalGames: ProfileStatistics.TotalGames,
 ) {
-    @OptIn(InternalHexoApi::class)
     suspend fun retrieveProfile() = repository.getProfile(profileId)
 }

@@ -27,9 +27,6 @@ import kotlinx.serialization.json.Json
 
 const val DEFAULT_HOST = "https://hexo.did.science"
 
-@RequiresOptIn(level = RequiresOptIn.Level.WARNING)
-annotation class InternalHexoApi
-
 private val logger = KotlinLogging.logger {}
 
 internal val json = Json {
