@@ -133,9 +133,9 @@ class FinishedGamePlayer(
 abstract class Player(
     private val repository: ProfileRepository,
     val playerId: PlayerId,
-    val profileId: ProfileId?,
-    val displayName: String,
-    val elo: Int,
+    open val profileId: ProfileId?,
+    open val displayName: String,
+    open val elo: Int,
     val color: CellOwner,
     val tournamentMatchWins: Int?,
 ) {

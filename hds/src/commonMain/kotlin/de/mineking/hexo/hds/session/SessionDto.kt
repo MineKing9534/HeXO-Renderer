@@ -9,6 +9,7 @@ import de.mineking.hexo.hds.game.TournamentMatchSnapshotDto
 import de.mineking.hexo.hds.profile.ProfileId
 import de.mineking.hexo.hds.utils.Duration
 import de.mineking.hexo.hds.utils.Instant
+import de.mineking.hexo.hds.utils.TimeControl
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -115,4 +116,21 @@ internal data class SessionMoveDto(
     val occupiedBy: PlayerId,
     @SerialName("x") val q: Int,
     @SerialName("y") val r: Int,
+)
+
+@Serializable
+internal data class LobbyPlayerDto(
+    override val profileId: ProfileId?,
+    override val displayName: String,
+    override val elo: Int,
+) : SessionPlayer
+
+@Serializable
+internal data class LobbyInfoDto(
+    val id: SessionId,
+    val players: List<LobbyPlayerDto>,
+    val timeControl: TimeControl,
+    val rated: Boolean,
+    val createdAt: Instant,
+    val startedAt: Instant?,
 )

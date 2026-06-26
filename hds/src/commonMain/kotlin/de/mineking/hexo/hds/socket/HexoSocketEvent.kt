@@ -1,5 +1,6 @@
 package de.mineking.hexo.hds.socket
 
+import de.mineking.hexo.hds.session.LobbyInfoDto
 import de.mineking.hexo.hds.session.SessionDto
 import de.mineking.hexo.hds.session.SessionGameStateDto
 import de.mineking.hexo.hds.session.SessionId
@@ -8,7 +9,10 @@ import de.mineking.hexo.hds.session.SessionPlayerDto
 import de.mineking.hexo.hds.session.SessionStateDto
 import de.mineking.hexo.hds.tournament.TournamentId
 import de.mineking.hexo.hds.utils.Instant
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlin.reflect.KClass
 
 internal annotation class SocketEventName(val name: String)
@@ -65,6 +69,26 @@ internal data class GameCellPlace(
     val state: SessionGameStateDto,
     val cell: SessionMoveDto,
 ) : HexoSocketEvent
+
+@Serializable
+@SocketEventName("lobby-removed")
+internal data class LobbyRemoved(
+    val id: SessionId,
+) : HexoSocketEvent
+
+@Serializable(with = LobbyUpdated.LobbyUpdateSerializer::class)
+@SocketEventName("lobby-updated")
+internal data class LobbyUpdated(
+    val id: SessionId,
+    val data: LobbyInfoDto,
+) : HexoSocketEvent {
+    object LobbyUpdateSerializer : KSerializer<LobbyUpdated> {
+        override val descriptor = LobbyInfoDto.serializer().descriptor
+
+        override fun deserialize(decoder: Decoder) = LobbyInfoDto.serializer().deserialize(decoder).let { LobbyUpdated(it.id, it) }
+        override fun serialize(encoder: Encoder, value: LobbyUpdated) = throw UnsupportedOperationException()
+    }
+}
 
 sealed interface ProtocolSocketEvent : SocketEvent {
     @Serializable

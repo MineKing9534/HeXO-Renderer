@@ -4,7 +4,10 @@ import de.mineking.hexo.hds.HdsApiClient
 import de.mineking.hexo.hds.profile.ProfileRepository
 import de.mineking.hexo.hds.socket.GameCellPlace
 import de.mineking.hexo.hds.socket.GameStateUpdated
+import de.mineking.hexo.hds.socket.HexoSocketEvent
 import de.mineking.hexo.hds.socket.HexoSocketRequest
+import de.mineking.hexo.hds.socket.LobbyRemoved
+import de.mineking.hexo.hds.socket.LobbyUpdated
 import de.mineking.hexo.hds.socket.ProtocolSocketEvent
 import de.mineking.hexo.hds.socket.SessionUpdated
 import de.mineking.hexo.hds.socket.SessionWatchError
@@ -15,17 +18,21 @@ import de.mineking.hexo.hds.tournament.TournamentRepository
 import de.mineking.hexo.hds.utils.EntityState
 import de.mineking.hexo.hds.utils.withLock
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.client.call.body
 import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.launch
 import kotlin.time.Clock
 
 private val logger = KotlinLogging.logger {}
 
 interface SessionRepository {
-    // TODO track available lobbies
+    val lobbies: StateFlow<Map<SessionId, LobbySession>>
 
-    fun observeSession(id: SessionId): StateFlow<EntityState<Session>>
+    // TODO handle lobby sessions
+    fun observeSession(id: SessionId): StateFlow<EntityState<LiveSession>>
 }
 
 internal class SessionRepositoryImpl(
@@ -34,17 +41,43 @@ internal class SessionRepositoryImpl(
     private val tournamentRepository: () -> TournamentRepository,
 ) : SessionRepository {
     private val sessionsLock = SynchronizedObject()
-    private val sessions = mutableMapOf<SessionId, StateFlow<EntityState<Session>>>()
+    private val sessions = mutableMapOf<SessionId, StateFlow<EntityState<LiveSession>>>()
 
-    private fun Session.createLastState() = dto.state
+    override val lobbies = MutableStateFlow(emptyMap<SessionId, LobbySession>())
+
+    init {
+        client.coroutineScope.launch {
+            populateLobbyList()
+            client.socketClient?.events
+                ?.filterIsInstance<HexoSocketEvent>()
+                ?.collect { handleLobbyEvent(it) }
+        }
+    }
+
+    private suspend fun populateLobbyList() {
+        val response = client.request("/sessions")
+        val lobbies = response.body<List<LobbyInfoDto>>()
+
+        this.lobbies.value = lobbies.associate { it.id to LobbySession.of(it) }
+    }
+
+    private fun handleLobbyEvent(event: HexoSocketEvent) {
+        when (event) {
+            is LobbyRemoved -> lobbies.value -= event.id
+            is LobbyUpdated -> lobbies.value += event.id to LobbySession.of(event.data)
+            else -> {}
+        }
+    }
+
+    private fun LiveSession.createLastState() = dto.state
         .let { it as? SessionStateDto.InGame }
         ?.let { Clock.System.now() to it }
         ?: lastState
 
-    private fun MutableStateFlow<EntityState<Session>>.populate(client: SocketIOClient) {
+    private fun MutableStateFlow<EntityState<LiveSession>>.populate(client: SocketIOClient) {
         client.listen<SessionWatchStarted> { event ->
             logger.info { "Successfully joined session ${event.session.id.value}" }
-            value = EntityState.Data(Session.of(
+            value = EntityState.Data(LiveSession.of(
                 client = this@SessionRepositoryImpl.client,
                 dto = event.session,
                 lastState = null,
@@ -61,7 +94,7 @@ internal class SessionRepositoryImpl(
                 return@listen
             }
 
-            this@populate.value = EntityState.Data(Session.of(
+            this@populate.value = EntityState.Data(LiveSession.of(
                 client = this@SessionRepositoryImpl.client,
                 dto = value.value.dto,
                 lastState = value.value.createLastState(),
@@ -81,7 +114,7 @@ internal class SessionRepositoryImpl(
                 return@listen
             }
 
-            this@populate.value = EntityState.Data(Session.of(
+            this@populate.value = EntityState.Data(LiveSession.of(
                 client = this@SessionRepositoryImpl.client,
                 dto = value.value.dto,
                 lastState = value.value.createLastState(),
@@ -92,8 +125,8 @@ internal class SessionRepositoryImpl(
         }
     }
 
-    private fun createSession(client: SocketIOClient, id: SessionId): StateFlow<EntityState<Session>> {
-        val flow = MutableStateFlow<EntityState<Session>>(EntityState.Loading)
+    private fun createSession(client: SocketIOClient, id: SessionId): StateFlow<EntityState<LiveSession>> {
+        val flow = MutableStateFlow<EntityState<LiveSession>>(EntityState.Loading)
 
         fun cleanup() {
             client.disconnect()
@@ -139,7 +172,7 @@ internal class SessionRepositoryImpl(
                 return@listen
             }
 
-            val session = Session.of(
+            val session = LiveSession.of(
                 client = this@SessionRepositoryImpl.client,
                 dto = value.value.dto.copy(
                     state = event.session.state ?: value.value.dto.state,
@@ -166,7 +199,7 @@ internal class SessionRepositoryImpl(
         return flow
     }
 
-    override fun observeSession(id: SessionId): StateFlow<EntityState<Session>> {
+    override fun observeSession(id: SessionId): StateFlow<EntityState<LiveSession>> {
         if (client.socketClient == null) error("Cannot observe sessions without a SocketIO connection")
 
         return sessionsLock.withLock {

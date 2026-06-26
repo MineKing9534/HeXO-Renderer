@@ -9,6 +9,7 @@ import de.mineking.hexo.hds.game.GameId
 import de.mineking.hexo.hds.game.GameMove
 import de.mineking.hexo.hds.game.GameOptions
 import de.mineking.hexo.hds.game.GameResult
+import de.mineking.hexo.hds.game.GameVisibility
 import de.mineking.hexo.hds.game.Player
 import de.mineking.hexo.hds.game.PlayerId
 import de.mineking.hexo.hds.game.TournamentMatchSnapshot
@@ -31,17 +32,54 @@ class SessionReference(
     fun observe() = repository.observeSession(id)
 }
 
-class Session private constructor(
+interface SessionPlayer {
+    val profileId: ProfileId?
+    val displayName: String
+    val elo: Int
+}
+
+interface Session {
+    val id: SessionId
+    val gameOptions: GameOptions
+    val players: List<SessionPlayer>
+
+    // TODO observe
+}
+
+class LobbySession(
+    override val id: SessionId,
+    override val gameOptions: GameOptions,
+    override val players: List<SessionPlayer>,
+    val createdAt: Instant,
+    val startedAt: Instant?,
+) : Session {
+    companion object {
+        internal fun of(dto: LobbyInfoDto) = LobbySession(
+            id = dto.id,
+            gameOptions = GameOptions(
+                rated = dto.rated,
+                timeControl = dto.timeControl,
+                visibility = GameVisibility.Public,
+            ),
+            players = dto.players,
+            createdAt = dto.createdAt,
+            startedAt = dto.startedAt,
+        )
+    }
+}
+
+class LiveSession private constructor(
     @property:InternalHexoApi val client: HdsApiClient,
-    val id: SessionId,
-    val gameOptions: GameOptions,
-    val players: List<SessionPlayer>,
+    override val id: SessionId,
+    override val gameOptions: GameOptions,
+    override val players: List<LiveSessionPlayer>,
     val tournamentInfo: TournamentMatchSnapshot?,
     val state: SessionState,
+    val game: SessionGame,
     internal val dto: SessionDto,
     internal val lastState: Pair<Instant, SessionStateDto.InGame>?,
     internal val gameState: SessionGameStateDto,
-) {
+) : Session {
     companion object {
         private fun SessionDto.createPlayerList(
             repository: ProfileRepository,
@@ -55,7 +93,7 @@ class Session private constructor(
                 }
             } ?: CellOwner.entries[index]
 
-            SessionPlayer(
+            LiveSessionPlayer(
                 repository = repository,
                 playerId = data.id,
                 profileId = data.profileId?.takeIf { it.value != data.id.value },
@@ -79,12 +117,10 @@ class Session private constructor(
 
         private fun SessionStateDto.toSessionState(
             gameState: SessionGameStateDto?,
-            playersById: Map<PlayerId, SessionPlayer>,
-            game: () -> SessionGame,
+            playersById: Map<PlayerId, LiveSessionPlayer>,
         ) = when (this) {
-            is SessionStateDto.Lobby -> SessionState.Lobby
+            is SessionStateDto.Lobby -> error("Cannot create live LiveSession from lobby")
             is SessionStateDto.InGame -> SessionState.InGame(
-                game = game(),
                 currentTurn = SessionTurn(
                     player = playersById[gameState!!.currentTurnPlayerId]!!,
                     placementsRemaining = gameState.placementsRemaining,
@@ -93,7 +129,6 @@ class Session private constructor(
             )
 
             is SessionStateDto.Finished -> SessionState.Finished(
-                game = game(),
                 rematchAcceptedPlayers = rematchAcceptedPlayerIds.mapNotNull { playersById[it] },
             )
         }
@@ -105,28 +140,27 @@ class Session private constructor(
             gameState: SessionGameStateDto,
             profileRepository: ProfileRepository,
             tournamentRepository: () -> TournamentRepository,
-        ): Session {
+        ): LiveSession {
             val players = dto.createPlayerList(profileRepository, gameState)
             val playersById = players.associateBy { it.playerId }
 
             val tournament = dto.tournament?.let { TournamentMatchSnapshot.of(it, client.host, tournamentRepository) }
 
-            return Session(
+            return LiveSession(
                 client = client,
                 id = dto.id,
                 gameOptions = dto.gameOptions,
                 players = players,
                 tournamentInfo = tournament,
-                state = dto.state.toSessionState(gameState, playersById) {
-                    SessionGame.of(
-                        dto = dto,
-                        lastState = lastState,
-                        tournamentInfo = tournament,
-                        gameState = gameState,
-                        players = players,
-                        playersById = playersById,
-                    )
-                },
+                state = dto.state.toSessionState(gameState, playersById),
+                game = SessionGame.of(
+                    dto = dto,
+                    lastState = lastState,
+                    tournamentInfo = tournament,
+                    gameState = gameState,
+                    players = players,
+                    playersById = playersById,
+                ),
                 dto = dto,
                 lastState = lastState,
                 gameState = gameState,
@@ -146,7 +180,7 @@ data class SessionPlayerEloAdjustment(
     val eloLoss: Int,
 )
 
-class SessionPlayer(
+class LiveSessionPlayer(
     repository: ProfileRepository,
     playerId: PlayerId,
     profileId: ProfileId?,
@@ -157,7 +191,7 @@ class SessionPlayer(
     tournamentMatchWins: Int?,
     val timeRemaining: Duration?,
     val connectionStatus: SessionPlayerConnectionStatus,
-) : Player(
+) : SessionPlayer, Player(
     repository = repository,
     playerId = playerId,
     profileId = profileId,
@@ -165,28 +199,19 @@ class SessionPlayer(
     elo = elo,
     color = color,
     tournamentMatchWins = tournamentMatchWins,
-)
+) {
+    override val profileId = super<Player>.profileId
+    override val displayName = super<Player>.displayName
+    override val elo = super<Player>.elo
+}
 
 sealed interface SessionState {
-    data object Lobby : SessionState
-
-    sealed interface GameSessionState : SessionState {
-        val game: SessionGame
-    }
-
-    data class InGame(
-        override val game: SessionGame,
-        val currentTurn: SessionTurn,
-    ) : GameSessionState
-
-    data class Finished(
-        override val game: SessionGame,
-        val rematchAcceptedPlayers: List<SessionPlayer>,
-    ) : GameSessionState
+    data class InGame(val currentTurn: SessionTurn) : SessionState
+    data class Finished(val rematchAcceptedPlayers: List<SessionPlayer>) : SessionState
 }
 
 data class SessionTurn(
-    val player: SessionPlayer,
+    val player: LiveSessionPlayer,
     val placementsRemaining: Int,
     val expiresIn: Duration?,
 )
@@ -198,7 +223,7 @@ class SessionGame(
     override val options: GameOptions,
     override val tournamentInfo: TournamentMatchSnapshot?,
     override val moves: List<GameMove>,
-    override val players: List<SessionPlayer>,
+    override val players: List<LiveSessionPlayer>,
 ) : Game {
     override val moveCount get() = moves.size
 
@@ -208,8 +233,8 @@ class SessionGame(
             lastState: Pair<Instant, SessionStateDto.InGame>?,
             tournamentInfo: TournamentMatchSnapshot?,
             gameState: SessionGameStateDto,
-            players: List<SessionPlayer>,
-            playersById: Map<PlayerId, SessionPlayer>,
+            players: List<LiveSessionPlayer>,
+            playersById: Map<PlayerId, LiveSessionPlayer>,
         ) = SessionGame(
             id = (dto.state as SessionStateDto.GameSessionState).gameId,
             startedAt = when (dto.state) {
