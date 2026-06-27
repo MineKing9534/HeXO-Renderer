@@ -14,7 +14,6 @@ import de.mineking.hexo.hds.game.PlayerId
 import de.mineking.hexo.hds.game.TournamentMatchSnapshot
 import de.mineking.hexo.hds.profile.ProfileId
 import de.mineking.hexo.hds.profile.ProfileRepository
-import de.mineking.hexo.hds.tournament.TournamentRepository
 import de.mineking.hexo.hds.utils.EntityState
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.serialization.Serializable
@@ -146,20 +145,17 @@ class LiveSession private constructor(
 
         internal fun of(
             client: HdsApiClient,
-            repository: SessionRepository,
             dto: SessionDto,
             lastState: Pair<Instant, SessionStateDto.InGame>?,
             gameState: SessionGameStateDto,
-            profileRepository: ProfileRepository,
-            tournamentRepository: () -> TournamentRepository,
         ): LiveSession {
-            val players = dto.createPlayerList(profileRepository, gameState)
+            val players = dto.createPlayerList(client.profileRepository, gameState)
             val playersById = players.associateBy { it.playerId }
 
-            val tournament = dto.tournament?.let { TournamentMatchSnapshot.of(it, client.host, tournamentRepository) }
+            val tournament = dto.tournament?.let { TournamentMatchSnapshot.of(it, client) }
 
             return LiveSession(
-                repository = repository,
+                repository = client.sessionRepository,
                 id = dto.id,
                 gameOptions = dto.gameOptions,
                 players = players,

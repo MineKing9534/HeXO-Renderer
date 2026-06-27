@@ -98,13 +98,10 @@ class Tournament private constructor(
 
         internal fun of(
             client: HdsApiClient,
-            profileRepository: ProfileRepository,
-            finishedGameRepository: FinishedGameRepository,
-            sessionRepository: SessionRepository,
             dto: TournamentDto,
         ): Tournament {
-            val participants = dto.createParticipantList(profileRepository)
-            val matches = dto.createMatchList(finishedGameRepository, sessionRepository, participants)
+            val participants = dto.createParticipantList(client.profileRepository)
+            val matches = dto.createMatchList(client.finishedGameRepository, client.sessionRepository, participants)
 
             return Tournament(
                 id = dto.id,

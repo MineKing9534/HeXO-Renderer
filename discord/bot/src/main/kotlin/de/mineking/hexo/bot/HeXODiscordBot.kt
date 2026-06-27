@@ -27,7 +27,7 @@ import de.mineking.hexo.bot.menus.leaderboardMenu
 import de.mineking.hexo.bot.menus.profileMenu
 import de.mineking.hexo.bot.utils.installErrorHandling
 import de.mineking.hexo.bot.utils.updateLinkedRoleMetadata
-import de.mineking.hexo.hds.HexoRepositories
+import de.mineking.hexo.hds.HdsApiClient
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.DiscordUserId
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
@@ -51,7 +51,7 @@ internal val logger = KotlinLogging.logger {}
 val Manager.main get() = manager.bot as HeXODiscordBot
 
 class HeXODiscordBot(
-    private val repositories: HexoRepositories,
+    private val client: HdsApiClient,
     private val accountLinkRepository: AccountLinkRepository?,
     private val discordUserAuthenticationRepository: DiscordUserAuthenticationRepository?,
     val notationParser: BoardParser,
@@ -81,14 +81,14 @@ class HeXODiscordBot(
             localize()
             installErrorHandling()
 
-            gameMenu = gameMenu(repositories.finishedGames)
-            profileMenu = profileMenu(repositories.profiles, accountLinkRepository)
-            leaderboardMenu = leaderboardMenu(repositories.leaderboard, accountLinkRepository, profileMenu)
+            gameMenu = gameMenu(client.finishedGameRepository)
+            profileMenu = profileMenu(client.profileRepository, accountLinkRepository)
+            leaderboardMenu = leaderboardMenu(client.leaderboardRepository, accountLinkRepository, profileMenu)
             if (discordUserAuthenticationRepository != null && accountLinkRepository != null) {
                 accountLinkMenu = accountLinkMenu(
                     discordAuthRepository = discordUserAuthenticationRepository,
                     accountLinkRepository = accountLinkRepository,
-                    profileRepository = repositories.profiles,
+                    profileRepository = client.profileRepository,
                 )
             }
         }
@@ -102,7 +102,7 @@ class HeXODiscordBot(
             +gameCommand(gameMenu)
             +leaderboardCommand(leaderboardMenu)
 
-            +profileCommand(accountLinkRepository, repositories.profiles, profileMenu)
+            +profileCommand(accountLinkRepository, client.profileRepository, profileMenu)
             if (accountLinkRepository != null) {
                 +profileUserCommand(accountLinkRepository, profileMenu)
             }

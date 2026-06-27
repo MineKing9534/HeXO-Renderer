@@ -20,7 +20,6 @@ import de.mineking.hexo.board.render.image.DefaultTheme
 import de.mineking.hexo.board.render.image.Theme
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.hds.HdsApiClient
-import de.mineking.hexo.hds.createRepositories
 import de.mineking.hexo.web.components.Dialog
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -81,8 +80,6 @@ enum class CellPlacementMode {
 
 @Composable
 private fun MainLayout(client: HdsApiClient?, initialBoard: Board) {
-    val repositories = remember(client) { client?.createRepositories() }
-
     val viewport = remember { mutableStateOf<BoardViewport?>(null) }
     val theme = remember { mutableStateOf(DefaultTheme.HDS) }
     val placementMode = remember {
@@ -121,7 +118,7 @@ private fun MainLayout(client: HdsApiClient?, initialBoard: Board) {
             },
         )
         Sidebar(
-            repositories = repositories,
+            client = client,
             placementMode = placementMode,
             board = transformedBoard,
             onBoardChange = { cause, updated ->

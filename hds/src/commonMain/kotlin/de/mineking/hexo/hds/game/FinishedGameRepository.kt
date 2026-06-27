@@ -1,8 +1,6 @@
 package de.mineking.hexo.hds.game
 
 import de.mineking.hexo.hds.HdsApiClient
-import de.mineking.hexo.hds.profile.ProfileRepository
-import de.mineking.hexo.hds.tournament.TournamentRepository
 import io.ktor.client.call.body
 import io.ktor.client.request.parameter
 import io.ktor.http.isSuccess
@@ -14,16 +12,12 @@ interface FinishedGameRepository {
     suspend fun getFinishedGames(page: Int, pageSize: Int, rated: Boolean? = null): List<FinishedGame>
 }
 
-internal class FinishedGameRepositoryImpl(
-    private val client: HdsApiClient,
-    private val profileRepository: ProfileRepository,
-    private val tournamentRepository: () -> TournamentRepository,
-) : FinishedGameRepository {
+internal class FinishedGameRepositoryImpl(private val client: HdsApiClient) : FinishedGameRepository {
     private val requester = client.entityRequesterFactory.createEntityRequester<GameId, FinishedGame> {
         val response = client.request("/finished-games/${it.value}")
 
         if (!response.status.isSuccess()) return@createEntityRequester null
-        FinishedGame.of(client, profileRepository, tournamentRepository, response.body())
+        FinishedGame.of(client, response.body())
     }
 
     private val listRequester = client.entityRequesterFactory.createEntityRequester<FinishedGamesParameter, List<FinishedGame>> { param ->
@@ -42,7 +36,7 @@ internal class FinishedGameRepositoryImpl(
         @Serializable
         data class Response(val games: List<FinishedGameDto>)
         response.body<Response>().games
-            .map { FinishedGame.of(client, profileRepository, tournamentRepository, it) }
+            .map { FinishedGame.of(client, it) }
     }
 
     override suspend fun getGame(id: GameId) = requester.fetch(id)

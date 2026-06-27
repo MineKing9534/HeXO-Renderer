@@ -1,5 +1,6 @@
 package de.mineking.hexo.hds.leaderboard
 
+import de.mineking.hexo.hds.HdsApiClient
 import de.mineking.hexo.hds.profile.ProfileId
 import de.mineking.hexo.hds.profile.ProfileRepository
 import de.mineking.hexo.hds.profile.ProfileStatistics
@@ -11,13 +12,13 @@ class Leaderboard(
     val players: List<LeaderboardEntry>,
 ) {
     companion object {
-        internal fun of(profileRepository: ProfileRepository, dto: LeaderboardDto): Leaderboard {
+        internal fun of(client: HdsApiClient, dto: LeaderboardDto): Leaderboard {
             return Leaderboard(
                 generatedAt = dto.generatedAt,
                 nextRefreshAt = dto.nextRefreshAt,
                 players = dto.players.map {
                     LeaderboardEntry(
-                        repository = profileRepository,
+                        repository = client.profileRepository,
                         profileId = it.profileId,
                         displayName = it.displayName,
                         image = it.image,

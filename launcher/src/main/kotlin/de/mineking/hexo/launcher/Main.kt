@@ -11,8 +11,7 @@ import de.mineking.hexo.bot.outputBoardAttachment
 import de.mineking.hexo.bot.utils.LinkedRolesUpdateService
 import de.mineking.hexo.bot.utils.SandboxFormationOrNotationParser
 import de.mineking.hexo.hds.HdsApiClient
-import de.mineking.hexo.hds.HexoRepositories
-import de.mineking.hexo.hds.caching.createCachingRepositories
+import de.mineking.hexo.hds.caching.CachingRepositoryWrapper
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.HexoDatabaseManager
 import de.mineking.hexo.link.oauth2.AESTokenTransform
@@ -26,20 +25,19 @@ import kotlin.io.encoding.Base64
 
 fun main() {
     val config = Config.fromEnvironment()
-    val client = HdsApiClient(socketClient = null)
-    val repositories = client.createCachingRepositories()
+    val client = HdsApiClient(socketClient = null, repositoryWrapper = CachingRepositoryWrapper())
 
     val accountLinking = config.createAccountLinking()
-    val linkedRoles = createLinkedRolesFeature(config, repositories, accountLinking)
+    val linkedRoles = createLinkedRolesFeature(config, client, accountLinking)
 
     val pngRenderer = BufferedImageBoardRenderer.Default.outputPngBytes().cached()
 
     val bot = HeXODiscordBot(
-        repositories = repositories,
+        client = client,
         accountLinkRepository = accountLinking.accountLinkRepository,
         discordUserAuthenticationRepository = accountLinking.discordUserAuthenticationRepository,
         linkedRolesUrl = linkedRoles?.url,
-        notationParser = repositories.createNotationParser(),
+        notationParser = client.createNotationParser(),
         boardRenderer = pngRenderer.outputBoardAttachment("png"),
         token = config.bot.token,
     )
@@ -99,7 +97,7 @@ private fun Config.createDiscordUserAuthenticationRepository(
 
 private fun createLinkedRolesFeature(
     config: Config,
-    repositories: HexoRepositories,
+    client: HdsApiClient,
     accountLinking: AccountLinking,
 ): LinkedRolesFeature? {
     val server = config.server ?: return null
@@ -110,8 +108,8 @@ private fun createLinkedRolesFeature(
         updateService = LinkedRolesUpdateService(
             accountLinkRepository = accountLinkRepository,
             discordUserAuthenticationRepository = discordUserAuthenticationRepository,
-            finishedGameRepository = repositories.finishedGames,
-            profileRepository = repositories.profiles,
+            finishedGameRepository = client.finishedGameRepository,
+            profileRepository = client.profileRepository,
         ),
         url = server.linkedRolesUrl,
     )
@@ -143,8 +141,8 @@ private fun installShutdownHook(bot: HeXODiscordBot, httpServer: HttpServer?) {
     )
 }
 
-private fun HexoRepositories.createNotationParser(): BoardParser = SandboxFormationOrNotationParser(
-    formationRepository = formations,
+private fun HdsApiClient.createNotationParser(): BoardParser = SandboxFormationOrNotationParser(
+    formationRepository = formationRepository,
     delegateParser = CombinedHexoNotationParser(),
 ).cached()
 

@@ -1,7 +1,6 @@
 package de.mineking.hexo.hds.session
 
 import de.mineking.hexo.hds.HdsApiClient
-import de.mineking.hexo.hds.profile.ProfileRepository
 import de.mineking.hexo.hds.socket.GameCellPlace
 import de.mineking.hexo.hds.socket.GameStateUpdated
 import de.mineking.hexo.hds.socket.HexoSocketEvent
@@ -14,7 +13,6 @@ import de.mineking.hexo.hds.socket.SessionWatchError
 import de.mineking.hexo.hds.socket.SessionWatchStarted
 import de.mineking.hexo.hds.socket.SocketIOClient
 import de.mineking.hexo.hds.socket.listen
-import de.mineking.hexo.hds.tournament.TournamentRepository
 import de.mineking.hexo.hds.utils.EntityState
 import de.mineking.hexo.hds.utils.withLock
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -36,11 +34,7 @@ interface SessionRepository {
     fun observeSession(id: SessionId): StateFlow<EntityState<Session>>
 }
 
-internal class SessionRepositoryImpl(
-    private val client: HdsApiClient,
-    private val profileRepository: ProfileRepository,
-    private val tournamentRepository: () -> TournamentRepository,
-) : SessionRepository {
+internal class SessionRepositoryImpl(private val client: HdsApiClient) : SessionRepository {
     private val lobbyInitialization = CompletableDeferred<Unit>()
     override val lobbies = MutableStateFlow(emptyMap<SessionId, LobbySession>())
 
@@ -169,7 +163,6 @@ internal class SessionRepositoryImpl(
                 val value = state.value as? LiveSession ?: return@listen
 
                 val session = LiveSession.of(
-                    repository = this@SessionRepositoryImpl,
                     client = this@SessionRepositoryImpl.client,
                     dto = value.dto.copy(
                         state = event.session.state ?: value.dto.state,
@@ -177,8 +170,6 @@ internal class SessionRepositoryImpl(
                     ),
                     lastState = value.createLastState(),
                     gameState = value.gameState,
-                    profileRepository = profileRepository,
-                    tournamentRepository = tournamentRepository,
                 )
 
                 if (event.session.state !is SessionStateDto.Finished) return@listen
@@ -200,13 +191,10 @@ internal class SessionRepositoryImpl(
         client.listen<SessionWatchStarted> { event ->
             logger.info { "Successfully joined session ${event.session.id.value}" }
             this@populate.value = EntityState.Data(LiveSession.of(
-                repository = this@SessionRepositoryImpl,
                 client = this@SessionRepositoryImpl.client,
                 dto = event.session,
                 lastState = null,
                 gameState = event.gameState,
-                profileRepository = profileRepository,
-                tournamentRepository = tournamentRepository,
             ))
         }
 
@@ -220,7 +208,6 @@ internal class SessionRepositoryImpl(
                 val value = state.value as? LiveSession ?: return@listen
 
                 EntityState.Data(LiveSession.of(
-                    repository = this@SessionRepositoryImpl,
                     client = this@SessionRepositoryImpl.client,
                     dto = value.dto,
                     lastState = value.createLastState(),
@@ -228,8 +215,6 @@ internal class SessionRepositoryImpl(
                         cells = (value.gameState.cells ?: emptyList()) + event.cell,
                         playerTiles = value.gameState.playerTiles,
                     ),
-                    profileRepository = profileRepository,
-                    tournamentRepository = tournamentRepository,
                 ))
             }
         }
@@ -243,13 +228,10 @@ internal class SessionRepositoryImpl(
 
                 val value = state.value as? LiveSession ?: return@listen
                 EntityState.Data(LiveSession.of(
-                    repository = this@SessionRepositoryImpl,
                     client = this@SessionRepositoryImpl.client,
                     dto = value.dto,
                     lastState = value.createLastState(),
                     gameState = event.gameState,
-                    profileRepository = profileRepository,
-                    tournamentRepository = tournamentRepository,
                 ))
             }
         }

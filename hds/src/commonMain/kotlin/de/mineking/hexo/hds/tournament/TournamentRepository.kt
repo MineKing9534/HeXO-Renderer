@@ -1,9 +1,6 @@
 package de.mineking.hexo.hds.tournament
 
 import de.mineking.hexo.hds.HdsApiClient
-import de.mineking.hexo.hds.game.FinishedGameRepository
-import de.mineking.hexo.hds.profile.ProfileRepository
-import de.mineking.hexo.hds.session.SessionRepository
 import de.mineking.hexo.hds.socket.TournamentUpdate
 import de.mineking.hexo.hds.utils.EntityState
 import de.mineking.hexo.hds.utils.withLock
@@ -20,12 +17,7 @@ interface TournamentRepository {
     fun observeTournament(id: TournamentId): StateFlow<EntityState<Tournament>>
 }
 
-internal class TournamentRepositoryImpl(
-    private val client: HdsApiClient,
-    private val profileRepository: ProfileRepository,
-    private val finishedGameRepository: FinishedGameRepository,
-    private val sessionRepository: SessionRepository,
-) : TournamentRepository {
+internal class TournamentRepositoryImpl(private val client: HdsApiClient) : TournamentRepository {
     init {
         if (client.socketClient != null) {
             client.coroutineScope.launch {
@@ -44,7 +36,7 @@ internal class TournamentRepositoryImpl(
     private val requester = client.entityRequesterFactory.createEntityRequester<TournamentId, Tournament> { id ->
         val response = client.request("/tournaments/${id.value}")
         val tournament = when {
-            response.status.isSuccess() -> Tournament.of(client, profileRepository, finishedGameRepository, sessionRepository, response.body())
+            response.status.isSuccess() -> Tournament.of(client, response.body())
             else -> null
         }
 

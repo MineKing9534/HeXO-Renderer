@@ -81,11 +81,9 @@ class FinishedGame(
 
         internal fun of(
             client: HdsApiClient,
-            profileRepository: ProfileRepository,
-            tournamentRepository: () -> TournamentRepository,
             dto: FinishedGameDto,
         ): FinishedGame {
-            val players = dto.createPlayerList(profileRepository)
+            val players = dto.createPlayerList(client.profileRepository)
             val playersById = players.associateBy { it.playerId }
 
             return FinishedGame(
@@ -94,7 +92,7 @@ class FinishedGame(
                 url = "${client.host}/finished-games/${dto.id.value}",
                 result = GameResult(playersById[dto.result.winningPlayerId], dto.result.duration, dto.result.reason),
                 options = dto.options,
-                tournamentInfo = dto.tournament?.let { TournamentMatchSnapshot.of(it, client.host, tournamentRepository) },
+                tournamentInfo = dto.tournament?.let { TournamentMatchSnapshot.of(it, client) },
                 moves = dto.moves.map {
                     GameMove(
                         coordinate = CellCoordinate(it.q, it.r),
@@ -142,7 +140,7 @@ abstract class Player(
 fun Player.isGuest() = profileId == null
 
 class TournamentMatchSnapshot(
-    private val repository: () -> TournamentRepository,
+    private val repository: TournamentRepository,
     val tournamentId: TournamentId,
     val tournamentUrl: String,
     val tournamentName: String,
@@ -153,18 +151,17 @@ class TournamentMatchSnapshot(
     val bestOf: Int,
     val currentGameNumber: Int,
 ) {
-    suspend fun retrieveTournament() = repository().getTournament(tournamentId)
-    fun observeTournament() = repository().observeTournament(tournamentId)
+    suspend fun retrieveTournament() = repository.getTournament(tournamentId)
+    fun observeTournament() = repository.observeTournament(tournamentId)
 
     companion object {
         internal fun of(
             dto: TournamentMatchSnapshotDto,
-            host: String,
-            repository: () -> TournamentRepository,
+            client: HdsApiClient,
         ) = TournamentMatchSnapshot(
-            repository = repository,
+            repository = client.tournamentRepository,
             tournamentId = dto.tournamentId,
-            tournamentUrl = "$host/tournaments/${dto.tournamentId.value}",
+            tournamentUrl = "${client.host}/tournaments/${dto.tournamentId.value}",
             tournamentName = dto.tournamentName,
             matchId = dto.matchId,
             bracket = dto.bracket,
