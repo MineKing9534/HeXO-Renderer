@@ -131,7 +131,10 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
 
         client.listen<ProtocolSocketEvent.Connected> {
             logger.info { "Successfully connected SocketIO fork for session ${id.value}" }
+            remove()
+        }
 
+        client.listen<ProtocolSocketEvent.Initialized> {
             remove()
             client.request(HexoSocketRequest.WatchSession(id))
         }

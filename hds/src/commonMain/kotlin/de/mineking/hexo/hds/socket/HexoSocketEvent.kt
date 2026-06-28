@@ -96,6 +96,10 @@ sealed interface ProtocolSocketEvent : SocketEvent {
     data object Connected : ProtocolSocketEvent
 
     @Serializable
+    @SocketEventName("initialized")
+    data object Initialized : ProtocolSocketEvent
+
+    @Serializable
     @SocketEventName("disconnect")
     data class Disconnected(val message: String? = null) : ProtocolSocketEvent
 
