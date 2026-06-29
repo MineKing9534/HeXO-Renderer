@@ -15,6 +15,7 @@ import de.mineking.hexo.hds.game.TournamentMatchSnapshot
 import de.mineking.hexo.hds.profile.ProfileId
 import de.mineking.hexo.hds.profile.ProfileRepository
 import de.mineking.hexo.hds.utils.EntityState
+import de.mineking.hexo.hds.utils.TimeControl
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
@@ -94,6 +95,7 @@ class LiveSession private constructor(
         private fun SessionDto.createPlayerList(
             repository: ProfileRepository,
             gameState: SessionGameStateDto?,
+            timeControl: TimeControl,
         ) = players.mapIndexed { index, data ->
             val owner = gameState?.playerTiles?.get(data.id)?.color?.let {
                 when {
@@ -120,7 +122,21 @@ class LiveSession private constructor(
                         else -> error("Inconsistent tournament snapshot")
                     }
                 },
-                timeRemaining = gameState?.playerTimeRemaining[data.id],
+                timeRemaining = when (timeControl) {
+                    is TimeControl.Unlimited -> null
+                    is TimeControl.Turn ->
+                        if (data.id == gameState?.currentTurnPlayerId) {
+                            gameState.currentTurnExpiresIn
+                        } else {
+                            timeControl.turnTime
+                        }
+                    is TimeControl.Match ->
+                        if (data.id == gameState?.currentTurnPlayerId) {
+                            gameState.currentTurnExpiresIn
+                        } else {
+                            gameState?.playerTimeRemaining[data.id]
+                        }
+                },
                 connectionStatus = data.connection.status,
             )
         }.sortedBy { player -> gameState?.cells?.indexOfFirst { it.occupiedBy == player.playerId } }
@@ -149,7 +165,7 @@ class LiveSession private constructor(
             lastState: Pair<Instant, SessionStateDto.InGame>?,
             gameState: SessionGameStateDto,
         ): LiveSession {
-            val players = dto.createPlayerList(client.profileRepository, gameState)
+            val players = dto.createPlayerList(client.profileRepository, gameState, dto.gameOptions.timeControl)
             val playersById = players.associateBy { it.playerId }
 
             val tournament = dto.tournament?.let { TournamentMatchSnapshot.of(it, client) }
