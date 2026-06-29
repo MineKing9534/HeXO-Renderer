@@ -68,6 +68,7 @@ import net.dv8tion.jda.api.components.separator.Separator
 import net.dv8tion.jda.api.interactions.DiscordLocale
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback
 import kotlin.math.absoluteValue
+import kotlin.time.Duration.Companion.seconds
 
 data class GameMenuParameter(val event: IReplyCallback, val id: GameId, val move: Int)
 private data class MatchData(val game: FinishedGame, val board: Board)
@@ -159,7 +160,7 @@ private fun FinishedGame.gameDetails(localization: GameMenuLocalization, locale:
 
     +line()
     +line {
-        +code("${Emojis.HOURGLASS.formatted} ${result.duration}")
+        +code("${Emojis.HOURGLASS.formatted} ${result.duration.inWholeSeconds.seconds}")
         append("\u2003")
         +code("${Emojis.TIMER_CLOCK.formatted} ${localization.timeControl(locale, options.timeControl)}")
         append("\u2003")

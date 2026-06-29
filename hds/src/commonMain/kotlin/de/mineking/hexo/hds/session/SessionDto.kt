@@ -7,8 +7,8 @@ import de.mineking.hexo.hds.game.PlayerId
 import de.mineking.hexo.hds.game.PlayerTile
 import de.mineking.hexo.hds.game.TournamentMatchSnapshotDto
 import de.mineking.hexo.hds.profile.ProfileId
-import de.mineking.hexo.hds.utils.Duration
 import de.mineking.hexo.hds.utils.Instant
+import de.mineking.hexo.hds.utils.LiveDuration
 import de.mineking.hexo.hds.utils.TimeControl
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
@@ -107,8 +107,8 @@ internal data class SessionGameStateDto(
     val currentTurnPlayerId: PlayerId?,
     val placementsRemaining: Int,
     val turnCount: Int,
-    @SerialName("currentTurnExpiresInMs") val currentTurnExpiresIn: Duration?,
-    @SerialName("playerTimeRemainingMs") val playerTimeRemaining: Map<PlayerId, Duration>,
+    @SerialName("currentTurnExpiresInMs") val currentTurnExpiresIn: LiveDuration?,
+    @SerialName("playerTimeRemainingMs") val playerTimeRemaining: Map<PlayerId, LiveDuration>,
 )
 
 @Serializable

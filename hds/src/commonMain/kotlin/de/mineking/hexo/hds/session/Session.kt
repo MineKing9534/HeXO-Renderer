@@ -15,11 +15,12 @@ import de.mineking.hexo.hds.game.TournamentMatchSnapshot
 import de.mineking.hexo.hds.profile.ProfileId
 import de.mineking.hexo.hds.profile.ProfileRepository
 import de.mineking.hexo.hds.utils.EntityState
+import de.mineking.hexo.hds.utils.LiveDuration
 import de.mineking.hexo.hds.utils.TimeControl
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
-import kotlin.time.Duration
+import kotlin.time.Clock
 import kotlin.time.Instant
 
 @JvmInline
@@ -128,7 +129,7 @@ class LiveSession private constructor(
                         if (data.id == gameState?.currentTurnPlayerId) {
                             gameState.currentTurnExpiresIn
                         } else {
-                            timeControl.turnTime
+                            LiveDuration(timeControl.turnTime, Clock.System.now())
                         }
                     is TimeControl.Match ->
                         if (data.id == gameState?.currentTurnPlayerId) {
@@ -139,7 +140,7 @@ class LiveSession private constructor(
                 },
                 connectionStatus = data.connection.status,
             )
-        }.sortedBy { player -> gameState?.cells?.indexOfFirst { it.occupiedBy == player.playerId } }
+        }
 
         private fun SessionStateDto.toSessionState(
             gameState: SessionGameStateDto?,
@@ -213,7 +214,7 @@ class LiveSessionPlayer(
     val eloAdjustment: SessionPlayerEloAdjustment?,
     color: CellOwner,
     tournamentMatchWins: Int?,
-    val timeRemaining: Duration?,
+    val timeRemaining: LiveDuration?,
     val connectionStatus: SessionPlayerConnectionStatus,
 ) : SessionPlayer, Player(
     repository = repository,
@@ -237,7 +238,7 @@ sealed interface SessionState {
 data class SessionTurn(
     val player: LiveSessionPlayer,
     val placementsRemaining: Int,
-    val expiresIn: Duration?,
+    val expiresIn: LiveDuration?,
 )
 
 class SessionGame(
