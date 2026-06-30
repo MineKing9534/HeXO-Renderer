@@ -73,11 +73,14 @@ private class ComponentParserState {
 }
 
 context(main: HeXODiscordBot)
-private suspend fun String.renderToComponents(theme: DefaultTheme): List<MessageTopLevelComponent> {
+private suspend fun String.renderToComponents(theme: DefaultTheme) = try {
+    val board = main.notationParser.parse(this)
+    listOf(MediaGallery.of(board.asMediaGalleryItem(theme)))
+} catch (_: HexoNotationException) {
     val state = context(theme) { internalRender() }
     state.flush()
 
-    return state.result
+    state.result
 }
 
 context(main: HeXODiscordBot, theme: DefaultTheme)
