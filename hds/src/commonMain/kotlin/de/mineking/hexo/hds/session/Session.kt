@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
 import kotlin.time.Clock
+import kotlin.time.Duration
 import kotlin.time.Instant
 
 @JvmInline
@@ -144,6 +145,7 @@ class LiveSession private constructor(
 
         private fun SessionStateDto.toSessionState(
             gameState: SessionGameStateDto?,
+            lastState: Pair<Instant, SessionStateDto.InGame>?,
             playersById: Map<PlayerId, LiveSessionPlayer>,
         ) = when (this) {
             is SessionStateDto.Lobby -> error("Cannot create live LiveSession from lobby")
@@ -156,6 +158,11 @@ class LiveSession private constructor(
             )
 
             is SessionStateDto.Finished -> SessionState.Finished(
+                result = GameResult(
+                    winner = playersById[winningPlayerId],
+                    duration = lastState?.let { it.first - it.second.startedAt } ?: Duration.ZERO,
+                    reason = finishReason,
+                ),
                 rematchAcceptedPlayers = rematchAcceptedPlayerIds.mapNotNull { playersById[it] },
             )
         }
@@ -170,6 +177,7 @@ class LiveSession private constructor(
             val playersById = players.associateBy { it.playerId }
 
             val tournament = dto.tournament?.let { TournamentMatchSnapshot.of(it, client) }
+            val state = dto.state.toSessionState(gameState, lastState, playersById)
 
             return LiveSession(
                 repository = client.sessionRepository,
@@ -177,7 +185,7 @@ class LiveSession private constructor(
                 gameOptions = dto.gameOptions,
                 players = players,
                 tournamentInfo = tournament,
-                state = dto.state.toSessionState(gameState, playersById),
+                state = state,
                 game = SessionGame.of(
                     dto = dto,
                     lastState = lastState,
@@ -185,6 +193,7 @@ class LiveSession private constructor(
                     gameState = gameState,
                     players = players,
                     playersById = playersById,
+                    result = (state as? SessionState.Finished)?.result,
                 ),
                 dto = dto,
                 lastState = lastState,
@@ -232,7 +241,7 @@ class LiveSessionPlayer(
 
 sealed interface SessionState {
     data class InGame(val currentTurn: SessionTurn) : SessionState
-    data class Finished(val rematchAcceptedPlayers: List<SessionPlayer>) : SessionState
+    data class Finished(val result: GameResult, val rematchAcceptedPlayers: List<LiveSessionPlayer>) : SessionState
 }
 
 data class SessionTurn(
@@ -260,20 +269,14 @@ class SessionGame(
             gameState: SessionGameStateDto,
             players: List<LiveSessionPlayer>,
             playersById: Map<PlayerId, LiveSessionPlayer>,
+            result: GameResult?,
         ) = SessionGame(
             id = (dto.state as SessionStateDto.GameSessionState).gameId,
             startedAt = when (dto.state) {
                 is SessionStateDto.InGame -> dto.state.startedAt
-                is SessionStateDto.Finished -> lastState!!.second.startedAt
+                is SessionStateDto.Finished -> lastState?.second?.startedAt ?: Instant.DISTANT_PAST
             },
-            result = when (dto.state) {
-                is SessionStateDto.Finished -> GameResult(
-                    winner = playersById[dto.state.winningPlayerId],
-                    duration = lastState!!.first - lastState.second.startedAt,
-                    reason = dto.state.finishReason,
-                )
-                else -> null
-            },
+            result = result,
             options = dto.gameOptions,
             tournamentInfo = tournamentInfo,
             moves = gameState.cells?.map {

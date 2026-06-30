@@ -86,7 +86,7 @@ internal sealed interface SessionStateDto {
     data class Finished(
         override val gameId: GameId,
         val finishReason: GameFinishReason,
-        val winningPlayerId: PlayerId,
+        val winningPlayerId: PlayerId?,
         val rematchAcceptedPlayerIds: List<PlayerId>,
     ) : GameSessionState
 }
