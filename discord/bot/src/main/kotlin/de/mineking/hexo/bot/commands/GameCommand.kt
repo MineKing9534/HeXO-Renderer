@@ -5,8 +5,8 @@ import de.mineking.discord.commands.requiredStringOption
 import de.mineking.discord.localization.LocalizationFile
 import de.mineking.discord.ui.message.MessageMenu
 import de.mineking.discord.ui.message.replyMenu
-import de.mineking.hexo.api.game.GameId
 import de.mineking.hexo.bot.menus.GameMenuParameter
+import de.mineking.hexo.hds.game.GameId
 import net.dv8tion.jda.api.interactions.IntegrationType
 import net.dv8tion.jda.api.interactions.InteractionContextType
 

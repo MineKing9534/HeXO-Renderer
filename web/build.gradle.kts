@@ -38,7 +38,7 @@ kotlin {
             implementation(projects.board.render.compose)
 
             implementation(projects.board.parse)
-            implementation(projects.api)
+            implementation(projects.hds)
 
             implementation(compose.html.core)
             implementation(compose.html.svg)

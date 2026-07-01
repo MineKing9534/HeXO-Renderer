@@ -12,7 +12,7 @@ dependencies {
     implementation(projects.board.parse)
     implementation(projects.board.render)
 
-    implementation(projects.api)
+    implementation(projects.hds)
     implementation(projects.discord.link)
     runtimeOnly(libs.postgres)
 
@@ -40,10 +40,10 @@ discordLocalization {
 
     import("kotlin.math.roundToInt")
 
-    import("de.mineking.hexo.api.utils.TimeControl")
-    import("de.mineking.hexo.api.game.FinishedGame")
-    import("de.mineking.hexo.api.game.GameFinishReason")
-    import("de.mineking.hexo.api.profile.RichProfile")
+    import("de.mineking.hexo.hds.utils.TimeControl")
+    import("de.mineking.hexo.hds.game.FinishedGame")
+    import("de.mineking.hexo.hds.game.GameFinishReason")
+    import("de.mineking.hexo.hds.profile.RichProfile")
 
     import("kotlin.time.toJavaInstant")
     import("net.dv8tion.jda.api.utils.TimeFormat")
