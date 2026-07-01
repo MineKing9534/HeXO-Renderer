@@ -51,6 +51,7 @@ class LinkedRolesUpdateService(
                         finishedGames
                             .flatMapTo(mutableSetOf()) { it.players }
                             .mapNotNull { it.profileId }
+                            .toSet()
                             .forEach { scheduleLinkedRoleDataUpdate(it) }
 
                         lastSeenGame = finishedGames.first().id
