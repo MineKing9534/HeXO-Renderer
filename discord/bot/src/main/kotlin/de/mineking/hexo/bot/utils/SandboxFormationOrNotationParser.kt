@@ -1,10 +1,10 @@
 package de.mineking.hexo.bot.utils
 
-import de.mineking.hexo.api.asBoard
-import de.mineking.hexo.api.formation.FormationId
-import de.mineking.hexo.api.formation.FormationRepository
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.parse.BoardParser
+import de.mineking.hexo.hds.asBoard
+import de.mineking.hexo.hds.formation.FormationId
+import de.mineking.hexo.hds.formation.FormationRepository
 
 class SandboxFormationOrNotationParser(
     private val formationRepository: FormationRepository,
@@ -17,7 +17,7 @@ class SandboxFormationOrNotationParser(
         return if (match != null) {
             val showTurnNumbers = match.groupValues[1].isNotEmpty()
             val id = FormationId(match.groupValues[2])
-            formationRepository.getFormation(id)?.asBoard(showTurnNumbers)
+            formationRepository.getFormation(id)?.asBoard(showTurnNumbers = showTurnNumbers)
                 ?: throw IllegalArgumentException("Formation with id `${id.value}` not found")
         } else {
             delegateParser.parse(notation)

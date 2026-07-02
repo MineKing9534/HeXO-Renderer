@@ -1,10 +1,22 @@
-import org.gradle.api.publish.maven.MavenPublication
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 plugins {
     `maven-publish`
 }
 
 val release = System.getenv("RELEASE") == "true"
+
+pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+    extensions.configure<JavaPluginExtension>("java") {
+        withSourcesJar()
+    }
+}
+
+pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
+    extensions.configure<KotlinMultiplatformExtension>("kotlin") {
+        withSourcesJar(publish = true)
+    }
+}
 
 publishing {
     repositories {
@@ -26,7 +38,13 @@ publishing {
         }
     }
 
-    publications.withType<MavenPublication> {
+}
+
+afterEvaluate {
+    publishing.publications.withType<MavenPublication>().configureEach {
+        val suffix = artifactId.removePrefix(project.name)
+        artifactId = "${project.path.removePrefix(":").replace(":", "-")}$suffix"
+
         version = if (release) "${ project.version }" else System.getenv("BRANCH")
     }
 }

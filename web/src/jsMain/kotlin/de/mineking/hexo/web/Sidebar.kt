@@ -9,13 +9,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.web.events.SyntheticMouseEvent
-import de.mineking.hexo.api.HexoRepositories
 import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.clone
 import de.mineking.hexo.board.parse.parseCombinedHexoNotation
 import de.mineking.hexo.board.render.RectilinearNotationType
 import de.mineking.hexo.board.render.renderRectilinearNotation
 import de.mineking.hexo.board.render.renderRectilinearStateBKETurnNotation
+import de.mineking.hexo.hds.HdsApiClient
 import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.components.Select
 import kotlinx.browser.document
@@ -51,7 +51,7 @@ enum class BoardUpdateCause {
 
 @Composable
 fun Sidebar(
-    repositories: HexoRepositories?,
+    client: HdsApiClient?,
     placementMode: MutableState<CellPlacementMode>,
     board: HexoBoard,
     onBoardChange: (BoardUpdateCause, HexoBoard) -> Unit,
@@ -95,7 +95,7 @@ fun Sidebar(
 
         Div({ classes("flex", "flex-col", "gap-2") }) {
             NotationField(
-                repositories = repositories,
+                client = client,
                 notation = notation,
                 parseError = parseError,
                 onChange = { cause, value ->
@@ -212,7 +212,7 @@ private fun ParseStatus(valid: Boolean) {
 
 @Composable
 private fun NotationField(
-    repositories: HexoRepositories?,
+    client: HdsApiClient?,
     notation: String,
     parseError: String?,
     onChange: (BoardUpdateCause, String) -> Unit,
@@ -231,7 +231,7 @@ private fun NotationField(
                     "before:bg-linear-to-r", "before:from-transparent", "before:to-slate-900/95", "before:content-['']",
                 )
             }) {
-                NotationActions(repositories, notation, onChange)
+                NotationActions(client, notation, onChange)
             }
         }
 
@@ -271,7 +271,7 @@ fun ActionButton(label: String, enabled: Boolean = true, onClick: () -> Unit) {
 
 @Composable
 private fun NotationActions(
-    repositories: HexoRepositories?,
+    client: HdsApiClient?,
     notation: String,
     onChange: (BoardUpdateCause, String) -> Unit,
 ) {
@@ -301,15 +301,15 @@ private fun NotationActions(
             }
         }
 
-        if (repositories != null) {
+        if (client != null) {
             ActionButton("Import Position") { importDialogOpen = true }
         }
     }
 
-    if (importDialogOpen && repositories != null) {
+    if (importDialogOpen && client != null) {
         ImportDialog(
-            formationRepository = repositories.formations,
-            finishedGameRepository = repositories.finishedGames,
+            formationRepository = client.formationRepository,
+            finishedGameRepository = client.finishedGameRepository,
             onClose = { importDialogOpen = false },
             onConfirm = {
                 importDialogOpen = false

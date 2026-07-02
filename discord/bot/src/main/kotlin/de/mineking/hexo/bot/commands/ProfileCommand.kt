@@ -11,12 +11,12 @@ import de.mineking.discord.localization.LocalizationParameter
 import de.mineking.discord.localization.Localize
 import de.mineking.discord.ui.message.MessageMenu
 import de.mineking.discord.ui.message.replyMenu
-import de.mineking.hexo.api.profile.ProfileId
-import de.mineking.hexo.api.profile.ProfileRepository
-import de.mineking.hexo.api.profile.getProfileByName
 import de.mineking.hexo.bot.menus.ProfileMenuParameter
 import de.mineking.hexo.bot.userId
 import de.mineking.hexo.bot.utils.finalErrorResponse
+import de.mineking.hexo.hds.profile.ProfileId
+import de.mineking.hexo.hds.profile.ProfileRepository
+import de.mineking.hexo.hds.profile.getProfileByName
 import de.mineking.hexo.link.AccountLinkRepository
 import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.interactions.DiscordLocale

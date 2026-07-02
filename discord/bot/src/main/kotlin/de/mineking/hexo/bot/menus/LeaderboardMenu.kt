@@ -28,12 +28,12 @@ import de.mineking.discord.ui.parameter
 import de.mineking.discord.ui.registerLocalizedMenu
 import de.mineking.discord.ui.renderValue
 import de.mineking.discord.ui.setup
-import de.mineking.hexo.api.leaderboard.Leaderboard
-import de.mineking.hexo.api.leaderboard.LeaderboardEntry
-import de.mineking.hexo.api.leaderboard.LeaderboardRepository
-import de.mineking.hexo.api.profile.ProfileId
 import de.mineking.hexo.bot.escapeMarkdown
 import de.mineking.hexo.bot.utils.effectiveLocale
+import de.mineking.hexo.hds.leaderboard.Leaderboard
+import de.mineking.hexo.hds.leaderboard.LeaderboardEntry
+import de.mineking.hexo.hds.leaderboard.LeaderboardRepository
+import de.mineking.hexo.hds.profile.ProfileId
 import de.mineking.hexo.link.AccountLinkRepository
 import dev.freya02.jda.emojis.unicode.Emojis
 import kotlinx.coroutines.Dispatchers
