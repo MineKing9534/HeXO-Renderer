@@ -16,72 +16,60 @@ import kotlin.coroutines.resumeWithException
 import kotlin.reflect.KClass
 import kotlin.uuid.Uuid
 
-internal data class AuthData(val deviceId: String, val ephemeralClientId: String, val versionHash: String)
+internal data class AuthData(val deviceId: String, val ephemeralClientId: String, val versionHash: String = DEFAULT_VERSION_HASH) {
+    companion object {
+        const val DEFAULT_VERSION_HASH = "HeXO-Kotlin"
+    }
+}
 
 internal val logger = KotlinLogging.logger {}
 
 data class SocketIOOptions(
     val host: String,
     val path: String,
-    val headers: Map<String, String>,
+    val headers: Map<String, String?>,
+    val query: Map<String, String>,
 ) {
     companion object {
+        val DEFAULT_HEADERS = mapOf("User-Agent" to HEXO_USER_AGENT)
+        val DEFAULT_QUERY_PARAMS = mapOf("skipVersionCheck" to "true")
+
         fun createDefault(url: String): SocketIOOptions {
             val url = Url(url)
             return SocketIOOptions(
                 host = url.protocolWithAuthority,
                 path = "${url.encodedPath.trimEnd('/')}/socket.io",
-                headers = emptyMap(),
+                headers = DEFAULT_HEADERS,
+                query = DEFAULT_QUERY_PARAMS,
             )
         }
     }
 }
 
-private const val DEFAULT_VERSION_HASH = "version-query"
-private val versionMismatchError =
-    "Client version hash ${Regex.escape(DEFAULT_VERSION_HASH)} does not match server version hash (.*). Please refresh the page.".toRegex()
-
-private val DEFAULT_HEADERS = mapOf("User-Agent" to HEXO_USER_AGENT)
-
 suspend fun connectHexoSocket(json: Json = de.mineking.hexo.hds.json, options: SocketIOOptions): HexoSocketClient {
-    fun createClient(version: String): HexoSocketClient {
-        val authData = AuthData(
-            deviceId = Uuid.random().toString(),
-            ephemeralClientId = Uuid.random().toString(),
-            versionHash = version,
-        )
+    logger.info { "Connecting..." }
 
-        val events = MutableSharedFlow<SocketEvent>(extraBufferCapacity = 16, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-        val client = SocketIOClient(parent = null) {
-            SocketIOClientDriver(json, options.host, options.path, authData, DEFAULT_HEADERS + options.headers)
-        }
+    val authData = AuthData(
+        deviceId = Uuid.random().toString(),
+        ephemeralClientId = Uuid.random().toString(),
+    )
 
-        SocketEventRegistry.eventNames.keys.forEach { type ->
-            client.listen(type) { event ->
-                if (!events.tryEmit(event)) {
-                    logger.warn { "Dropped socket.io event of type '${SocketEventRegistry.eventNames[event::class]}'" }
-                }
+    val events = MutableSharedFlow<SocketEvent>(extraBufferCapacity = 16, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    val client = SocketIOClient(parent = null) {
+        SocketIOClientDriver(json, authData, options)
+    }
+
+    SocketEventRegistry.eventNames.keys.forEach { type ->
+        client.listen(type) { event ->
+            if (!events.tryEmit(event)) {
+                logger.warn { "Dropped socket.io event of type '${SocketEventRegistry.eventNames[event::class]}'" }
             }
         }
-
-        return HexoSocketClient(client, events)
     }
+    client.awaitConnect()
 
-    logger.info { "Connecting..." }
-    var client = createClient(DEFAULT_VERSION_HASH)
-    try {
-        client.client.awaitConnect()
-    } catch (e: ConnectErrorException) {
-        client.client.disconnect()
-        val match = versionMismatchError.matchEntire(e.message) ?: throw e
-        val correctVersion = match.groupValues[1]
-
-        logger.info { "Disconnected because of version mismatch; Reconnecting with correct version: $correctVersion..." }
-        client = createClient(correctVersion).also { it.client.awaitConnect() }
-    }
-
-    logger.info { "Connected" }
-    return client
+    return HexoSocketClient(client, events)
+        .also { logger.info { "Connected" } }
 }
 
 class HexoSocketClient(
@@ -179,10 +167,8 @@ interface EventListener {
 
 internal expect class SocketIOClientDriver(
     json: Json,
-    host: String,
-    path: String,
     authData: AuthData,
-    headers: Map<String, String?>,
+    options: SocketIOOptions,
 ) {
     fun connect()
     fun disconnect()

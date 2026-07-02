@@ -13,18 +13,17 @@ import kotlin.reflect.KClass
 
 internal actual class SocketIOClientDriver actual constructor(
     private val json: Json,
-    host: String,
-    path: String,
     authData: AuthData,
-    headers: Map<String, String?>,
+    options: SocketIOOptions,
 ) {
     private val socket = io(
-        url = host,
+        url = options.host,
         options = SocketOptions {
             this.autoConnect = false
             this.transports = arrayOf("websocket")
-            this.extraHeaders = headers.filterValues { it != null }.toJsObject()
-            this.path = path
+            this.extraHeaders = options.headers.filterValues { it != null }.toJsObject()
+            this.path = options.path
+            this.query = options.query.toJsObject()
             this.addTrailingSlash = true
             this.auth = AuthPayload {
                 deviceId = authData.deviceId
