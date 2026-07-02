@@ -73,11 +73,14 @@ private class ComponentParserState {
 }
 
 context(main: HeXODiscordBot)
-private suspend fun String.renderToComponents(theme: DefaultTheme): List<MessageTopLevelComponent> {
+private suspend fun String.renderToComponents(theme: DefaultTheme) = try {
+    val board = main.notationParser.parse(this)
+    listOf(MediaGallery.of(board.asMediaGalleryItem(theme)))
+} catch (_: HexoNotationException) {
     val state = context(theme) { internalRender() }
     state.flush()
 
-    return state.result
+    state.result
 }
 
 context(main: HeXODiscordBot, theme: DefaultTheme)
@@ -85,52 +88,52 @@ private suspend fun String.internalRender(): ComponentParserState {
     val state = ComponentParserState()
 
     while (state.position < length) {
-        val type = SegmentParser.entries.firstOrNull {
-            startsWith(it.symbol, state.position)
+        val segment = SegmentParser.entries.firstNotNullOfOrNull { parser ->
+            parser.match(this, state.position)?.let { parser to it }
         }
 
-        state.handle(this, type)
+        state.handle(this, segment)
     }
 
     return state
 }
 
 context(main: HeXODiscordBot, theme: DefaultTheme)
-private suspend fun ComponentParserState.handle(str: String, type: SegmentParser?) {
-    if (type == null) {
+private suspend fun ComponentParserState.handle(str: String, segment: Pair<SegmentParser, SegmentMatch>?) {
+    if (segment == null) {
         val c = str[position]
         temp.append(c)
 
         if (c == '\n') flush()
         position++
     } else {
-        val start = position + type.symbol.length
-        val end = str.indexOf(type.symbol, start)
+        val (type, match) = segment
 
-        if (end == -1) {
-            temp.append(str[position++])
+        if (type.keepAsText) {
+            temp.append(match.text)
         } else {
-            val content = str.substring(start, end)
-
-            if (type.keepAsText) {
-                temp.append("${type.symbol}$content${type.symbol}")
-            } else {
-                flush()
-            }
-
-            type.handle(content, this)
-            position = end + type.symbol.length
+            flush()
         }
+
+        type.handle(match.content, this)
+        position = match.end
     }
 }
 
-private enum class SegmentParser(val symbol: String, val keepAsText: Boolean) {
+private data class SegmentMatch(
+    val content: String,
+    val text: String,
+    val end: Int,
+)
+
+private enum class SegmentParser(val symbol: String?, val keepAsText: Boolean) {
     CodeBlock("```", keepAsText = false) {
         context(main: HeXODiscordBot, theme: DefaultTheme)
         override suspend fun handle(content: String, state: ComponentParserState) {
             val (code, lang) = content.decodeCodeAndLanguage()
             state.result += try {
-                MediaGallery.of(main.notationParser.parse(code).asMediaGalleryItem(theme))
+                val notation = if (lang == "hexo" || lang == null) code else "$lang\n$code"
+                MediaGallery.of(main.notationParser.parse(notation).asMediaGalleryItem(theme))
             } catch (_: HexoNotationException) {
                 TextDisplay.of("$symbol${lang?.let { "$it\n" } ?: ""}$code$symbol")
             }
@@ -148,6 +151,29 @@ private enum class SegmentParser(val symbol: String, val keepAsText: Boolean) {
         }
     },
     Code("`", keepAsText = true) {
+        context(main: HeXODiscordBot, theme: DefaultTheme)
+        override suspend fun handle(content: String, state: ComponentParserState) {
+            try {
+                state.afterParagraph += main.notationParser.parse(content).asMediaGalleryItem(theme)
+            } catch (_: HexoNotationException) {
+            }
+        }
+    },
+    Url(symbol = null, keepAsText = true) {
+        private val pattern = """https?://\S+""".toRegex()
+        private val trailingPunctuation = charArrayOf('.', ',', ';', ':', '!', '?')
+
+        override fun match(str: String, position: Int): SegmentMatch? {
+            val value = pattern.find(str, position)?.takeIf { it.range.first == position }?.value ?: return null
+            val content = value.trimEnd { it in trailingPunctuation }
+
+            return SegmentMatch(
+                content = content,
+                text = content,
+                end = position + content.length,
+            )
+        }
+
         context(main: HeXODiscordBot, theme: DefaultTheme)
         override suspend fun handle(content: String, state: ComponentParserState) {
             try {
@@ -174,6 +200,22 @@ private enum class SegmentParser(val symbol: String, val keepAsText: Boolean) {
         }
     },
     ;
+
+    open fun match(str: String, position: Int): SegmentMatch? {
+        val symbol = symbol ?: return null
+        if (!str.startsWith(symbol, position)) return null
+
+        val start = position + symbol.length
+        val end = str.indexOf(symbol, start)
+        if (end == -1) return null
+
+        val content = str.substring(start, end)
+        return SegmentMatch(
+            content = content,
+            text = "$symbol$content$symbol",
+            end = end + symbol.length,
+        )
+    }
 
     context(main: HeXODiscordBot, theme: DefaultTheme)
     abstract suspend fun handle(content: String, state: ComponentParserState)
