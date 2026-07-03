@@ -23,4 +23,10 @@ kotlin {
             implementation(projects.board.parse)
         }
     }
+
+    sourceSets.jvmTest {
+        dependencies {
+            implementation(libs.kotlin.coroutines.test)
+        }
+    }
 }

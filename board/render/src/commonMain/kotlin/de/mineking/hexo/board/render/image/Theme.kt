@@ -189,7 +189,7 @@ object HTTTXTheme : Theme {
             color = when (owner) {
                 CellOwner.X -> PLAYER_X_LABEL_COLOR
                 CellOwner.O -> PLAYER_O_LABEL_COLOR
-                null -> backgroundColor
+                null -> OCCUPIED_HIGHLIGHT_COLOR
             },
             font = Theme.Font(fontSize = 0.85f, type = FontType.MonospaceRegular),
         )
