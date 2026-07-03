@@ -2,6 +2,7 @@ package de.mineking.hexo.hds.tournament
 
 import de.mineking.hexo.hds.HdsApiClient
 import de.mineking.hexo.hds.socket.TournamentUpdate
+import de.mineking.hexo.hds.socket.listen
 import de.mineking.hexo.hds.utils.EntityState
 import de.mineking.hexo.hds.utils.withLock
 import io.ktor.client.call.body
@@ -9,7 +10,6 @@ import io.ktor.http.isSuccess
 import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
 
 interface TournamentRepository {
@@ -19,13 +19,9 @@ interface TournamentRepository {
 
 internal class TournamentRepositoryImpl(private val client: HdsApiClient) : TournamentRepository {
     init {
-        if (client.socketClient != null) {
+        client.socketClient?.listen<TournamentUpdate> { event ->
             client.coroutineScope.launch {
-                client.socketClient.events
-                    .filterIsInstance<TournamentUpdate>()
-                    .collect { event ->
-                        val _ = getTournament(event.tournamentId)
-                    }
+                val _ = getTournament(event.tournamentId)
             }
         }
     }

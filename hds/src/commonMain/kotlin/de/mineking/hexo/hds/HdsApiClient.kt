@@ -10,7 +10,7 @@ import de.mineking.hexo.hds.profile.ProfileRepository
 import de.mineking.hexo.hds.profile.ProfileRepositoryImpl
 import de.mineking.hexo.hds.session.SessionRepository
 import de.mineking.hexo.hds.session.SessionRepositoryImpl
-import de.mineking.hexo.hds.socket.HexoSocketClient
+import de.mineking.hexo.hds.socket.SocketIOClient
 import de.mineking.hexo.hds.tournament.TournamentRepository
 import de.mineking.hexo.hds.tournament.TournamentRepositoryImpl
 import de.mineking.hexo.hds.utils.EntityRequesterFactory
@@ -67,7 +67,7 @@ interface RepositoryWrapper {
 class HdsApiClient(
     internal val coroutineScope: CoroutineScope = createCoroutineScope(logger),
     internal val host: String = DEFAULT_HOST,
-    internal val socketClient: HexoSocketClient?,
+    internal val socketClient: SocketIOClient?,
     private val httpClient: HttpClient = createDefaultHttpClient(),
     internal val entityRequesterFactory: EntityRequesterFactory = EntityRequesterFactory.Debouncing(coroutineScope).logRequestErrors(),
     repositoryWrapper: RepositoryWrapper = RepositoryWrapper,
@@ -84,7 +84,7 @@ class HdsApiClient(
 
     fun shutdown() {
         coroutineScope.cancel()
-        socketClient?.client?.disconnect()
+        socketClient?.disconnect()
     }
 }
 

@@ -3,7 +3,6 @@ package de.mineking.hexo.hds.session
 import de.mineking.hexo.hds.HdsApiClient
 import de.mineking.hexo.hds.socket.GameCellPlace
 import de.mineking.hexo.hds.socket.GameStateUpdated
-import de.mineking.hexo.hds.socket.HexoSocketEvent
 import de.mineking.hexo.hds.socket.HexoSocketRequest
 import de.mineking.hexo.hds.socket.LobbyRemoved
 import de.mineking.hexo.hds.socket.LobbyUpdated
@@ -21,7 +20,6 @@ import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
@@ -42,15 +40,8 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
     private val sessions = mutableMapOf<SessionId, MutableStateFlow<EntityState<Session>>>()
 
     init {
-        if (client.socketClient != null) {
-            client.coroutineScope.launch {
-                populateLobbyList()
-
-                client.socketClient.events
-                    .filterIsInstance<HexoSocketEvent>()
-                    .collect { handleLobbyEvent(it) }
-            }
-        }
+        client.socketClient?.registerLobbyListeners()
+        client.coroutineScope.launch { populateLobbyList() }
     }
 
     private suspend fun populateLobbyList() {
@@ -61,33 +52,30 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
         lobbyInitialization.complete(Unit)
     }
 
-    private fun handleLobbyEvent(event: HexoSocketEvent) {
-        when (event) {
-            is LobbyUpdated -> {
-                val oldLobby = lobbies.value[event.id]
-                val newLobby = LobbySession.of(this, event.data)
-                lobbies.update { it + (event.id to newLobby) }
+    private fun SocketIOClient.registerLobbyListeners() {
+        listen<LobbyUpdated> { event ->
+            val oldLobby = lobbies.value[event.id]
+            val newLobby = LobbySession.of(this@SessionRepositoryImpl, event.data)
+            lobbies.update { it + (event.id to newLobby) }
 
-                if (oldLobby == null || !(!oldLobby.hasStarted() && newLobby.hasStarted())) return
-                sessionsLock.withLock {
-                    val state = sessions[event.id]?.value ?: return
-                    if (state is EntityState.Data && state.value is LobbySession) {
-                        sessions[event.id]?.populate(event.id)
-                    }
+            if (oldLobby == null || !(!oldLobby.hasStarted() && newLobby.hasStarted())) return@listen
+            sessionsLock.withLock {
+                val state = sessions[event.id]?.value ?: return@listen
+                if (state is EntityState.Data && state.value is LobbySession) {
+                    sessions[event.id]?.populate(event.id)
                 }
             }
-            is LobbyRemoved -> {
-                lobbies.update { it - event.id }
-                sessionsLock.withLock {
-                    sessions[event.id]?.update {
-                        if (it !is EntityState.Data || it.value !is LobbySession) return
+        }
+        listen<LobbyRemoved> { event ->
+            lobbies.update { it - event.id }
+            sessionsLock.withLock {
+                sessions[event.id]?.update {
+                    if (it !is EntityState.Data || it.value !is LobbySession) return@listen
 
-                        sessions -= event.id
-                        EntityState.NotFound
-                    }
+                    sessions -= event.id
+                    EntityState.NotFound
                 }
             }
-            else -> {}
         }
     }
 
@@ -117,7 +105,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
 
     private fun MutableStateFlow<EntityState<Session>>.connectSocket(id: SessionId): SocketIOClient {
         // We need to fork a new client since HDS only allows one session per connection
-        val client = client.socketClient!!.client.fork()
+        val client = client.socketClient!!.fork()
 
         fun cleanup() {
             client.disconnect()

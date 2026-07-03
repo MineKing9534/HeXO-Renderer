@@ -8,7 +8,6 @@ import io.ktor.http.protocolWithAuthority
 import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.json.Json
 import kotlin.coroutines.resume
@@ -46,7 +45,7 @@ data class SocketIOOptions(
     }
 }
 
-suspend fun connectHexoSocket(json: Json = de.mineking.hexo.hds.json, options: SocketIOOptions): HexoSocketClient {
+suspend fun connectSocketClient(json: Json = de.mineking.hexo.hds.json, options: SocketIOOptions): SocketIOClient {
     logger.info { "Connecting..." }
 
     val authData = AuthData(
@@ -54,28 +53,16 @@ suspend fun connectHexoSocket(json: Json = de.mineking.hexo.hds.json, options: S
         ephemeralClientId = Uuid.random().toString(),
     )
 
-    val events = MutableSharedFlow<SocketEvent>(extraBufferCapacity = 16, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     val client = SocketIOClient(parent = null) {
         SocketIOClientDriver(json, authData, options)
     }
 
-    SocketEventRegistry.eventNames.keys.forEach { type ->
-        client.listen(type) { event ->
-            if (!events.tryEmit(event)) {
-                logger.warn { "Dropped socket.io event of type '${SocketEventRegistry.eventNames[event::class]}'" }
-            }
-        }
-    }
     client.awaitConnect()
 
-    return HexoSocketClient(client, events)
-        .also { logger.info { "Connected" } }
-}
+    logger.info { "Connected" }
 
-class HexoSocketClient(
-    val client: SocketIOClient,
-    val events: SharedFlow<SocketEvent>,
-)
+    return client
+}
 
 class SocketIOClient internal constructor(
     private val parent: SocketIOClient?,
