@@ -1,9 +1,7 @@
-import com.adarshr.gradle.testlogger.theme.ThemeType
 import com.adarshr.gradle.testlogger.TestLoggerExtension
 import com.adarshr.gradle.testlogger.logger.SequentialTestLogger
 import com.adarshr.gradle.testlogger.theme.Theme
-import org.gradle.api.tasks.testing.AbstractTestTask
-import org.gradle.api.tasks.testing.Test
+import com.adarshr.gradle.testlogger.theme.ThemeType
 
 plugins {
     id("com.adarshr.test-logger")
