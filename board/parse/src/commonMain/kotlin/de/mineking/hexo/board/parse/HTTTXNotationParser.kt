@@ -39,16 +39,14 @@ fun String.parseHTTTXNotation(focusWinningRows: Boolean = true): Board {
         turn = 0
     }
 
-    val occupied = mutableSetOf<CellCoordinate>()
-
     turns.forEachIndexed { index, turn ->
         val owner = CellOwner.entries[turn.number % 2]
         val focused = index == turns.lastIndex
 
         turn.moves.forEach { coordinate ->
-            requireHexo(occupied.add(coordinate)) { "Duplicate HTTTX move at $coordinate" }
-
             board[coordinate].apply {
+                requireHexo(this.owner == null) { "Duplicate HTTTX move at $coordinate" }
+
                 this.owner = owner
                 this.turn = turn.number
                 this.focused = focused

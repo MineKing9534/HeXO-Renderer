@@ -5,6 +5,7 @@ import kotlin.contracts.contract
 
 class HexoNotationException(
     override val message: String,
+    override val cause: Throwable? = null,
 ) : Exception(message)
 
 @OptIn(ExperimentalContracts::class)
