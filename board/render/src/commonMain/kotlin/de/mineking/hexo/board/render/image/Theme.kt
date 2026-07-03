@@ -152,7 +152,7 @@ object HTTTXTheme : Theme {
 
     private val OCCUPIED_HIGHLIGHT_COLOR = Color.rgb(0x651527)
     private val EMPTY_HIGHLIGHT_COLOR = Color.rgb(0x491628)
-    private val LINE_HIGHLIGHT_COLOR = Color.rgba(0xaa801628)
+    private val LINE_HIGHLIGHT_COLOR = Color.rgba(0x88ff2720)
 
     override val gap = 3.0
     override val borderThickness = 0.0
