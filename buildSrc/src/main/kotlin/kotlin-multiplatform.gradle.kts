@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.targets.jvm.tasks.KotlinJvmTest
+
 plugins {
     id("kotlin-common")
     kotlin("multiplatform")
@@ -16,11 +18,24 @@ kotlin {
         }
     }
 
-    sourceSets.commonTest {
+    sourceSets
+        .matching { "Test" in it.name && "jvm" !in it.name }
+        .configureEach {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
+
+    sourceSets.named("jvmTest") {
         dependencies {
-            implementation(kotlin("test"))
+            CommonConfig.JVM_TEST_DEPENDENCIES.forEach { implementation(it) }
+            CommonConfig.JVM_TEST_RUNTIME_DEPENDENCIES.forEach { runtimeOnly(it) }
         }
     }
+}
+
+tasks.named<KotlinJvmTest>("jvmTest") {
+    useJUnitPlatform()
 }
 
 tasks.register("test") {

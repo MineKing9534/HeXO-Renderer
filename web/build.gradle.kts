@@ -1,7 +1,5 @@
-import org.apache.tools.ant.filters.ReplaceTokens
 import com.github.gmazzo.buildconfig.BuildConfigValue.Expression
-import org.gradle.declarative.dsl.schema.FqName.Empty.packageName
-import org.gradle.internal.execution.caching.CachingState.enabled
+import org.apache.tools.ant.filters.ReplaceTokens
 
 plugins {
     id("kotlin-common")

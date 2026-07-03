@@ -11,23 +11,17 @@ repositories {
     maven("https://maven.mineking.dev/snapshots")
 }
 
-private val commonKotlinCompilerArgs = listOf(
-    "-Xexpect-actual-classes",
-    "-Xreturn-value-checker=full",
-)
-
-private val javaVersion = 21
 
 pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
     extensions.configure<KotlinJvmProjectExtension>("kotlin") {
-        jvmToolchain(javaVersion)
-        compilerOptions.freeCompilerArgs.addAll(commonKotlinCompilerArgs)
+        jvmToolchain(CommonConfig.JAVA_VERSION)
+        compilerOptions.freeCompilerArgs.addAll(CommonConfig.COMMON_COMPILER_ARGS)
     }
 }
 
 pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
     extensions.configure<KotlinMultiplatformExtension>("kotlin") {
-        jvmToolchain(javaVersion)
-        compilerOptions.freeCompilerArgs.addAll(commonKotlinCompilerArgs)
+        jvmToolchain(CommonConfig.JAVA_VERSION)
+        compilerOptions.freeCompilerArgs.addAll(CommonConfig.COMMON_COMPILER_ARGS)
     }
 }

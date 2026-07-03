@@ -2,7 +2,6 @@
 
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
-import kotlin.jvm.java
 
 plugins {
     id("kotlin-multiplatform")
