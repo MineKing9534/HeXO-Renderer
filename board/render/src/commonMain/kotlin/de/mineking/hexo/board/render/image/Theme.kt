@@ -16,7 +16,7 @@ value class Color private constructor(val rgba: Int) {
         val Transparent = rgba(0)
 
         fun rgb(rgb: Int) = Color(rgb or 0xff000000.toInt())
-        fun rgba(rgba: Int) = Color(rgba)
+        fun rgba(rgba: Long) = Color(rgba.toInt())
 
         fun of(red: UByte, green: UByte, blue: UByte, alpha: UByte) = Color(
             rgba = (alpha.toInt() shl (3 * 8)) +
@@ -36,7 +36,7 @@ value class Color private constructor(val rgba: Int) {
 
 fun Color.isTransparent() = alpha == 0.toUByte()
 
-fun Color.withAlpha(alpha: Int) = Color.rgba(((alpha and 0xff) shl (3 * 8)) or (rgba and 0xffffff))
+fun Color.withAlpha(alpha: Int) = Color.rgba((((alpha and 0xff) shl (3 * 8)) or (rgba and 0xffffff)).toLong())
 
 private const val BRIGHTNESS_FACTOR = 0.35
 private fun UByte.darker() = (toDouble() * BRIGHTNESS_FACTOR).coerceIn(0.0, 255.0).toInt().toUByte()
@@ -59,6 +59,7 @@ interface Theme {
 
     val gap: Double
     val borderThickness: Double
+    val lineThickness: Double
 
     val backgroundColor: Color
 
@@ -67,6 +68,8 @@ interface Theme {
     fun Cell.highlightColor(): ElementColors
 
     fun Cell.label(): Label?
+
+    fun Cell.drawDecoration(point: Point, renderer: InternalBoardRenderer) {}
 }
 
 enum class DefaultTheme(val theme: Theme) {
@@ -86,6 +89,8 @@ data class BasicTheme(
     val playerXColor: Color,
     val playerOColor: Color,
 ) : Theme {
+    override val lineThickness = 6 * borderThickness
+
     private fun CellOwner?.color(default: Color, transform: (Color) -> Color = { it }) = when (this) {
         CellOwner.X -> transform(playerXColor)
         CellOwner.O -> transform(playerOColor)
@@ -137,23 +142,40 @@ data class BasicTheme(
 }
 
 object HTTTXTheme : Theme {
+    private val BORDER_COlOR = Color.rgb(0x24213a)
+    private val BACKGROUND_COLOR = Color.rgb(0x1f1729)
+
+    private val PLAYER_X_CELL_COLOR = Color.rgb(0x5e2f1d)
+    private val PLAYER_X_LABEL_COLOR = Color.rgb(0xd25a06)
+    private val PLAYER_O_CELL_COLOR = Color.rgb(0x163a65)
+    private val PLAYER_O_LABEL_COLOR = Color.rgb(0x0383e1)
+
+    private val OCCUPIED_HIGHLIGHT_COLOR = Color.rgb(0x651527)
+    private val EMPTY_HIGHLIGHT_COLOR = Color.rgb(0x491628)
+    private val LINE_HIGHLIGHT_COLOR = Color.rgba(0xaa801628)
+
     override val gap = 3.0
     override val borderThickness = 0.0
-    override val backgroundColor = Color.rgb(0x24213a)
+    override val lineThickness = 16.0
+    override val backgroundColor = BORDER_COlOR // cells have no border and non-transparent background -> background becomes effective border
 
-    override fun LineHighlight.color() = Theme.ElementColors(Color.Transparent, Color.Transparent)
+    override fun LineHighlight.color() = Theme.ElementColors(LINE_HIGHLIGHT_COLOR, Color.Transparent)
 
     override fun Cell.backgroundColor() = Theme.ElementColors(
         backgroundColor = when (owner) {
-            CellOwner.X -> Color.rgb(0x5e2f1d)
-            CellOwner.O -> Color.rgb(0x163a65)
-            null -> Color.rgb(0x1f1729)
+            CellOwner.X -> PLAYER_X_CELL_COLOR
+            CellOwner.O -> PLAYER_O_CELL_COLOR
+            null -> BACKGROUND_COLOR
         },
         borderColor = Color.Transparent,
     )
 
     override fun Cell.highlightColor() = Theme.ElementColors(
-        backgroundColor = if (highlight == null) Color.Transparent else Color.rgb(if (owner == null) 0x491628 else 0x651527),
+        backgroundColor = when {
+            highlight == null -> Color.Transparent
+            owner == null -> EMPTY_HIGHLIGHT_COLOR
+            else -> OCCUPIED_HIGHLIGHT_COLOR
+        },
         borderColor = Color.Transparent,
     )
 
@@ -165,11 +187,49 @@ object HTTTXTheme : Theme {
         Theme.Label(
             value = label,
             color = when (owner) {
-                CellOwner.X -> Color.rgb(0xd25a06)
-                CellOwner.O -> Color.rgb(0x0383e1)
+                CellOwner.X -> PLAYER_X_LABEL_COLOR
+                CellOwner.O -> PLAYER_O_LABEL_COLOR
                 null -> backgroundColor
             },
             font = Theme.Font(fontSize = 0.85f, type = FontType.MonospaceRegular),
         )
+    }
+
+    override fun Cell.drawDecoration(point: Point, renderer: InternalBoardRenderer) {
+        if (turn != null) return
+
+        val thickness = renderer.lineThickness * 0.6f
+
+        when (owner) {
+            CellOwner.X -> {
+                fun drawXPart(direction: Point) {
+                    renderer.renderingContext.drawLine(
+                        from = point - direction,
+                        to = point + direction,
+                        stroke = Stroke(PLAYER_X_LABEL_COLOR, thickness),
+                    )
+                }
+
+                val delta = renderer.hexSize * 0.42
+                drawXPart(Point(delta, delta))
+                drawXPart(Point(delta, -delta))
+            }
+            CellOwner.O -> {
+                fun drawCircle(radius: Double, color: Color) {
+                    renderer.renderingContext.drawLine(
+                        from = point,
+                        to = point,
+                        stroke = Stroke(color, radius.toFloat()),
+                    )
+                }
+
+                val radius = renderer.hexSize * 1.2
+                drawCircle(radius, PLAYER_O_LABEL_COLOR)
+
+                val oldColor = if (highlight != null) OCCUPIED_HIGHLIGHT_COLOR else PLAYER_O_CELL_COLOR
+                drawCircle(radius - thickness * 2, oldColor)
+            }
+            else -> return
+        }
     }
 }

@@ -5,7 +5,6 @@ import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.board.MutableCell
 import de.mineking.hexo.board.end
-import dev.jamesyox.svg4k.tags.text
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -39,7 +38,8 @@ class InternalBoardRenderer(
     }
 
     val hexSize = layout.size.layoutRadius * (1 - theme.gap / 64)
-    val borderThickness = (layout.size.layoutRadius * theme.borderThickness / 64).toFloat()
+    val borderThickness = theme.borderThickness.relativeWidth()
+    val lineThickness = theme.lineThickness.relativeWidth()
 
     fun drawLine(line: LineHighlight) {
         val (backgroundColor, borderColor) = theme.run { line.color() }
@@ -48,8 +48,8 @@ class InternalBoardRenderer(
         renderingContext.drawLine(
             from = line.start.toPixel(),
             to = line.end.toPixel(),
-            stroke = Stroke(backgroundColor, borderThickness * 6),
-            outline = Stroke(borderColor, borderThickness * 2),
+            stroke = Stroke(backgroundColor, lineThickness),
+            outline = Stroke(borderColor, lineThickness / 3),
         )
     }
 
@@ -73,15 +73,17 @@ class InternalBoardRenderer(
             renderingContext.drawLine(point, point, Stroke(color, borderThickness * 8))
         }
 
-        drawCellLabel(position, cell)
+        drawCellLabel(pixel, cell)
     }
 
-    private fun drawCellLabel(position: CellCoordinate, cell: Cell) {
-        val (label, color, font) = theme.run { cell.label() } ?: return
+    private fun drawCellLabel(pixel: Point, cell: Cell) {
+        val (label, color, font) = theme.run { cell.label() }
+            ?: return theme.run { cell.drawDecoration(pixel, this@InternalBoardRenderer) }
+
         if (color.isTransparent()) return
 
         renderingContext.drawString(
-            point = position.toPixel(),
+            point = pixel,
             text = label,
             fontSize = hexSize.toFloat() * font.fontSize,
             font = font.type,
@@ -90,6 +92,8 @@ class InternalBoardRenderer(
     }
 
     fun CellCoordinate.toPixel() = layout.size.run { toPixel() }
+
+    private fun Double.relativeWidth() = (layout.size.layoutRadius * this / 64).toFloat()
 }
 
 private const val DEGREES_TO_RADIANS = 0.017453292519943295
