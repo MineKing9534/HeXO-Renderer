@@ -71,10 +71,10 @@ class AwtRenderingContext(private val graphics: Graphics2D) : RenderingContext {
         }
     }
 
-    override fun drawPolygon(shape: Polygon, color: Color?, outline: Stroke?) {
+    override fun drawPolygon(shape: Polygon, color: Color, outline: Stroke?) {
         val hex = shape.toShape()
 
-        if (color != null) {
+        if (!color.isTransparent()) {
             graphics.color = color.awt
             graphics.fill(hex)
         }

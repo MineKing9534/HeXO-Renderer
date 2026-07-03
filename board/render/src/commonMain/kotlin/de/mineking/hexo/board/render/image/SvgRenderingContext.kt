@@ -182,11 +182,11 @@ class SvgRenderingContext(private val topLeftCorner: Point) : RenderingContext {
         drawLinePart(stroke)
     }
 
-    override fun drawPolygon(shape: Polygon, color: Color?, outline: Stroke?) = configure {
+    override fun drawPolygon(shape: Polygon, color: Color, outline: Stroke?) = configure {
         polygon {
             points = shape.points.map { (x, y) -> SvgPoint(x, y) }
 
-            if (color != null) fill(color.svg)
+            fill(color.svg)
             if (outline != null) {
                 stroke(outline.color.svg)
                 strokeWidth = outline.width.none

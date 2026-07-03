@@ -66,12 +66,12 @@ class CanvasRenderingContext(val canvas: CanvasRenderingContext2D) : RenderingCo
         canvas.restore()
     }
 
-    override fun drawPolygon(shape: Polygon, color: Color?, outline: Stroke?) {
+    override fun drawPolygon(shape: Polygon, color: Color, outline: Stroke?) {
         canvas.beginPath()
         shape.trace()
         canvas.closePath()
 
-        if (color != null) {
+        if (!color.isTransparent()) {
             canvas.fillStyle = color.css
             canvas.fill()
         }

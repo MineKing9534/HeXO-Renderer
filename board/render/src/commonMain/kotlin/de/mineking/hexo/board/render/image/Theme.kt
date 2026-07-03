@@ -75,6 +75,7 @@ interface Theme {
 enum class DefaultTheme(val theme: Theme) {
     HDS(BasicTheme.Default),
     HTTTX(HTTTXTheme),
+    Tyto(TytoTheme),
 }
 
 data class BasicTheme(
@@ -154,30 +155,25 @@ object HTTTXTheme : Theme {
     private val EMPTY_HIGHLIGHT_COLOR = Color.rgb(0x491628)
     private val LINE_HIGHLIGHT_COLOR = Color.rgba(0x88ff2720)
 
-    override val gap = 3.0
-    override val borderThickness = 0.0
+    override val gap = 1.0
+    override val borderThickness = 3.0
     override val lineThickness = 16.0
-    override val backgroundColor = BORDER_COlOR // cells have no border and non-transparent background -> background becomes effective border
+    override val backgroundColor = BACKGROUND_COLOR
 
     override fun LineHighlight.color() = Theme.ElementColors(LINE_HIGHLIGHT_COLOR, Color.Transparent)
 
     override fun Cell.backgroundColor() = Theme.ElementColors(
-        backgroundColor = when (owner) {
-            CellOwner.X -> PLAYER_X_CELL_COLOR
-            CellOwner.O -> PLAYER_O_CELL_COLOR
-            null -> BACKGROUND_COLOR
+        backgroundColor = when {
+            highlight != null && owner == null -> EMPTY_HIGHLIGHT_COLOR
+            highlight != null && owner != null -> OCCUPIED_HIGHLIGHT_COLOR
+            owner == CellOwner.X -> PLAYER_X_CELL_COLOR
+            owner == CellOwner.O -> PLAYER_O_CELL_COLOR
+            else -> BACKGROUND_COLOR
         },
-        borderColor = Color.Transparent,
+        borderColor = BORDER_COlOR,
     )
 
-    override fun Cell.highlightColor() = Theme.ElementColors(
-        backgroundColor = when {
-            highlight == null -> Color.Transparent
-            owner == null -> EMPTY_HIGHLIGHT_COLOR
-            else -> OCCUPIED_HIGHLIGHT_COLOR
-        },
-        borderColor = Color.Transparent,
-    )
+    override fun Cell.highlightColor() = Theme.ElementColors(Color.Transparent, Color.Transparent)
 
     private fun Cell.labelText() = label
         .takeIf { it.isNotBlank() }
@@ -231,5 +227,42 @@ object HTTTXTheme : Theme {
             }
             else -> return
         }
+    }
+}
+
+object TytoTheme : Theme {
+    private val BACKGROUND_COLOR = Color.rgb(0x0d0f0e)
+    private val EMPTY_BORDER_COLOR = Color.rgb(0x2e2a1d)
+
+    private val PLAYER_X_CELL_COLOR = Color.rgb(0xf08a3c)
+    private val PLAYER_O_CELL_COLOR = Color.rgb(0x3fb6d9)
+    private val EMPTY_CELL_COLOR = Color.rgb(0x101211)
+
+    private val DECORATION_COLOR = Color.rgba(0x88ffffff)
+
+    override val gap = 1.0
+    override val borderThickness = 3.0
+
+    override val lineThickness = 0.0
+    override val backgroundColor = BACKGROUND_COLOR
+
+    override fun LineHighlight.color() = Theme.ElementColors(Color.Transparent, Color.Transparent)
+    override fun Cell.highlightColor() = Theme.ElementColors(Color.Transparent, Color.Transparent)
+
+    override fun Cell.backgroundColor(): Theme.ElementColors {
+        val color = when (owner) {
+            CellOwner.X -> PLAYER_X_CELL_COLOR
+            CellOwner.O -> PLAYER_O_CELL_COLOR
+            null -> EMPTY_CELL_COLOR
+        }
+        return Theme.ElementColors(color, EMPTY_BORDER_COLOR)
+    }
+
+    override fun Cell.label() = null
+
+    override fun Cell.drawDecoration(point: Point, renderer: InternalBoardRenderer) {
+        if (!focused) return
+        val hex = point.createHex(renderer.hexSize * 0.75)
+        renderer.renderingContext.drawPolygon(hex, Color.Transparent, Stroke(DECORATION_COLOR, renderer.borderThickness * 2))
     }
 }
