@@ -1,13 +1,9 @@
 package de.mineking.hexo.hds.socket
 
 import de.mineking.hexo.hds.HEXO_USER_AGENT
-import de.mineking.hexo.hds.utils.withLock
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.Url
 import io.ktor.http.protocolWithAuthority
-import kotlinx.atomicfu.locks.SynchronizedObject
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.json.Json
 import kotlin.coroutines.resume
@@ -53,35 +49,17 @@ suspend fun connectSocketClient(json: Json = de.mineking.hexo.hds.json, options:
         ephemeralClientId = Uuid.random().toString(),
     )
 
-    val client = SocketIOClient(parent = null) {
-        SocketIOClientDriver(json, authData, options)
-    }
-
-    client.awaitConnect()
-
-    logger.info { "Connected" }
-
-    return client
+    return SocketIOClient(SocketIOClientDriver(json, authData, options))
+        .awaitConnect()
+        .also { logger.info { "Connected" } }
 }
 
 class SocketIOClient internal constructor(
-    private val parent: SocketIOClient?,
-    private val driverFactory: () -> SocketIOClientDriver,
+    private val driver: SocketIOClientDriver,
 ) {
-    private val lock = SynchronizedObject()
-    private val children = mutableSetOf<SocketIOClient>()
-
-    private val driver = driverFactory()
-
-    fun fork() = SocketIOClient(this, driverFactory).also {
-        lock.withLock {
-            children += it
-        }
-    }
-
     @IgnorableReturnValue
-    fun <T : SocketEvent> listen(type: KClass<T>, handler: EventListener.(T) -> Unit): EventListener {
-        lateinit var listener: EventListener
+    fun <T : SocketEvent> listen(type: KClass<T>, handler: SocketListener.(T) -> Unit): SocketListener {
+        lateinit var listener: SocketListener
         return driver.listen(type.eventName, type) {
             listener.handler(it)
         }.also {
@@ -93,12 +71,10 @@ class SocketIOClient internal constructor(
         driver.request(request)
     }
 
-    fun connect() = driver.connect()
-
     @IgnorableReturnValue
     suspend fun awaitConnect() = suspendCancellableCoroutine { continuation ->
-        var connectListener: EventListener? = null
-        var connectErrorListener: EventListener? = null
+        var connectListener: SocketListener? = null
+        var connectErrorListener: SocketListener? = null
 
         fun removeListeners() {
             connectListener?.remove()
@@ -123,7 +99,7 @@ class SocketIOClient internal constructor(
 
         @Suppress("TooGenericExceptionCaught")
         try {
-            connect()
+            driver.connect()
         } catch (e: Exception) {
             removeListeners()
             continuation.resumeWithException(e)
@@ -131,24 +107,15 @@ class SocketIOClient internal constructor(
     }
 
     fun disconnect() {
-        parent?.lock?.withLock {
-            parent.children -= this
-        }
-
         driver.disconnect()
-
-        val children = lock.withLock {
-            children.toList().also { children.clear() }
-        }
-        children.forEach { it.disconnect() }
     }
 }
 
 @IgnorableReturnValue
-inline fun <reified T : SocketEvent> SocketIOClient.listen(noinline handler: EventListener.(T) -> Unit) =
+inline fun <reified T : SocketEvent> SocketIOClient.listen(noinline handler: SocketListener.(T) -> Unit) =
     listen(T::class, handler)
 
-interface EventListener {
+interface SocketListener {
     fun remove()
 }
 
@@ -161,7 +128,7 @@ internal expect class SocketIOClientDriver(
     fun disconnect()
 
     @IgnorableReturnValue
-    fun <T : SocketEvent> listen(name: String, type: KClass<out T>, handler: (T) -> Unit): EventListener
+    fun <T : SocketEvent> listen(name: String, type: KClass<out T>, handler: (T) -> Unit): SocketListener
 
     fun request(request: SocketRequest)
 }

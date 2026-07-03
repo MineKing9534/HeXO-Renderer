@@ -44,7 +44,7 @@ internal actual class SocketIOClientDriver actual constructor(
     @IgnorableReturnValue
     @Suppress("UNCHECKED_CAST")
     @OptIn(ExperimentalSerializationApi::class)
-    actual fun <T : SocketEvent> listen(name: String, type: KClass<out T>, handler: (T) -> Unit): EventListener {
+    actual fun <T : SocketEvent> listen(name: String, type: KClass<out T>, handler: (T) -> Unit): SocketListener {
         val serializer = json.serializersModule.serializer(type, emptyList(), false)
         val listener = { raw: dynamic ->
             @Suppress("TooGenericExceptionCaught")
@@ -56,7 +56,7 @@ internal actual class SocketIOClientDriver actual constructor(
             }
         }
         socket.on(name, listener)
-        return object : EventListener {
+        return object : SocketListener {
             override fun remove() {
                 socket.off(name, listener)
             }
