@@ -82,9 +82,14 @@ fun MutableBoard.focusWinningRows() = apply {
     }
 }
 
-fun Board.clone() = MutableBoard().apply {
-    this.lineHighlights += this@clone.lineHighlights
-    this.cells += this@clone.cells.mapValues { (_, cell) -> cell.copy() }
+fun Board.copy() = MutableBoard().apply {
+    this.lineHighlights += this@copy.lineHighlights
+    this.cells += this@copy.cells.mapValues { (_, cell) -> cell.copy() }
+}
+
+fun Board.mutable() = when (this) {
+    is MutableBoard -> this
+    else -> copy()
 }
 
 operator fun Board.plus(other: Board) = merge(other)

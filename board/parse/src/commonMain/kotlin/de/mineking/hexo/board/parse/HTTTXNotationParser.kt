@@ -3,6 +3,7 @@ package de.mineking.hexo.board.parse
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.HexoNotationException
+import de.mineking.hexo.board.HexoNotationFormatException
 import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.requireHexo
@@ -12,8 +13,8 @@ private val VERSION_PATTERN = """^version\[(\d+)\]$""".toRegex()
 private val COORDINATE_PATTERN = """\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\]""".toRegex()
 private val TURN_PATTERN = """^(\d+)\.\s*((?:\[\s*-?\d+\s*,\s*-?\d+\s*\]\s*)+)$""".toRegex()
 
-class HTTTXNotationParser(val focusWinningRows: Boolean = true) : BoardParser {
-    override suspend fun parse(notation: String) = notation.parseHTTTXNotation(focusWinningRows)
+object HTTTXNotationParser : BoardParser {
+    override suspend fun parse(notation: String) = notation.parseHTTTXNotation(focusWinningRows = false)
 }
 
 fun String.parseHTTTXNotation(focusWinningRows: Boolean = true): Board {
@@ -24,7 +25,7 @@ fun String.parseHTTTXNotation(focusWinningRows: Boolean = true): Board {
     requireHexo(statements.isNotEmpty()) { "Cannot parse an empty HTTTX notation" }
 
     val version = VERSION_PATTERN.matchEntire(statements.first())?.groupValues?.get(1)?.toInt()
-        ?: throw HexoNotationException("HTTTX notation has to start with `version[n];`")
+        ?: throw HexoNotationFormatException("HTTTX notation has to start with `version[n];`")
 
     requireHexo(version == 1) { "Unsupported HTTTX notation version `$version`" }
     requireHexo(statements.size > 1) { "HTTTX notation has to contain at least one turn" }
@@ -44,9 +45,9 @@ fun String.parseHTTTXNotation(focusWinningRows: Boolean = true): Board {
         val focused = index == turns.lastIndex
 
         turn.moves.forEach { coordinate ->
-            board[coordinate].apply {
-                requireHexo(this.owner == null) { "Duplicate HTTTX move at $coordinate" }
+            requireHexo(coordinate !in board.cells) { "Duplicate HTTTX move at $coordinate" }
 
+            board[coordinate].apply {
                 this.owner = owner
                 this.turn = turn.number
                 this.focused = focused
@@ -59,11 +60,6 @@ fun String.parseHTTTXNotation(focusWinningRows: Boolean = true): Board {
     }
 
     return board
-}
-
-fun String.parseHTTTXNotationOrNull(focusWinningRows: Boolean): Board? {
-    if (!split(";", limit = 2)[0].matches(VERSION_PATTERN)) return null
-    return parseHTTTXNotation(focusWinningRows)
 }
 
 private data class HTTTXTurn(

@@ -13,8 +13,8 @@ import kotlin.io.encoding.Base64
 private const val SHIFT_BYTE = 0x80.toByte()
 private const val MASK = 0x7f.toByte()
 
-class TytoNotationParser(val focusWinningRows: Boolean = true) : BoardParser {
-    override suspend fun parse(notation: String) = notation.parseTytoNotation(focusWinningRows)
+object TytoNotationParser : BoardParser {
+    override suspend fun parse(notation: String) = notation.parseTytoNotation(focusWinningRows = false)
 }
 
 fun String.parseTytoNotation(focusWinningRows: Boolean = true): Board {
@@ -22,9 +22,9 @@ fun String.parseTytoNotation(focusWinningRows: Boolean = true): Board {
     val board = MutableBoard()
 
     fun move(coordinate: CellCoordinate, turn: Int, focused: Boolean = false) {
-        board[coordinate].apply {
-            requireHexo(this.owner == null) { "Duplicate cell at $coordinate" }
+        requireHexo(coordinate !in board.cells) { "Duplicate cell at $coordinate" }
 
+        board[coordinate].apply {
             this.owner = CellOwner.entries[turn % 2]
             this.turn = turn
             this.focused = focused
@@ -52,11 +52,17 @@ fun String.parseTytoNotation(focusWinningRows: Boolean = true): Board {
 }
 
 private class TytoNotationStream(input: String) {
+    companion object {
+        private val base64 = Base64.withPadding(Base64.PaddingOption.ABSENT_OPTIONAL)
+    }
+
     private var offset = 0
+
+    @Suppress("SwallowedException")
     private val bytes = try {
-        Base64.decode(input)
+        base64.decode(input)
     } catch (e: IllegalArgumentException) {
-        throw HexoNotationException(e.message ?: "", e)
+        throw HexoNotationException(e.message ?: "Invalid base64")
     }
 
     fun hasData() = offset < bytes.size

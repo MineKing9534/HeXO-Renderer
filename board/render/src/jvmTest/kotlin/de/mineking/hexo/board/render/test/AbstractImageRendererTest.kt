@@ -5,7 +5,7 @@ import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.MutableBoard
-import de.mineking.hexo.board.clone
+import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.parse.parseHTTTXNotation
 import de.mineking.hexo.board.render.BoardRenderer
 import de.mineking.hexo.board.render.image.DefaultTheme
@@ -32,7 +32,7 @@ abstract class AbstractImageRendererTest(private val extension: String, private 
             1. [0,1][1,-1];
             2. [1,0][-1,0];
             3. [2,0][-4,0];
-        """.trimIndent().parseHTTTXNotation().clone()
+        """.trimIndent().parseHTTTXNotation().copy()
 
         board[-4, 0].highlight = CellHighlight(null)
         board[-3, 0].highlight = CellHighlight(null)

@@ -14,8 +14,8 @@ import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.board.MutableBoard
-import de.mineking.hexo.board.clone
 import de.mineking.hexo.board.contains
+import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.distanceTo
 import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.render.image.BasicTheme
@@ -68,7 +68,7 @@ fun InteractiveBoard(
         if (temporaryLine == null) {
             board
         } else {
-            board.clone().apply {
+            board.copy().apply {
                 lineHighlights += temporaryLine
             }
         }
@@ -142,7 +142,7 @@ fun BoardView(
         onViewportChange = onViewportChange,
         onBoardInteraction = { interaction ->
             if (interaction is BoardInteraction.HighlightBoardInteraction) {
-                overlay = overlay.clone().also {
+                overlay = overlay.copy().also {
                     interaction.apply(it)
                 }
             }

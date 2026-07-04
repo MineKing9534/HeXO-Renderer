@@ -12,6 +12,7 @@ dependencies {
     implementation(projects.discord.link)
     implementation(projects.server)
 
+    implementation(projects.board)
     implementation(projects.board.parse)
     implementation(projects.board.render)
 

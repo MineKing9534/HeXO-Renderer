@@ -2,8 +2,8 @@ package de.mineking.hexo.board.render.test
 
 import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.MutableBoard
-import de.mineking.hexo.board.parse.parseCombinedHexoNotation
 import de.mineking.hexo.board.parse.parseRectilinearNotation
+import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
 import de.mineking.hexo.board.render.RectilinearNotationType
 import de.mineking.hexo.board.render.renderRectilinearNotation
 import de.mineking.hexo.board.render.renderRectilinearStateBKETurnNotation
@@ -73,7 +73,7 @@ class IntegrationTest {
     @Test
     fun `bke test 1`() {
         val input = "o A0"
-        val parsed = input.parseCombinedHexoNotation()
+        val parsed = input.parseRectilinearStateBKETurnNotation()
         val rendered = parsed.renderRectilinearStateBKETurnNotation()
 
         assertEquals(input, rendered)
@@ -82,7 +82,7 @@ class IntegrationTest {
     @Test
     fun `bke test 2`() {
         val input = "o A0 A2 x A1 A4 o B1.0 B4.0"
-        val parsed = input.parseCombinedHexoNotation()
+        val parsed = input.parseRectilinearStateBKETurnNotation()
         val rendered = parsed.renderRectilinearStateBKETurnNotation()
 
         assertEquals(input, rendered)
@@ -91,11 +91,11 @@ class IntegrationTest {
     @Test
     fun `rectilinear state bke turn test`() {
         val input = ".x/xx, d o A0 B1 x B2.0 B2.1"
-        val parsed = input.parseCombinedHexoNotation()
+        val parsed = input.parseRectilinearStateBKETurnNotation()
         val rendered = parsed.renderRectilinearStateBKETurnNotation()
 
         assertEquals(".x/xx, b @(1, 0) o A0 A1 x B3.1 B4.0", rendered)
-        val _ = rendered.parseCombinedHexoNotation()
+        val _ = rendered.parseRectilinearStateBKETurnNotation()
     }
 
     @Test
@@ -148,6 +148,6 @@ class IntegrationTest {
         val rendered = board.renderRectilinearStateBKETurnNotation()
 
         assertEquals("x, q @(2, -1) o A0 A1", rendered)
-        assertEquals(board, rendered.parseCombinedHexoNotation())
+        assertEquals(board, rendered.parseRectilinearStateBKETurnNotation())
     }
 }
