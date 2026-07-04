@@ -33,6 +33,7 @@ external interface SocketOptions {
     var transports: Array<String>
     var auth: AuthPayload
     var path: String
+    var query: dynamic
     var extraHeaders: dynamic
     var addTrailingSlash: Boolean
 

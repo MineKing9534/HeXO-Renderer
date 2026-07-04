@@ -9,6 +9,10 @@ sealed interface HexoSocketRequest : SocketRequest {
     @Serializable
     @SocketEventName("watch-session")
     data class WatchSession(val sessionId: SessionId) : HexoSocketRequest
+
+    @Serializable
+    @SocketEventName("unwatch-session")
+    data class UnwatchSession(val sessionId: SessionId) : HexoSocketRequest
 }
 
 val SocketRequest.requestName get() = SocketRequestRegistry.requestNames[this::class]

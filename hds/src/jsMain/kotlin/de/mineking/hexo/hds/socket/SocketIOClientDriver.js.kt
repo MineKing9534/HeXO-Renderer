@@ -13,18 +13,17 @@ import kotlin.reflect.KClass
 
 internal actual class SocketIOClientDriver actual constructor(
     private val json: Json,
-    host: String,
-    path: String,
     authData: AuthData,
-    headers: Map<String, String?>,
+    options: SocketIOOptions,
 ) {
     private val socket = io(
-        url = host,
+        url = options.host,
         options = SocketOptions {
             this.autoConnect = false
             this.transports = arrayOf("websocket")
-            this.extraHeaders = headers.filterValues { it != null }.toJsObject()
-            this.path = path
+            this.extraHeaders = options.headers.filterValues { it != null }.toJsObject()
+            this.path = options.path
+            this.query = options.query.toJsObject()
             this.addTrailingSlash = true
             this.auth = AuthPayload {
                 deviceId = authData.deviceId
@@ -45,7 +44,7 @@ internal actual class SocketIOClientDriver actual constructor(
     @IgnorableReturnValue
     @Suppress("UNCHECKED_CAST")
     @OptIn(ExperimentalSerializationApi::class)
-    actual fun <T : SocketEvent> listen(name: String, type: KClass<out T>, handler: (T) -> Unit): EventListener {
+    actual fun <T : SocketEvent> listen(name: String, type: KClass<out T>, handler: (T) -> Unit): SocketListener {
         val serializer = json.serializersModule.serializer(type, emptyList(), false)
         val listener = { raw: dynamic ->
             @Suppress("TooGenericExceptionCaught")
@@ -57,7 +56,7 @@ internal actual class SocketIOClientDriver actual constructor(
             }
         }
         socket.on(name, listener)
-        return object : EventListener {
+        return object : SocketListener {
             override fun remove() {
                 socket.off(name, listener)
             }

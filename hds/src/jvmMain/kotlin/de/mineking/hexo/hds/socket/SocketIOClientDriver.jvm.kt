@@ -6,21 +6,22 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import org.json.JSONObject
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import kotlin.reflect.KClass
 
 internal actual class SocketIOClientDriver actual constructor(
     private val json: Json,
-    host: String,
-    path: String,
     authData: AuthData,
-    headers: Map<String, String?>,
+    options: SocketIOOptions,
 ) {
     private val socket = IO.socket(
-        host,
+        options.host,
         IO.Options.builder()
             .setTransports(arrayOf("websocket"))
-            .setExtraHeaders(headers.mapValues { (_, value) -> listOfNotNull(value) })
-            .setPath(path.let { if (it.endsWith("/")) it else "$it/" })
+            .setExtraHeaders(options.headers.mapValues { (_, value) -> listOfNotNull(value) })
+            .setPath(options.path.let { if (it.endsWith("/")) it else "$it/" })
+            .setQuery(options.query.toQueryString())
             .setAuth(
                 mapOf(
                     "deviceId" to authData.deviceId,
@@ -42,7 +43,7 @@ internal actual class SocketIOClientDriver actual constructor(
     @IgnorableReturnValue
     @Suppress("UNCHECKED_CAST")
     @OptIn(ExperimentalSerializationApi::class)
-    actual fun <T : SocketEvent> listen(name: String, type: KClass<out T>, handler: (T) -> Unit): EventListener {
+    actual fun <T : SocketEvent> listen(name: String, type: KClass<out T>, handler: (T) -> Unit): SocketListener {
         val serializer = json.serializersModule.serializer(type, emptyList(), false)
         val listener = Emitter.Listener { args ->
             @Suppress("TooGenericExceptionCaught")
@@ -65,7 +66,7 @@ internal actual class SocketIOClientDriver actual constructor(
         }
 
         socket.on(name, listener)
-        return object : EventListener {
+        return object : SocketListener {
             override fun remove() {
                 socket.off(name, listener)
             }
@@ -78,3 +79,11 @@ internal actual class SocketIOClientDriver actual constructor(
         socket.emit(request.requestName, JSONObject(json.encodeToString(serializer, request)))
     }
 }
+
+private fun Map<String, String>.toQueryString() = entries.joinToString("&") { (key, value) ->
+    "${key.encodeQueryParameter()}=${value.encodeQueryParameter()}"
+}
+
+private fun String.encodeQueryParameter() = URLEncoder
+    .encode(this, StandardCharsets.UTF_8)
+    .replace("+", "%20")
