@@ -11,7 +11,7 @@ import de.mineking.discord.utils.listen
 import de.mineking.discord.withLocalization
 import de.mineking.hexo.board.parse.BoardParser
 import de.mineking.hexo.board.render.BoardRenderer
-import de.mineking.hexo.board.render.image.Theme
+import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.bot.commands.accountLinkCommand
 import de.mineking.hexo.bot.commands.gameCommand
 import de.mineking.hexo.bot.commands.leaderboardCommand

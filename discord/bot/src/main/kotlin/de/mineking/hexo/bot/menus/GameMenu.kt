@@ -44,7 +44,7 @@ import de.mineking.discord.ui.state
 import de.mineking.discord.ui.terminateRender
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.render.RectilinearNotationType
-import de.mineking.hexo.board.render.image.DefaultTheme
+import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.board.render.renderRectilinearNotation
 import de.mineking.hexo.bot.CustomEmoji
 import de.mineking.hexo.bot.HeXODiscordBot

@@ -137,12 +137,10 @@ class IntegrationTest {
         board[2, 0].apply {
             owner = CellOwner.O
             turn = 1
-            focused = true
         }
         board[1, 0].apply {
             owner = CellOwner.O
             turn = 1
-            focused = true
         }
 
         val rendered = board.renderRectilinearStateBKETurnNotation()

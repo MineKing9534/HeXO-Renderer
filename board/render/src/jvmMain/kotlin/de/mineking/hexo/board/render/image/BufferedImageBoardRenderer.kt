@@ -2,6 +2,7 @@ package de.mineking.hexo.board.render.image
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.render.BoardRenderer
+import de.mineking.hexo.board.render.image.theme.Theme
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO

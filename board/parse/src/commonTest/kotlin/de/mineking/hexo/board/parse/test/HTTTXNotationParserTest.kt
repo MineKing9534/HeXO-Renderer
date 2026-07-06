@@ -26,8 +26,8 @@ class HTTTXNotationParserTest {
                 CellCoordinate(0, 1) to Cell(CellOwner.O, turn = 1),
                 CellCoordinate(-1, 0) to Cell(CellOwner.X, turn = 2),
                 CellCoordinate(1, 0) to Cell(CellOwner.X, turn = 2),
-                CellCoordinate(-4, 0) to Cell(CellOwner.O, turn = 3, focused = true),
-                CellCoordinate(2, 0) to Cell(CellOwner.O, turn = 3, focused = true),
+                CellCoordinate(-4, 0) to Cell(CellOwner.O, turn = 3),
+                CellCoordinate(2, 0) to Cell(CellOwner.O, turn = 3),
             ),
             board.cells,
         )

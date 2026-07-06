@@ -1,5 +1,9 @@
 package de.mineking.hexo.board.render.image
 
+import de.mineking.hexo.board.render.image.theme.Color
+import de.mineking.hexo.board.render.image.theme.FontType
+import de.mineking.hexo.board.render.image.theme.Theme
+import de.mineking.hexo.board.render.image.theme.isTransparent
 import kotlinx.browser.document
 import org.w3c.dom.ALPHABETIC
 import org.w3c.dom.BUTT
@@ -17,8 +21,8 @@ fun HTMLCanvasElement.drawBoard(
     layout: BoardRenderLayout,
     padding: Int,
     offset: Point = Point.Zero,
-    theme: Theme = BasicTheme.Default,
-    middleLayer: InternalBoardRenderer.() -> Unit = {},
+    theme: Theme = Theme.Default,
+    middleLayer: RenderingContext.() -> Unit = {},
 ) {
     val context = getContext("2d") as CanvasRenderingContext2D
 
@@ -27,10 +31,10 @@ fun HTMLCanvasElement.drawBoard(
     context.fillRect(0.0, 0.0, width.toDouble(), height.toDouble())
     context.translate(padding.toDouble() + offset.x, padding.toDouble() + offset.y)
 
-    CanvasRenderingContext(context).drawBoard(layout, theme, middleLayer)
+    CanvasRenderingBackend(context).drawBoard(layout, theme, middleLayer)
 }
 
-class CanvasRenderingContext(val canvas: CanvasRenderingContext2D) : RenderingContext {
+class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBackend {
     private data class TextExclusion(
         val text: String,
         val font: String,

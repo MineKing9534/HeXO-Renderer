@@ -21,13 +21,12 @@ fun String.parseTytoNotation(focusWinningRows: Boolean = true): Board {
     val stream = TytoNotationStream(this)
     val board = MutableBoard()
 
-    fun move(coordinate: CellCoordinate, turn: Int, focused: Boolean = false) {
+    fun move(coordinate: CellCoordinate, turn: Int) {
         requireHexo(coordinate !in board.cells) { "Duplicate cell at $coordinate" }
 
         board[coordinate].apply {
             this.owner = CellOwner.entries[turn % 2]
             this.turn = turn
-            this.focused = focused
         }
     }
 
@@ -37,10 +36,9 @@ fun String.parseTytoNotation(focusWinningRows: Boolean = true): Board {
     while (stream.hasData()) {
         val first = stream.readCoordinate()
         val second = stream.readCoordinateOrNull()
-        val isLast = !stream.hasData()
 
-        move(first, turn, focused = isLast)
-        if (second != null) move(second, turn, focused = isLast)
+        move(first, turn)
+        if (second != null) move(second, turn)
         turn++
     }
 

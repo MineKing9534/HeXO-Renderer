@@ -16,8 +16,8 @@ import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.compose.InteractiveBoard
-import de.mineking.hexo.board.render.image.DefaultTheme
-import de.mineking.hexo.board.render.image.Theme
+import de.mineking.hexo.board.render.image.theme.DefaultTheme
+import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.hds.HdsApiClient
 import de.mineking.hexo.web.components.Dialog
@@ -94,9 +94,6 @@ private fun MainLayout(client: HdsApiClient?, initialBoard: Board) {
     var board by remember { mutableStateOf(initialBoard) }
     val transformedBoard = remember(board) {
         board.copy().apply {
-            val maxTurn = getMaxTurn()
-            cells.values.forEach { it.focused = maxTurn != null && (it.turn == maxTurn) }
-
             focusWinningRows()
         }
     }

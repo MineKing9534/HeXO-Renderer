@@ -42,6 +42,7 @@ private val directions = listOf(
     CellCoordinate(0, 1),
     CellCoordinate(1, -1),
 )
+
 fun Board.findWinningRows(): List<List<Pair<CellCoordinate, Cell>>> {
     val rows = mutableListOf<List<Pair<CellCoordinate, Cell>>>()
 

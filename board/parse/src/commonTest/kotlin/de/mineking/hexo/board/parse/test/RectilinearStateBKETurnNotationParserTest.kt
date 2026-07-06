@@ -23,8 +23,8 @@ class RectilinearStateBKETurnNotationParserTest {
                 CellCoordinate(1, -1) to Cell(CellOwner.O, turn = 1),
                 CellCoordinate(2, -1) to Cell(CellOwner.O, turn = 1),
 
-                CellCoordinate(-1, 2) to Cell(CellOwner.X, turn = 2, focused = true),
-                CellCoordinate(0, 2) to Cell(CellOwner.X, turn = 2, focused = true),
+                CellCoordinate(-1, 2) to Cell(CellOwner.X, turn = 2),
+                CellCoordinate(0, 2) to Cell(CellOwner.X, turn = 2),
             ),
             board.cells,
         )
@@ -37,8 +37,8 @@ class RectilinearStateBKETurnNotationParserTest {
             mapOf(
                 CellCoordinate(0, 0) to Cell(CellOwner.X, highlight = CellHighlight(null)),
                 CellCoordinate(1, 0) to Cell(CellOwner.X),
-                CellCoordinate(0, 1) to Cell(CellOwner.X, focused = true, turn = 1),
-                CellCoordinate(1, 1) to Cell(CellOwner.X, focused = true, turn = 1),
+                CellCoordinate(0, 1) to Cell(CellOwner.X, turn = 1),
+                CellCoordinate(1, 1) to Cell(CellOwner.X, turn = 1),
             ),
             board.cells,
         )

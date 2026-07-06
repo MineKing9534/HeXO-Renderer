@@ -63,8 +63,6 @@ fun String.parseBKENotation(
             board[coordinate].apply {
                 owner = player
                 turn = index + 1
-
-                focused = index == turns.lastIndex
             }
         }
     }
