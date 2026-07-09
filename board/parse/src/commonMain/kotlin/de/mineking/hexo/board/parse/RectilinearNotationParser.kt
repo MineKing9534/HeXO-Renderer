@@ -14,8 +14,8 @@ import de.mineking.hexo.board.requireHexo
 import de.mineking.hexo.board.times
 import de.mineking.hexo.core.CellOwner
 
-class RectilinearNotationParser(val focusWinningRows: Boolean = true) : BoardParser {
-    override suspend fun parse(notation: String) = notation.parseRectilinearNotation(focusWinningRows)
+object RectilinearNotationParser : BoardParser {
+    override suspend fun parse(notation: String) = notation.parseRectilinearNotation(focusWinningRows = false)
 }
 
 fun String.parseRectilinearNotation(focusWinningRows: Boolean = true): Board {

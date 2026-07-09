@@ -23,8 +23,8 @@ class BKENotationParser {
                 CellCoordinate(1, 0) to Cell(CellOwner.X, turn = 2),
                 CellCoordinate(-1, 0) to Cell(CellOwner.X, turn = 2),
 
-                CellCoordinate(2, 0) to Cell(CellOwner.O, turn = 3, focused = true),
-                CellCoordinate(-4, 0) to Cell(CellOwner.O, turn = 3, focused = true),
+                CellCoordinate(2, 0) to Cell(CellOwner.O, turn = 3),
+                CellCoordinate(-4, 0) to Cell(CellOwner.O, turn = 3),
             ),
             board.cells,
         )
@@ -48,8 +48,8 @@ class BKENotationParser {
                 CellCoordinate(0, -1) to Cell(CellOwner.O, turn = 2),
                 CellCoordinate(1, -1) to Cell(CellOwner.O, turn = 2),
 
-                CellCoordinate(-2, 2) to Cell(CellOwner.X, turn = 3, focused = true),
-                CellCoordinate(-1, 2) to Cell(CellOwner.X, turn = 3, focused = true),
+                CellCoordinate(-2, 2) to Cell(CellOwner.X, turn = 3),
+                CellCoordinate(-1, 2) to Cell(CellOwner.X, turn = 3),
             ),
             board.cells,
         )
@@ -63,7 +63,7 @@ class BKENotationParser {
             mapOf(
                 CellCoordinate(0, 0) to Cell(CellOwner.X, turn = 0),
                 CellCoordinate(1, -1) to Cell(CellOwner.X, turn = 1),
-                CellCoordinate(1, 0) to Cell(CellOwner.O, turn = 2, focused = true),
+                CellCoordinate(1, 0) to Cell(CellOwner.O, turn = 2),
             ),
             board.cells,
         )
@@ -81,9 +81,9 @@ class BKENotationParser {
                 CellCoordinate(1, 0) to Cell(CellOwner.X, turn = 1),
                 CellCoordinate(0, 1) to Cell(CellOwner.X, turn = 1),
 
-                CellCoordinate(2, -2) to Cell(CellOwner.O, turn = 2, focused = true),
-                CellCoordinate(2, -1) to Cell(CellOwner.O, turn = 2, focused = true),
-                CellCoordinate(2, 0) to Cell(CellOwner.O, turn = 2, focused = true),
+                CellCoordinate(2, -2) to Cell(CellOwner.O, turn = 2),
+                CellCoordinate(2, -1) to Cell(CellOwner.O, turn = 2),
+                CellCoordinate(2, 0) to Cell(CellOwner.O, turn = 2),
             ),
             board.cells,
         )

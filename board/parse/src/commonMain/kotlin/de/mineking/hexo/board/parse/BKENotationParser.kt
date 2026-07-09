@@ -17,7 +17,8 @@ private const val TURN_LIST_PATTERN = /*language=regexp*/ """$TURN_PATTERN(?:\s+
 
 private const val ORIGIN_PATTERN = /*language=regexp*/ """@\s*\((-?\d+),\s*(-?\d+)\)"""
 
-private val BKE_FORMAT = """^\s*([bdpq<>])?\s*(CW|CCW)?\s*(?:$ORIGIN_PATTERN\s*:?)?\s*($TURN_LIST_PATTERN)\s*$""".toRegex()
+private val BKE_FORMAT_CHECK_PATTERN = ".*$TURN_PATTERN.*".toRegex()
+private val EXTENDED_BKE_PATTERN = """^\s*([bdpq<>])?\s*(CW|CCW)?\s*(?:$ORIGIN_PATTERN\s*:?)?\s*($TURN_LIST_PATTERN)\s*$""".toRegex()
 
 enum class Chirality(val symbol: String) {
     Clockwise("CW"),
@@ -30,10 +31,9 @@ enum class Chirality(val symbol: String) {
     }
 }
 
-class BKENotationParser(val focusWinningRows: Boolean = true) : BoardParser {
+object BKENotationParser : BoardParser {
     override suspend fun parse(notation: String) = notation
-        .parseBKENotationOrNull(implicitOrigin = true, focusWinningRows = focusWinningRows)
-        ?: throw HexoNotationException("Invalid BKE notation")
+        .parseExtendedBKENotation(implicitOrigin = true, focusWinningRows = false)
 }
 
 fun String.parseBKENotation(
@@ -42,14 +42,7 @@ fun String.parseBKENotation(
     chirality: Chirality = Chirality.Clockwise,
     focusWinningRows: Boolean = true,
 ): Board {
-    if (trim() == "0") {
-        return MutableBoard().apply {
-            this[0, 0].apply {
-                owner = CellOwner.X
-                turn = 0
-            }
-        }
-    }
+    bkePrecheck()?.let { return it }
 
     val turns = parseBKETurns()
     val board = MutableBoard()
@@ -66,11 +59,10 @@ fun String.parseBKENotation(
         moves.forEach {
             val coordinate = it.toCellCoordinate(origin, zeroOffsetLine, chirality)
             requireHexo(coordinate !in board.cells) { "Duplicate BKE move at $this" }
+
             board[coordinate].apply {
                 owner = player
                 turn = index + 1
-
-                focused = index == turns.lastIndex
             }
         }
     }
@@ -82,20 +74,12 @@ fun String.parseBKENotation(
     return board
 }
 
-fun String.parseBKENotationOrNull(
+fun String.parseExtendedBKENotation(
     implicitOrigin: Boolean,
     focusWinningRows: Boolean = true,
-): Board? {
-    if (trim() == "0") {
-        return MutableBoard().apply {
-            this[0, 0].apply {
-                owner = CellOwner.X
-                turn = 0
-            }
-        }
-    }
-
-    val match = BKE_FORMAT.matchEntire(this) ?: return null
+): Board {
+    bkePrecheck()?.let { return it }
+    val match = EXTENDED_BKE_PATTERN.matchEntire(this) ?: throw HexoNotationException("Invalid extended BKE notation, use `[b,d,p,q,<,>][CW,CCW]?")
 
     val (_, zeroOffsetLineSymbol, chiralitySymbol, originQ, originR, content) = match.groupValues
     val zeroOffsetLine = if (zeroOffsetLineSymbol.isNotEmpty()) Direction.fromSymbol(zeroOffsetLineSymbol) else Direction.TopRight
@@ -108,6 +92,20 @@ fun String.parseBKENotationOrNull(
     }
 
     return content.parseBKENotation(origin, zeroOffsetLine, chirality, focusWinningRows)
+}
+
+private fun String.bkePrecheck(): Board? {
+    if (trim() == "0") {
+        return MutableBoard().apply {
+            this[0, 0].apply {
+                owner = CellOwner.X
+                turn = 0
+            }
+        }
+    }
+
+    requireHexo(matches(BKE_FORMAT_CHECK_PATTERN), notationCheck = true) { "Invalid bke notation" }
+    return null
 }
 
 private operator fun <T> List<T>.component6() = get(5)

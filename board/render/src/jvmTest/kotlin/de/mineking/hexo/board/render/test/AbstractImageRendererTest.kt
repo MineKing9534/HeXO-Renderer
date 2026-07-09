@@ -5,15 +5,17 @@ import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.MutableBoard
-import de.mineking.hexo.board.clone
+import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.parse.parseHTTTXNotation
+import de.mineking.hexo.board.parse.parseTytoNotation
 import de.mineking.hexo.board.render.BoardRenderer
-import de.mineking.hexo.board.render.image.DefaultTheme
-import de.mineking.hexo.board.render.image.Theme
+import de.mineking.hexo.board.render.image.theme.DefaultTheme
+import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.core.CellOwner
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
+import java.io.File
 import kotlin.test.assertTrue
 
 abstract class AbstractImageRendererTest(private val extension: String, private val renderer: BoardRenderer<Theme, ByteArray>) {
@@ -21,18 +23,24 @@ abstract class AbstractImageRendererTest(private val extension: String, private 
         val actual = renderer.render(board, theme.theme)
         val expected = javaClass.getResourceAsStream("/$name.${theme.name.lowercase()}.$extension")?.readAllBytes()
 
+        if (!actual.contentEquals(expected)) {
+            val file = File("expected/$name.${theme.name.lowercase()}.$extension")
+            file.parentFile.mkdirs()
+
+            file.outputStream().use { it.write(actual) }
+        }
         assertTrue(actual.contentEquals(expected))
     }
 
-    @ParameterizedTest
     @EnumSource
+    @ParameterizedTest
     fun `longsword`(theme: DefaultTheme) {
         val board = """
             version[1];
             1. [0,1][1,-1];
             2. [1,0][-1,0];
             3. [2,0][-4,0];
-        """.trimIndent().parseHTTTXNotation().clone()
+        """.trimIndent().parseHTTTXNotation().copy()
 
         board[-4, 0].highlight = CellHighlight(null)
         board[-3, 0].highlight = CellHighlight(null)
@@ -40,8 +48,8 @@ abstract class AbstractImageRendererTest(private val extension: String, private 
         test("longsword", board, theme)
     }
 
-    @ParameterizedTest
     @EnumSource
+    @ParameterizedTest
     fun `labels and highlights`(theme: DefaultTheme) {
         val board = MutableBoard()
         board[0, 0].apply {
@@ -70,8 +78,8 @@ abstract class AbstractImageRendererTest(private val extension: String, private 
         test("labels", board, theme)
     }
 
-    @ParameterizedTest
     @EnumSource
+    @ParameterizedTest
     fun `line highlight test`(theme: DefaultTheme) {
         val board = MutableBoard()
         board[0, 1].apply {
@@ -83,5 +91,13 @@ abstract class AbstractImageRendererTest(private val extension: String, private 
         board.highlightLine(CellCoordinate(0, 2), Direction.TopLeft, length = 5, color = null)
 
         test("line_highlight", board, theme)
+    }
+
+    @EnumSource
+    @ParameterizedTest
+    fun `game test`(theme: DefaultTheme) {
+        val board = "AgQEBgYBBAICCAIGBQYFEAIKBgYCAAIMBAgIBAEOCgIGBAQEAQQKBAgCCAYBBgEMCgAMAQ".parseTytoNotation()
+
+        test("game", board, theme)
     }
 }

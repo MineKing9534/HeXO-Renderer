@@ -5,7 +5,7 @@ package de.mineking.hexo.board.render
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.Direction
-import de.mineking.hexo.board.clone
+import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.distanceTo
 import de.mineking.hexo.board.minus
 import de.mineking.hexo.board.plus
@@ -18,7 +18,7 @@ object RectilinearStateBKETurnNotationBoardRenderer : BoardRenderer<Unit, String
 
 fun Board.renderRectilinearStateBKETurnNotation(): String {
     val turns = mutableMapOf<Int, Pair<CellOwner, MutableList<CellCoordinate>>>()
-    val board = clone()
+    val board = copy()
     cells.forEach { (coordinate, cell) ->
         val owner = cell.owner ?: return@forEach
         val turn = cell.turn ?: return@forEach

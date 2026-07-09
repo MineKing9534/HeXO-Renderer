@@ -1,6 +1,10 @@
 package de.mineking.hexo.board.render.image
 
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.render.image.theme.Color
+import de.mineking.hexo.board.render.image.theme.FontType
+import de.mineking.hexo.board.render.image.theme.Theme
+import de.mineking.hexo.board.render.image.theme.isTransparent
 import java.awt.AlphaComposite
 import java.awt.BasicStroke
 import java.awt.Font
@@ -18,8 +22,8 @@ import java.awt.image.BufferedImage
 fun Board.renderToImage(
     layoutRadius: Double,
     padding: Int,
-    theme: Theme = BasicTheme.Default,
-    middleLayer: InternalBoardRenderer.() -> Unit = {},
+    theme: Theme = Theme.Default,
+    middleLayer: RenderingContext.() -> Unit = {},
 ): BufferedImage {
     require(cells.isNotEmpty() || lineHighlights.isNotEmpty())
 
@@ -36,7 +40,7 @@ fun Board.renderToImage(
     graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
     graphics.translate(padding - layout.boundingBox.minX, padding - layout.boundingBox.minY)
 
-    val context = AwtRenderingContext(graphics)
+    val context = AwtRenderingBackend(graphics)
     try {
         context.drawBoard(layout.copy(boundingBox = layout.boundingBox.pad(padding)), theme, middleLayer)
     } finally {
@@ -46,7 +50,7 @@ fun Board.renderToImage(
     return image
 }
 
-class AwtRenderingContext(private val graphics: Graphics2D) : RenderingContext {
+class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
     companion object {
         private val OPENSANS_BOLD_FONT = Font.createFont(Font.TRUETYPE_FONT, javaClass.getResourceAsStream("/fonts/open-sans.extrabold.ttf"))
         private val CONSOLAS_FONT = Font.createFont(Font.TRUETYPE_FONT, javaClass.getResourceAsStream("/fonts/consolas.regular.ttf"))
@@ -71,10 +75,10 @@ class AwtRenderingContext(private val graphics: Graphics2D) : RenderingContext {
         }
     }
 
-    override fun drawPolygon(shape: Polygon, color: Color?, outline: Stroke?) {
+    override fun drawPolygon(shape: Polygon, color: Color, outline: Stroke?) {
         val hex = shape.toShape()
 
-        if (color != null) {
+        if (!color.isTransparent()) {
             graphics.color = color.awt
             graphics.fill(hex)
         }

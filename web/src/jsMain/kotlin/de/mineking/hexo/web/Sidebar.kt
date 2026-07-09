@@ -7,11 +7,13 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.web.events.SyntheticMouseEvent
 import de.mineking.hexo.board.HexoNotationException
-import de.mineking.hexo.board.clone
-import de.mineking.hexo.board.parse.parseCombinedHexoNotation
+import de.mineking.hexo.board.copy
+import de.mineking.hexo.board.parse.BoardParser
+import de.mineking.hexo.board.parse.focusWinningRows
 import de.mineking.hexo.board.render.RectilinearNotationType
 import de.mineking.hexo.board.render.renderRectilinearNotation
 import de.mineking.hexo.board.render.renderRectilinearStateBKETurnNotation
@@ -20,6 +22,7 @@ import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.components.Select
 import kotlinx.browser.document
 import kotlinx.browser.window
+import kotlinx.coroutines.launch
 import kotlinx.dom.addClass
 import kotlinx.dom.removeClass
 import org.jetbrains.compose.web.attributes.InputType
@@ -42,6 +45,8 @@ private const val DEFAULT_SIDEBAR_WIDTH = 380
 private const val MIN_SIDEBAR_WIDTH = 330
 private const val MAX_SIDEBAR_WIDTH = 560
 private const val GITHUB_URL = "https://github.com/MineKing9534/HeXO-Renderer"
+
+private val boardParser = BoardParser.Default.focusWinningRows()
 
 enum class BoardUpdateCause {
     NotationInput,
@@ -94,6 +99,7 @@ fun Sidebar(
         SidebarHeader(parseError)
 
         Div({ classes("flex", "flex-col", "gap-2") }) {
+            val coroutineScope = rememberCoroutineScope()
             NotationField(
                 client = client,
                 notation = notation,
@@ -105,11 +111,13 @@ fun Sidebar(
                         return@NotationField
                     }
 
-                    try {
-                        onBoardChange(cause, value.parseCombinedHexoNotation(focusWinningRows = false))
-                        parseError = null
-                    } catch (e: HexoNotationException) {
-                        parseError = e.message
+                    coroutineScope.launch {
+                        try {
+                            onBoardChange(cause, boardParser.parse(value))
+                            parseError = null
+                        } catch (e: HexoNotationException) {
+                            parseError = e.message
+                        }
                     }
                 },
             )
@@ -335,7 +343,7 @@ private fun SidebarNotationInfo(board: HexoBoard, onBoardChange: (BoardUpdateCau
 
         if (parseError == null && board.cells.any { it.value.turn != null }) {
             ActionButton("Remove Turn Data") {
-                onBoardChange(BoardUpdateCause.RemoveTurnData, board.clone().apply {
+                onBoardChange(BoardUpdateCause.RemoveTurnData, board.copy().apply {
                     cells.values.forEach { it.turn = null }
                 })
             }

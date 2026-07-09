@@ -1,6 +1,9 @@
 package de.mineking.hexo.board.render.image
 
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.render.image.theme.Color
+import de.mineking.hexo.board.render.image.theme.FontType
+import de.mineking.hexo.board.render.image.theme.Theme
 import dev.jamesyox.svg4k.SvgTagDSL
 import dev.jamesyox.svg4k.TagConsumer
 import dev.jamesyox.svg4k.attr.AttributeConsumer
@@ -65,8 +68,8 @@ fun Board.renderToSvg(
     padding: Int,
     layoutRadius: Double = 64.0,
     prettyPrint: Boolean = false,
-    theme: Theme = BasicTheme.Default,
-    middleLayer: InternalBoardRenderer.() -> Unit = {},
+    theme: Theme = Theme.Default,
+    middleLayer: RenderingContext.() -> Unit = {},
 ): String {
     require(cells.isNotEmpty())
 
@@ -76,7 +79,7 @@ fun Board.renderToSvg(
 
     val topLeftCorner = layout.boundingBox.topLeft - Point(padding, padding)
 
-    val context = SvgRenderingContext(topLeftCorner)
+    val context = SvgRenderingBackend(topLeftCorner)
     context.drawBoard(layout.copy(boundingBox = layout.boundingBox.pad(padding)), theme, middleLayer)
 
     return svgString(prettyPrint) {
@@ -95,7 +98,7 @@ fun Board.renderToSvg(
     }
 }
 
-class SvgRenderingContext(private val topLeftCorner: Point) : RenderingContext {
+class SvgRenderingBackend(private val topLeftCorner: Point) : RenderingBackend {
     companion object {
         private val FULL_MASK = SvgId("full-mask")
         private val TEXT_MASK = SvgId("text-mask")
@@ -182,11 +185,11 @@ class SvgRenderingContext(private val topLeftCorner: Point) : RenderingContext {
         drawLinePart(stroke)
     }
 
-    override fun drawPolygon(shape: Polygon, color: Color?, outline: Stroke?) = configure {
+    override fun drawPolygon(shape: Polygon, color: Color, outline: Stroke?) = configure {
         polygon {
             points = shape.points.map { (x, y) -> SvgPoint(x, y) }
 
-            if (color != null) fill(color.svg)
+            fill(color.svg)
             if (outline != null) {
                 stroke(outline.color.svg)
                 strokeWidth = outline.width.none

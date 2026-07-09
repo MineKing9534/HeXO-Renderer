@@ -5,7 +5,7 @@ import de.mineking.discord.localization.LocalizationFile
 import de.mineking.discord.localization.Localize
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.HexoNotationException
-import de.mineking.hexo.board.render.image.DefaultTheme
+import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.localization
 import net.dv8tion.jda.api.components.MessageTopLevelComponent

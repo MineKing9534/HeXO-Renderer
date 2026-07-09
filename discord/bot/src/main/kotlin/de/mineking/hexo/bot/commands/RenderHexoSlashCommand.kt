@@ -24,7 +24,7 @@ import de.mineking.discord.ui.render
 import de.mineking.discord.ui.setValue
 import de.mineking.discord.ui.state
 import de.mineking.hexo.board.HexoNotationException
-import de.mineking.hexo.board.render.image.DefaultTheme
+import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.defaultHexoTheme
 import de.mineking.hexo.bot.utils.asMediaGalleryItem

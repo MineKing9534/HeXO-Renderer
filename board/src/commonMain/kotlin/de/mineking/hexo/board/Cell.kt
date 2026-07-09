@@ -5,6 +5,10 @@ import kotlinx.serialization.Serializable
 import kotlin.math.abs
 
 sealed interface Cell {
+    companion object {
+        val EMPTY = Cell()
+    }
+
     val owner: CellOwner?
     val highlight: CellHighlight?
     val focused: Boolean
@@ -31,6 +35,8 @@ data class MutableCell(
 ) : Cell {
     override fun copy() = copy(owner = owner)
 }
+
+fun Cell.isEmpty() = this == Cell.EMPTY
 
 data class CellHighlight(val color: CellOwner?)
 

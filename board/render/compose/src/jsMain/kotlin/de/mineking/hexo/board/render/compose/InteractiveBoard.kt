@@ -14,12 +14,11 @@ import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.board.MutableBoard
-import de.mineking.hexo.board.clone
 import de.mineking.hexo.board.contains
+import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.distanceTo
 import de.mineking.hexo.board.plus
-import de.mineking.hexo.board.render.image.BasicTheme
-import de.mineking.hexo.board.render.image.Theme
+import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.core.CellOwner
 import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.ContentBuilder
@@ -58,7 +57,7 @@ fun InteractiveBoard(
     viewport: BoardViewport?,
     onViewportChange: (BoardViewport) -> Unit,
     onBoardInteraction: (BoardInteraction) -> Unit,
-    theme: Theme = BasicTheme.Default,
+    theme: Theme = Theme.Default,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
     content: ContentBuilder<HTMLCanvasElement>? = null,
 ) {
@@ -68,7 +67,7 @@ fun InteractiveBoard(
         if (temporaryLine == null) {
             board
         } else {
-            board.clone().apply {
+            board.copy().apply {
                 lineHighlights += temporaryLine
             }
         }
@@ -129,7 +128,7 @@ fun BoardView(
     board: Board,
     viewport: BoardViewport?,
     onViewportChange: (BoardViewport) -> Unit,
-    theme: Theme = BasicTheme.Default,
+    theme: Theme = Theme.Default,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
     content: ContentBuilder<HTMLCanvasElement>? = null,
 ) {
@@ -142,7 +141,7 @@ fun BoardView(
         onViewportChange = onViewportChange,
         onBoardInteraction = { interaction ->
             if (interaction is BoardInteraction.HighlightBoardInteraction) {
-                overlay = overlay.clone().also {
+                overlay = overlay.copy().also {
                     interaction.apply(it)
                 }
             }

@@ -10,14 +10,14 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.MutableBoard
-import de.mineking.hexo.board.clone
+import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.focusWinningRows
-import de.mineking.hexo.board.parse.parseCombinedHexoNotation
+import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.compose.InteractiveBoard
-import de.mineking.hexo.board.render.image.DefaultTheme
-import de.mineking.hexo.board.render.image.Theme
+import de.mineking.hexo.board.render.image.theme.DefaultTheme
+import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.hds.HdsApiClient
 import de.mineking.hexo.web.components.Dialog
@@ -41,7 +41,7 @@ fun main() {
     val (initialBoard, initialError) = try {
         val board = when {
             initial.isBlank() -> Board()
-            else -> initial.parseCombinedHexoNotation(focusWinningRows = false)
+            else -> initial.parseRectilinearStateBKETurnNotation(focusWinningRows = false)
         }
 
         board to null
@@ -93,10 +93,7 @@ private fun MainLayout(client: HdsApiClient?, initialBoard: Board) {
 
     var board by remember { mutableStateOf(initialBoard) }
     val transformedBoard = remember(board) {
-        board.clone().apply {
-            val maxTurn = getMaxTurn()
-            cells.values.forEach { it.focused = maxTurn != null && (it.turn == maxTurn) }
-
+        board.copy().apply {
             focusWinningRows()
         }
     }
@@ -109,7 +106,7 @@ private fun MainLayout(client: HdsApiClient?, initialBoard: Board) {
             theme = theme.value.theme,
             viewport = viewport,
             onBoardInteraction = { interaction ->
-                board = board.clone().also {
+                board = board.copy().also {
                     when (interaction) {
                         is BoardInteraction.PlaceCell -> it.placeCell(interaction.coordinate, placementMode.value)
                         is BoardInteraction.HighlightBoardInteraction -> interaction.apply(it)

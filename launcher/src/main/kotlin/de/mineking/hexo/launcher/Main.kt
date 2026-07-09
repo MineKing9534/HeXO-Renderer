@@ -1,15 +1,14 @@
 package de.mineking.hexo.launcher
 
 import de.mineking.hexo.board.parse.BoardParser
-import de.mineking.hexo.board.parse.CombinedHexoNotationParser
 import de.mineking.hexo.board.parse.cached
+import de.mineking.hexo.board.parse.focusWinningRows
 import de.mineking.hexo.board.render.cached
 import de.mineking.hexo.board.render.image.BufferedImageBoardRenderer
 import de.mineking.hexo.board.render.image.outputPngBytes
 import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.outputBoardAttachment
 import de.mineking.hexo.bot.utils.LinkedRolesUpdateService
-import de.mineking.hexo.bot.utils.SandboxFormationOrNotationParser
 import de.mineking.hexo.hds.HdsApiClient
 import de.mineking.hexo.hds.caching.CachingRepositoryWrapper
 import de.mineking.hexo.link.AccountLinkRepository
@@ -37,7 +36,7 @@ fun main() {
         accountLinkRepository = accountLinking.accountLinkRepository,
         discordUserAuthenticationRepository = accountLinking.discordUserAuthenticationRepository,
         linkedRolesUrl = linkedRoles?.url,
-        notationParser = client.createNotationParser(),
+        notationParser = BoardParser.createWithHdsSupport(client).focusWinningRows().cached(),
         boardRenderer = pngRenderer.outputBoardAttachment("png"),
         token = config.bot.token,
     )
@@ -140,11 +139,6 @@ private fun installShutdownHook(bot: HeXODiscordBot, httpServer: HttpServer?) {
         },
     )
 }
-
-private fun HdsApiClient.createNotationParser(): BoardParser = SandboxFormationOrNotationParser(
-    formationRepository = formationRepository,
-    delegateParser = CombinedHexoNotationParser(),
-).cached()
 
 private val ServerConfig.oauth2CallbackUrl get() = "$url/oauth2/callback"
 private val ServerConfig.linkedRolesUrl get() = "$url/linked-roles"

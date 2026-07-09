@@ -23,8 +23,6 @@ fun AbstractGamePosition.asBoard(
 
         val turn = (it + 1) / 2
         if (showTurnNumbers) cell.turn = turn
-
-        if (turn == maxMoves / 2) cell.focused = true
     }
 
     if (focusWinningRows) {

@@ -10,18 +10,17 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
-import de.mineking.hexo.board.render.image.BasicTheme
 import de.mineking.hexo.board.render.image.BoardRenderBounds
 import de.mineking.hexo.board.render.image.BoardRenderLayout
-import de.mineking.hexo.board.render.image.Color
 import de.mineking.hexo.board.render.image.Stroke
-import de.mineking.hexo.board.render.image.Theme
 import de.mineking.hexo.board.render.image.center
 import de.mineking.hexo.board.render.image.createHex
 import de.mineking.hexo.board.render.image.createRenderLayout
 import de.mineking.hexo.board.render.image.div
 import de.mineking.hexo.board.render.image.drawBoard
-import de.mineking.hexo.board.render.image.withAlpha
+import de.mineking.hexo.board.render.image.theme.Color
+import de.mineking.hexo.board.render.image.theme.Theme
+import de.mineking.hexo.board.render.image.theme.withAlpha
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Canvas
@@ -37,7 +36,7 @@ fun RawBoard(
     board: Board,
     viewport: BoardViewport?,
     onViewportChange: (BoardViewport) -> Unit,
-    theme: Theme = BasicTheme.Default,
+    theme: Theme = Theme.Default,
     onCellClick: ((CellCoordinate) -> Unit)? = null,
     onBoardRightClick: ((BoardRightClickEvent) -> Unit)? = null,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
@@ -124,7 +123,7 @@ private fun HTMLCanvasElement.drawBoard(
         if (hoveredCell == null) return@drawBoard
         val cell = layout.board.cells[hoveredCell]
 
-        renderingContext.drawPolygon(
+        backend.drawPolygon(
             shape = hoveredCell.toPixel().createHex(hexSize),
             color = cellHoverColor.withAlpha(48),
             outline = if (cell != null && (cell.highlight != null || cell.focused)) null else Stroke(cellHoverColor.withAlpha(140), 2f),

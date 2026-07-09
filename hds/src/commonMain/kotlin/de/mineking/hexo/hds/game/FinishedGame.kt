@@ -89,7 +89,7 @@ class FinishedGame(
             return FinishedGame(
                 id = dto.id,
                 startedAt = dto.startedAt,
-                url = "${client.host}/finished-games/${dto.id.value}",
+                url = "${client.host}/games/${dto.id.value}",
                 result = GameResult(playersById[dto.result.winningPlayerId], dto.result.duration, dto.result.reason),
                 options = dto.options,
                 tournamentInfo = dto.tournament?.let { TournamentMatchSnapshot.of(it, client) },
