@@ -1,6 +1,7 @@
 package de.mineking.hexo.board.parse
 
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.BoardAttribute
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.HexoNotationException
@@ -67,11 +68,10 @@ fun String.parseBKENotation(
         }
     }
 
-    if (focusWinningRows) {
-        board.focusWinningRows()
+    return board.apply {
+        if (focusWinningRows) focusWinningRows()
+        attributes[BoardAttribute.ShowTurnNumbers] = true
     }
-
-    return board
 }
 
 fun String.parseExtendedBKENotation(

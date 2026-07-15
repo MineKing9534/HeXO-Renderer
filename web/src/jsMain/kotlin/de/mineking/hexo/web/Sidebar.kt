@@ -10,6 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.web.events.SyntheticMouseEvent
+import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.parse.BoardParser
@@ -39,7 +40,6 @@ import org.jetbrains.compose.web.dom.TextArea
 import org.w3c.dom.events.EventListener
 import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.url.URL
-import de.mineking.hexo.board.Board as HexoBoard
 
 private const val DEFAULT_SIDEBAR_WIDTH = 380
 private const val MIN_SIDEBAR_WIDTH = 330
@@ -58,8 +58,8 @@ enum class BoardUpdateCause {
 fun Sidebar(
     client: HdsApiClient?,
     placementMode: MutableState<CellPlacementMode>,
-    board: HexoBoard,
-    onBoardChange: (BoardUpdateCause, HexoBoard) -> Unit,
+    board: Board,
+    onBoardChange: (BoardUpdateCause, Board) -> Unit,
 ) {
     var width by remember { mutableStateOf(DEFAULT_SIDEBAR_WIDTH) }
     var resizing by remember { mutableStateOf(false) }
@@ -107,7 +107,7 @@ fun Sidebar(
                 onChange = { cause, value ->
                     notation = value
                     if (value.isBlank()) {
-                        onBoardChange(cause, HexoBoard())
+                        onBoardChange(cause, Board())
                         return@NotationField
                     }
 
@@ -328,7 +328,7 @@ private fun NotationActions(
 }
 
 @Composable
-private fun SidebarNotationInfo(board: HexoBoard, onBoardChange: (BoardUpdateCause, HexoBoard) -> Unit, parseError: String?) {
+private fun SidebarNotationInfo(board: Board, onBoardChange: (BoardUpdateCause, Board) -> Unit, parseError: String?) {
     Div({ classes("flex", "justify-between", "w-full", "h-6") }) {
         Div({
             classes("min-h-5", "text-sm", "leading-relaxed")

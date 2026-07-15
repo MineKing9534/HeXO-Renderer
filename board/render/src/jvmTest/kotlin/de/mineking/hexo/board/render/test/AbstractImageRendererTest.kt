@@ -6,6 +6,7 @@ import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.board.copy
+import de.mineking.hexo.board.parse.parseBKENotation
 import de.mineking.hexo.board.parse.parseHTTTXNotation
 import de.mineking.hexo.board.parse.parseTytoNotation
 import de.mineking.hexo.board.render.BoardRenderer
@@ -34,7 +35,7 @@ abstract class AbstractImageRendererTest(private val extension: String, private 
 
     @EnumSource
     @ParameterizedTest
-    fun `longsword`(theme: DefaultTheme) {
+    fun `longsword htttx`(theme: DefaultTheme) {
         val board = """
             version[1];
             1. [0,1][1,-1];
@@ -45,7 +46,18 @@ abstract class AbstractImageRendererTest(private val extension: String, private 
         board[-4, 0].highlight = CellHighlight(null)
         board[-3, 0].highlight = CellHighlight(null)
 
-        test("longsword", board, theme)
+        test("longsword_htttx", board, theme)
+    }
+
+    @EnumSource
+    @ParameterizedTest
+    fun `longsword BKE`(theme: DefaultTheme) {
+        val board = "o A0 A2 x A1 A4 o B1.0 D4.0".trimIndent().parseBKENotation(
+            origin = null,
+            zeroOffsetLine = Direction.Right,
+        ).copy()
+
+        test("longsword_bke", board, theme)
     }
 
     @EnumSource

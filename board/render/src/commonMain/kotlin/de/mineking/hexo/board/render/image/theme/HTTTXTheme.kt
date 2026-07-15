@@ -58,16 +58,12 @@ data class HTTTXTheme(
         highlight != null -> emptyHighlightColor.brighter()
         else -> backgroundColor.brighter()
     }
-
-    fun Cell.labelText() = label
-        .takeIf { it.isNotBlank() }
-        ?: turn?.let { (it + 1) / 2 }?.toString()
 }
 
 class HTTTXRenderer(
-    private val context: RenderingContext,
+    context: RenderingContext,
     private val theme: HTTTXTheme,
-) : BaseTheme.Renderer {
+) : BaseTheme.Renderer(context) {
     private val borderThickness = context.run { theme.borderThickness.relativeWidth() }
     private val lineThickness = context.run { theme.lineThickness.relativeWidth() }
 
@@ -79,7 +75,11 @@ class HTTTXRenderer(
             outline = Stroke(theme.cellBorderColor, borderThickness),
         )
 
-        val labelText = theme.run { cell.labelText() }
+        val labelText = cell.labelText(
+            defaultShowTurnLabels = true,
+            turnTransform = { (it + 1) / 2 },
+        )
+
         if (labelText != null) {
             val labelColor = theme.run { cell.decorationColor() }
             backend.drawString(

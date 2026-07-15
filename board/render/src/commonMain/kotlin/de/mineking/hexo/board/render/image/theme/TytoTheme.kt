@@ -49,9 +49,9 @@ class TytoTheme(
 }
 
 class TytoRenderer(
-    private val context: RenderingContext,
+    context: RenderingContext,
     private val theme: TytoTheme,
-) : BaseTheme.Renderer {
+) : BaseTheme.Renderer(context) {
     private val occupiedCells = mutableSetOf<Polygon>()
     private val focusedCells = mutableSetOf<Pair<Point, Color>>()
 

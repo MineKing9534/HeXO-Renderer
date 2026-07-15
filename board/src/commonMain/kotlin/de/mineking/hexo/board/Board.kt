@@ -9,14 +9,17 @@ interface Board {
 
     val lineHighlights: List<LineHighlight>
     val cells: Map<CellCoordinate, Cell>
+
+    val attributes: BoardAttributes
 }
 
-fun Board(): Board = MutableBoard()
+fun Board(): Board = MutableBoard(attributes = BoardAttributes.createDefault())
 
-class MutableBoard : Board {
-    override val lineHighlights = mutableListOf<LineHighlight>()
-    override val cells = mutableMapOf<CellCoordinate, MutableCell>()
-
+class MutableBoard(
+    override val lineHighlights: MutableList<LineHighlight> = mutableListOf(),
+    override val cells: MutableMap<CellCoordinate, MutableCell> = mutableMapOf(),
+    override val attributes: MutableBoardAttributes = MutableBoardAttributes(),
+) : Board {
     fun highlightLine(origin: CellCoordinate, direction: Direction, length: Int, color: CellOwner? = null) {
         lineHighlights += LineHighlight(origin, direction, length, color)
     }
@@ -33,6 +36,7 @@ class MutableBoard : Board {
     override fun hashCode(): Int {
         var result = lineHighlights.hashCode()
         result = 31 * result + cells.hashCode()
+        result = 31 * result + attributes.hashCode()
         return result
     }
 }
@@ -83,10 +87,11 @@ fun MutableBoard.focusWinningRows() = apply {
     }
 }
 
-fun Board.copy() = MutableBoard().apply {
-    this.lineHighlights += this@copy.lineHighlights
-    this.cells += this@copy.cells.mapValues { (_, cell) -> cell.copy() }
-}
+fun Board.copy() = MutableBoard(
+    lineHighlights = this@copy.lineHighlights.toMutableList(),
+    cells = this@copy.cells.mapValues { (_, cell) -> cell.copy() }.toMutableMap(),
+    attributes = this@copy.attributes.copy(),
+)
 
 fun Board.mutable() = when (this) {
     is MutableBoard -> this
@@ -111,11 +116,11 @@ fun Board.merge(other: Board, overrideOwner: Boolean = false): Board {
             )
         }
     }
-    return MutableBoard().apply {
-        this.cells += cells
-        this.lineHighlights += this@merge.lineHighlights
-        this.lineHighlights += other.lineHighlights
-    }
+    return MutableBoard(
+        cells = cells,
+        lineHighlights = (this@merge.lineHighlights + other.lineHighlights).toMutableList(),
+        attributes = this@merge.attributes + other.attributes,
+    )
 }
 
 @IgnorableReturnValue
