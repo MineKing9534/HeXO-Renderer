@@ -75,8 +75,8 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
         }
     }
 
-    override fun drawPolygon(shape: Polygon, color: Color, outline: Stroke?) {
-        val hex = shape.toShape()
+    override fun drawPolygon(shape: Polygon, color: Color, outline: Stroke?, borderRadius: Float) {
+        val hex = shape.toShape(borderRadius)
 
         if (!color.isTransparent()) {
             graphics.color = color.awt
@@ -134,14 +134,17 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
         BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND).createStrokedShape(this),
     )
 
-    private fun Polygon.toShape(): Shape {
+    private fun Polygon.toShape(borderRadius: Float): Shape {
         val path = Path2D.Double()
+        val polygonPath = toPath(borderRadius)
 
-        points.forEachIndexed { i, (x, y) ->
-            if (i == 0) {
-                path.moveTo(x, y)
-            } else {
-                path.lineTo(x, y)
+        path.moveTo(polygonPath.start.x, polygonPath.start.y)
+        polygonPath.segments.forEach { segment ->
+            when (segment) {
+                is PolygonPath.Segment.Line -> path.lineTo(segment.to.x, segment.to.y)
+                is PolygonPath.Segment.QuadraticCurve -> {
+                    path.quadTo(segment.control.x, segment.control.y, segment.to.x, segment.to.y)
+                }
             }
         }
 
