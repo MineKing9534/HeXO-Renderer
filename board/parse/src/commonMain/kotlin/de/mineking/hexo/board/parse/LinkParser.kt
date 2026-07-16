@@ -12,36 +12,38 @@ import de.mineking.hexo.hds.game.GameId
 abstract class LinkParser(private val prefix: String) : BoardParser {
     final override suspend fun parse(notation: String): Board {
         val trimmedNotation = notation.trim()
-        val showTurnNumbers = trimmedNotation.startsWith("#")
-        val link = trimmedNotation.removePrefix("#")
 
-        if (!link.startsWith(prefix)) throw HexoNotationFormatException("Invalid link")
-        return parse(link.removePrefix(prefix), showTurnNumbers)
+        if (!trimmedNotation.startsWith(prefix)) throw HexoNotationFormatException("Invalid link")
+
+        val param = trimmedNotation.removePrefix(prefix)
+        if (""".*\s.*""".toRegex().containsMatchIn(param)) throw HexoNotationFormatException("Invalid parameter")
+
+        return parseLink(param)
     }
 
-    abstract suspend fun parse(notation: String, showTurnNumbers: Boolean): Board
+    abstract suspend fun parseLink(param: String): Board
 }
 
 object TytoLinkParser : LinkParser(prefix = "https://hexo.tyto.cc/analysis#c=") {
-    override suspend fun parse(notation: String, showTurnNumbers: Boolean): Board {
-        return notation.parseTytoNotation(focusWinningRows = false)
+    override suspend fun parseLink(param: String): Board {
+        return param.parseTytoNotation(focusWinningRows = false)
     }
 }
 
 class HdsSandboxLinkParser(private val repository: FormationRepository) : LinkParser(prefix = "https://hexo.did.science/sandbox/") {
-    override suspend fun parse(notation: String, showTurnNumbers: Boolean): Board {
-        return repository.getFormation(FormationId(notation))
-            ?.asBoard(showTurnNumbers = showTurnNumbers, focusWinningRows = false)
-            ?: throw HexoNotationException("Formation $notation not found")
+    override suspend fun parseLink(param: String): Board {
+        return repository.getFormation(FormationId(param))
+            ?.asBoard(focusWinningRows = false)
+            ?: throw HexoNotationException("Formation $param not found")
     }
 }
 
 class HdsGameLinkParser(private val repository: FinishedGameRepository) : LinkParser(prefix = "https://hexo.did.science/games/") {
-    override suspend fun parse(notation: String, showTurnNumbers: Boolean): Board {
-        val (id, maxMoves) = notation.parseGameLinkParameter()
+    override suspend fun parseLink(param: String): Board {
+        val (id, maxMoves) = param.parseGameLinkParameter()
         return repository.getGame(id)
-            ?.asBoard(maxMoves = maxMoves ?: Int.MAX_VALUE, showTurnNumbers = showTurnNumbers, focusWinningRows = false)
-            ?: throw HexoNotationException("Game $notation not found")
+            ?.asBoard(maxMoves = maxMoves ?: Int.MAX_VALUE, focusWinningRows = false)
+            ?: throw HexoNotationException("Game $param not found")
     }
 }
 

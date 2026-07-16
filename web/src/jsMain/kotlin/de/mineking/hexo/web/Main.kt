@@ -93,9 +93,7 @@ private fun MainLayout(client: HdsApiClient?, initialBoard: Board) {
 
     var board by remember { mutableStateOf(initialBoard) }
     val transformedBoard = remember(board) {
-        board.copy().apply {
-            focusWinningRows()
-        }
+        board.copy().focusWinningRows()
     }
 
     Div({

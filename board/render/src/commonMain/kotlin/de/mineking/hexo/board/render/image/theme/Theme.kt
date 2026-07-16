@@ -1,5 +1,6 @@
 package de.mineking.hexo.board.render.image.theme
 
+import de.mineking.hexo.board.BoardAttribute
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.board.render.image.Point
@@ -73,9 +74,18 @@ abstract class BaseTheme(
     override val gap: Double,
     override val backgroundColor: Color,
 ) : Theme(gap, backgroundColor) {
-    interface Renderer {
-        fun drawCell(point: Point, hex: Polygon, cell: Cell)
-        fun drawLineHighlight(lineHighlight: LineHighlight)
+    abstract class Renderer(val context: RenderingContext) {
+        abstract fun drawCell(point: Point, hex: Polygon, cell: Cell)
+        abstract fun drawLineHighlight(lineHighlight: LineHighlight)
+
+        fun Cell.labelText(
+            defaultShowTurnLabels: Boolean,
+            turnTransform: (Int) -> Int = { it },
+        ) = label
+            .takeIf { it.isNotBlank() }
+            ?: turn
+                ?.let { "${turnTransform(it)}" }
+                .takeIf { context.layout.board.attributes[BoardAttribute.ShowTurnNumbers] ?: defaultShowTurnLabels }
     }
 
     protected abstract fun renderer(context: RenderingContext): Renderer

@@ -53,11 +53,9 @@ fun String.parseHTTTXNotation(focusWinningRows: Boolean = true): Board {
         }
     }
 
-    if (focusWinningRows) {
-        board.focusWinningRows()
+    return board.apply {
+        if (focusWinningRows) focusWinningRows()
     }
-
-    return board
 }
 
 private data class HTTTXTurn(

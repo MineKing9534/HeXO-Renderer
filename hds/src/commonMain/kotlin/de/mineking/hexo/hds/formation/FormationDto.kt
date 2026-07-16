@@ -32,7 +32,7 @@ data class GamePositionCell(
 ) : Move
 
 internal object GamePositionCellSerializer : KSerializer<GamePositionCell> {
-    override val descriptor = GamePositionCell.serializer().descriptor
+    override val descriptor = GamePositionCellDto.serializer().descriptor
     override fun deserialize(decoder: Decoder) = GamePositionCellDto.serializer().deserialize(decoder).let {
         GamePositionCell(
             coordinate = CellCoordinate(it.q, it.r),

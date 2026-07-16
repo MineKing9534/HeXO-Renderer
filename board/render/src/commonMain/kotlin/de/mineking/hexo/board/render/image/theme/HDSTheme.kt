@@ -43,16 +43,12 @@ data class HDSTheme(
         CellOwner.O -> transform(playerOColor)
         else -> default
     }
-
-    fun Cell.labelText() = label
-        .takeIf { it.isNotBlank() }
-        ?: turn?.toString()
 }
 
 class HDSRenderer(
-    private val context: RenderingContext,
+    context: RenderingContext,
     private val theme: HDSTheme,
-) : BaseTheme.Renderer {
+) : BaseTheme.Renderer(context) {
     private val borderThickness = context.run { theme.borderThickness.relativeWidth() }
 
     override fun drawCell(point: Point, hex: Polygon, cell: Cell): Unit = context.run {
@@ -68,7 +64,7 @@ class HDSRenderer(
 
         drawCellHighlight(cell, hex)
 
-        val labelText = theme.run { cell.labelText() }
+        val labelText = cell.labelText(defaultShowTurnLabels = false)
         if (labelText != null) {
             backend.drawString(
                 point = point,

@@ -43,6 +43,8 @@ import de.mineking.discord.ui.setValue
 import de.mineking.discord.ui.state
 import de.mineking.discord.ui.terminateRender
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.BoardAttribute
+import de.mineking.hexo.board.mutable
 import de.mineking.hexo.board.render.RectilinearNotationType
 import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.board.render.renderRectilinearNotation
@@ -78,7 +80,7 @@ fun UIManager.gameMenu(
 ) = registerLocalizedMenu<GameMenuParameter, GameMenuLocalization>("game") { localization ->
     var id by state(GameId(""))
     val moveState = state(0)
-    val showTurnNumber = state(false)
+    val showTurnNumbers = state(false)
 
     var move by moveState
 
@@ -92,7 +94,9 @@ fun UIManager.gameMenu(
 
     val lazyMatchData = lazy(default = null) {
         val match = gameRepository.getGame(id) ?: return@lazy null
-        val board = match.asBoard(move, showTurnNumber.value)
+        val board = match.asBoard(move, focusWinningRows = true)
+            .mutable()
+            .also { it.attributes[BoardAttribute.ShowTurnNumbers] = showTurnNumbers.value }
 
         MatchData(match, board)
     }
@@ -133,7 +137,7 @@ fun UIManager.gameMenu(
         }
 
         +moveSelector("move", matchData?.game?.moves?.size ?: Int.MAX_VALUE, moveState)
-        +additionalActions(main, lazyMatchData, showTurnNumber)
+        +additionalActions(main, lazyMatchData, showTurnNumbers)
     }
 }
 

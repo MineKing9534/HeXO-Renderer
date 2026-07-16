@@ -11,7 +11,6 @@ interface AbstractGamePosition {
 
 fun AbstractGamePosition.asBoard(
     maxMoves: Int = moves.size,
-    showTurnNumbers: Boolean = false,
     focusWinningRows: Boolean = true,
 ): Board = MutableBoard().apply {
     val maxMoves = maxMoves.coerceIn(0, moves.size)
@@ -21,8 +20,7 @@ fun AbstractGamePosition.asBoard(
         val cell = this[move.coordinate]
         cell.owner = move.owner
 
-        val turn = (it + 1) / 2
-        if (showTurnNumbers) cell.turn = turn
+        cell.turn = (it + 1) / 2
     }
 
     if (focusWinningRows) {
