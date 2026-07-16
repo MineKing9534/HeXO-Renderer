@@ -84,7 +84,7 @@ class HDSRenderer(
         }
 
         val borderThickness = borderThickness * 3
-        backend.drawPolygon(hex, color.withAlpha(48), Stroke(color, borderThickness))
+        backend.drawPolygon(hex, color.withAlpha(48), Stroke(color, borderThickness), borderRadius = borderThickness / 4f)
     }
 
     override fun drawLineHighlight(lineHighlight: LineHighlight) = context.run {

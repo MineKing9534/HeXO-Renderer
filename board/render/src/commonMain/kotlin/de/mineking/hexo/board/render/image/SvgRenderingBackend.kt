@@ -18,6 +18,7 @@ import dev.jamesyox.svg4k.attr.attrs.TextAnchor
 import dev.jamesyox.svg4k.attr.attrs.ViewBox
 import dev.jamesyox.svg4k.attr.attrs.cx
 import dev.jamesyox.svg4k.attr.attrs.cy
+import dev.jamesyox.svg4k.attr.attrs.d
 import dev.jamesyox.svg4k.attr.attrs.dominantBaseline
 import dev.jamesyox.svg4k.attr.attrs.fill
 import dev.jamesyox.svg4k.attr.attrs.fontFamily
@@ -55,10 +56,15 @@ import dev.jamesyox.svg4k.tags.defs
 import dev.jamesyox.svg4k.tags.g
 import dev.jamesyox.svg4k.tags.line
 import dev.jamesyox.svg4k.tags.mask
+import dev.jamesyox.svg4k.tags.path
 import dev.jamesyox.svg4k.tags.polygon
 import dev.jamesyox.svg4k.tags.rect
 import dev.jamesyox.svg4k.tags.svg
 import dev.jamesyox.svg4k.tags.text
+import dev.jamesyox.svg4k.util.ClosePath
+import dev.jamesyox.svg4k.util.L
+import dev.jamesyox.svg4k.util.M
+import dev.jamesyox.svg4k.util.Q
 import dev.jamesyox.svg4k.attr.attrs.fontSize as fs
 import dev.jamesyox.svg4k.attr.attrs.height as h
 import dev.jamesyox.svg4k.attr.attrs.width as w
@@ -185,14 +191,41 @@ class SvgRenderingBackend(private val topLeftCorner: Point) : RenderingBackend {
         drawLinePart(stroke)
     }
 
-    override fun drawPolygon(shape: Polygon, color: Color, outline: Stroke?) = configure {
-        polygon {
-            points = shape.points.map { (x, y) -> SvgPoint(x, y) }
+    override fun drawPolygon(shape: Polygon, color: Color, outline: Stroke?, borderRadius: Float) = configure {
+        if (borderRadius <= 0f) {
+            polygon {
+                points = shape.points.map { (x, y) -> SvgPoint(x, y) }
 
-            fill(color.svg)
-            if (outline != null) {
-                stroke(outline.color.svg)
-                strokeWidth = outline.width.none
+                fill(color.svg)
+                if (outline != null) {
+                    stroke(outline.color.svg)
+                    strokeWidth = outline.width.none
+                }
+            }
+        } else {
+            path {
+                val path = shape.toPath(borderRadius)
+                d {
+                    M(path.start.x, path.start.y)
+                    path.segments.forEach { segment ->
+                        when (segment) {
+                            is PolygonPath.Segment.Line -> L(segment.to.x, segment.to.y)
+                            is PolygonPath.Segment.QuadraticCurve -> Q(
+                                segment.control.x,
+                                segment.control.y,
+                                segment.to.x,
+                                segment.to.y,
+                            )
+                        }
+                    }
+                    ClosePath
+                }
+
+                fill(color.svg)
+                if (outline != null) {
+                    stroke(outline.color.svg)
+                    strokeWidth = outline.width.none
+                }
             }
         }
     }

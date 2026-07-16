@@ -70,9 +70,9 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
         canvas.restore()
     }
 
-    override fun drawPolygon(shape: Polygon, color: Color, outline: Stroke?) {
+    override fun drawPolygon(shape: Polygon, color: Color, outline: Stroke?, borderRadius: Float) {
         canvas.beginPath()
-        shape.trace()
+        shape.trace(borderRadius)
         canvas.closePath()
 
         if (!color.isTransparent()) {
@@ -151,12 +151,16 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
         restore()
     }
 
-    private fun Polygon.trace() {
-        points.forEachIndexed { i, (x, y) ->
-            if (i == 0) {
-                canvas.moveTo(x, y)
-            } else {
-                canvas.lineTo(x, y)
+    private fun Polygon.trace(borderRadius: Float) {
+        val path = toPath(borderRadius)
+
+        canvas.moveTo(path.start.x, path.start.y)
+        path.segments.forEach { segment ->
+            when (segment) {
+                is PolygonPath.Segment.Line -> canvas.lineTo(segment.to.x, segment.to.y)
+                is PolygonPath.Segment.QuadraticCurve -> {
+                    canvas.quadraticCurveTo(segment.control.x, segment.control.y, segment.to.x, segment.to.y)
+                }
             }
         }
     }
