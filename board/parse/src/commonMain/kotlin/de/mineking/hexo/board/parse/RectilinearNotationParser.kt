@@ -141,7 +141,7 @@ private enum class ParserState {
                 highlightLine(previousPosition, direction, length, color)
             } else {
                 configurePrevious {
-                    requireHexo(highlight != null) { "Cannot overwrite cell highlight" }
+                    requireHexo(highlight == null) { "Cannot overwrite cell highlight" }
                     highlight = CellHighlight(color)
                 }
             }
