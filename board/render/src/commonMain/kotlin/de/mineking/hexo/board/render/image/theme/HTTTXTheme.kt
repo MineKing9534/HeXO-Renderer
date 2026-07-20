@@ -87,7 +87,7 @@ class HTTTXRenderer(
                 text = labelText,
                 fontSize = hexSize.toFloat() * 0.85f,
                 font = FontType.MonospaceRegular,
-                color = labelColor
+                color = labelColor,
             )
         } else {
             drawDecoration(point, cell, color)

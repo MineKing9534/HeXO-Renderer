@@ -111,28 +111,28 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
                 nibble(h[0]) * 17,
                 nibble(h[1]) * 17,
                 nibble(h[2]) * 17,
-                255
+                255,
             )
 
             4 -> intArrayOf(
                 nibble(h[0]) * 17,
                 nibble(h[1]) * 17,
                 nibble(h[2]) * 17,
-                nibble(h[3]) * 17
+                nibble(h[3]) * 17,
             )
 
             6 -> intArrayOf(
                 byte(h.substring(0, 2)),
                 byte(h.substring(2, 4)),
                 byte(h.substring(4, 6)),
-                255
+                255,
             )
 
             8 -> intArrayOf(
                 byte(h.substring(0, 2)),
                 byte(h.substring(2, 4)),
                 byte(h.substring(4, 6)),
-                byte(h.substring(6, 8))
+                byte(h.substring(6, 8)),
             )
 
             else -> error("Invalid color: $hex")
@@ -146,7 +146,7 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
         text: String,
         fontSize: Float,
         font: FontType,
-        color: Color
+        color: Color,
     ) {
         val maxWidth = fontSize * WIDTH_FACTOR
 
@@ -192,19 +192,19 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
         val textY = point.y - bounds.centerY
 
         val shape = layout.getOutline(
-            AffineTransform.getTranslateInstance(textX, textY)
+            AffineTransform.getTranslateInstance(textX, textY),
         )
 
         val margin = BasicStroke(
             effectiveFontSize / 6f,
             BasicStroke.CAP_ROUND,
-            BasicStroke.JOIN_ROUND
+            BasicStroke.JOIN_ROUND,
         ).createStrokedShape(shape)
 
         textExclusions += TextExclusion(
             shape,
             margin,
-            margin.bounds2D
+            margin.bounds2D,
         )
 
         graphics.color = drawColor.awt
