@@ -20,6 +20,9 @@ enum class CustomEmoji(val path: String) {
 
     Link("link"),
     Unlink("unlink"),
+
+    NotationCRN("notation_crn"),
+    NotationMRN("notation_mrn"),
 }
 
 val CustomEmoji.discordName get() = name.lowercase()

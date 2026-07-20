@@ -15,9 +15,9 @@ import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.parse.BoardParser
 import de.mineking.hexo.board.parse.focusWinningRows
-import de.mineking.hexo.board.render.RectilinearNotationType
-import de.mineking.hexo.board.render.renderRectilinearNotation
-import de.mineking.hexo.board.render.renderRectilinearStateBKETurnNotation
+import de.mineking.hexo.board.render.notation.RectilinearNotationType
+import de.mineking.hexo.board.render.notation.renderRectilinearNotation
+import de.mineking.hexo.board.render.notation.renderRectilinearStateBKETurnNotation
 import de.mineking.hexo.hds.HdsApiClient
 import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.components.Select

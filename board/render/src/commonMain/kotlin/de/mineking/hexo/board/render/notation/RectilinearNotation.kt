@@ -1,9 +1,10 @@
-package de.mineking.hexo.board.render
+package de.mineking.hexo.board.render.notation
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.LineHighlight
+import de.mineking.hexo.board.render.BoardRenderer
 import de.mineking.hexo.core.CellOwner
 import kotlin.math.min
 
@@ -26,6 +27,10 @@ enum class RectilinearNotationType(
 
 object RectilinearNotationBoardRenderer : BoardRenderer<RectilinearNotationType, String> {
     override suspend fun render(board: Board, param: RectilinearNotationType) = board.renderRectilinearNotation(param)
+
+    fun withType(type: RectilinearNotationType) = object : BoardRenderer<Unit, String> {
+        override suspend fun render(board: Board, param: Unit) = this@RectilinearNotationBoardRenderer.render(board, type)
+    }
 }
 
 fun Board.renderRectilinearNotation(type: RectilinearNotationType) = renderRectilinearNotationInternal(type).notation

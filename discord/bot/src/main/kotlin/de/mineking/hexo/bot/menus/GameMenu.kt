@@ -4,12 +4,10 @@ import de.mineking.discord.localization.Locale
 import de.mineking.discord.localization.LocalizationFile
 import de.mineking.discord.localization.LocalizationParameter
 import de.mineking.discord.localization.Localize
-import de.mineking.discord.ui.Lazy
 import de.mineking.discord.ui.MutableState
 import de.mineking.discord.ui.UIManager
 import de.mineking.discord.ui.builder.append
 import de.mineking.discord.ui.builder.code
-import de.mineking.discord.ui.builder.codeBlock
 import de.mineking.discord.ui.builder.components.buildTextDisplay
 import de.mineking.discord.ui.builder.components.localizedTextDisplay
 import de.mineking.discord.ui.builder.components.message.actionRow
@@ -31,10 +29,11 @@ import de.mineking.discord.ui.initialize
 import de.mineking.discord.ui.lazy
 import de.mineking.discord.ui.localize
 import de.mineking.discord.ui.message.MessageComponent
+import de.mineking.discord.ui.message.MessageMenu
 import de.mineking.discord.ui.message.MessageMenuConfig
 import de.mineking.discord.ui.message.parameter
+import de.mineking.discord.ui.message.replyMenu
 import de.mineking.discord.ui.message.withParameter
-import de.mineking.discord.ui.modal.createModalComponent
 import de.mineking.discord.ui.modal.map
 import de.mineking.discord.ui.parameter
 import de.mineking.discord.ui.registerLocalizedMenu
@@ -45,9 +44,8 @@ import de.mineking.discord.ui.terminateRender
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.BoardAttribute
 import de.mineking.hexo.board.mutable
-import de.mineking.hexo.board.render.RectilinearNotationType
 import de.mineking.hexo.board.render.image.theme.DefaultTheme
-import de.mineking.hexo.board.render.renderRectilinearNotation
+import de.mineking.hexo.board.render.notation.NotationType
 import de.mineking.hexo.bot.CustomEmoji
 import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.main
@@ -77,6 +75,7 @@ private data class MatchData(val game: FinishedGame, val board: Board)
 
 fun UIManager.gameMenu(
     gameRepository: FinishedGameRepository,
+    notationMenu: MessageMenu<NotationMenuParameter, *>,
 ) = registerLocalizedMenu<GameMenuParameter, GameMenuLocalization>("game") { localization ->
     var id by state(GameId(""))
     val moveState = state(0)
@@ -92,7 +91,7 @@ fun UIManager.gameMenu(
     val locale = parameter({ DiscordLocale.UNKNOWN }, { it.event.effectiveLocale }, { event.effectiveLocale })
     localize(locale) // Predefine locale for potential error handling
 
-    val lazyMatchData = lazy(default = null) {
+    val matchData by lazy(default = null) {
         val match = gameRepository.getGame(id) ?: return@lazy null
         val board = match.asBoard(move, focusWinningRows = true)
             .mutable()
@@ -100,7 +99,6 @@ fun UIManager.gameMenu(
 
         MatchData(match, board)
     }
-    val matchData = lazyMatchData.getValue()
 
     render {
         val matchData = matchData
@@ -137,7 +135,7 @@ fun UIManager.gameMenu(
         }
 
         +moveSelector("move", matchData?.game?.moves?.size ?: Int.MAX_VALUE, moveState)
-        +additionalActions(main, lazyMatchData, showTurnNumbers)
+        +additionalActions(main, id, notationMenu, showTurnNumbers)
     }
 }
 
@@ -172,12 +170,13 @@ private fun FinishedGame.gameDetails(localization: GameMenuLocalization, locale:
     }
 }
 
-private fun MessageMenuConfig<*, *>.additionalActions(
+private fun additionalActions(
     main: HeXODiscordBot,
-    matchData: Lazy<MatchData?>,
+    gameId: GameId,
+    notationMenu: MessageMenu<NotationMenuParameter, *>,
     showTurnNumber: MutableState<Boolean>,
 ) = actionRow {
-    +notationButton(matchData)
+    +notationButton(gameId, notationMenu)
     +toggleButton(
         "turn",
         emoji = main.emojiManager[if (showTurnNumber.value) CustomEmoji.SwitchOn else CustomEmoji.SwitchOff],
@@ -185,22 +184,15 @@ private fun MessageMenuConfig<*, *>.additionalActions(
     ) { deferEdit().queue() }
 }
 
-private fun MessageMenuConfig<*, *>.notationButton(
-    matchData: Lazy<MatchData?>,
-) = modalButton(
+private fun notationButton(
+    gameId: GameId,
+    notationMenu: MessageMenu<NotationMenuParameter, *>,
+) = button(
     "notation",
     emoji = Emojis.PRINTER,
-    component = createModalComponent {
-        val board = matchData.getValue()!!.board
-        +buildTextDisplay {
-            RectilinearNotationType.entries.forEach {
-                +codeBlock("hexo", board.renderRectilinearNotation(it))
-            }
-        }
-
-        produce {}
-    },
-)
+) {
+    replyMenu(notationMenu, NotationMenuParameter(gameId, NotationType.CompactRectilinear, event), ephemeral = true).queue()
+}
 
 private fun GameFinishReason.localize(locale: DiscordLocale, localization: GameMenuLocalization): String {
     val emoji = when (this) {
