@@ -41,12 +41,22 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
         val x: Double,
         val y: Double,
         val margin: Double,
+        val minX: Double,
+        val minY: Double,
+        val maxX: Double,
+        val maxY: Double,
     )
 
     private val textExclusions = mutableListOf<TextExclusion>()
+    private val lineLayer by lazy { createLineLayer() }
 
     override fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke?) {
-        val layer = createLineLayer()
+        val layer = lineLayer.apply { clear() }
+        val lineRadius = ((stroke.width + (outline?.width ?: 0f)) / 2.0)
+        val minX = minOf(from.x, to.x) - lineRadius
+        val minY = minOf(from.y, to.y) - lineRadius
+        val maxX = maxOf(from.x, to.x) + lineRadius
+        val maxY = maxOf(from.y, to.y) + lineRadius
 
         if (outline != null) {
             layer.context.strokeStyle = outline.color.css
@@ -62,7 +72,7 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
         layer.context.lineJoin = CanvasLineJoin.ROUND
         layer.context.strokeSegment(from, to)
 
-        layer.context.cutOutTextExclusions()
+        layer.context.cutOutTextExclusions(minX, minY, maxX, maxY)
 
         canvas.save()
         canvas.setTransform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
@@ -106,7 +116,17 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
         val textY = point.y + (ascent - descent) / 2.0
         val margin = fontSize / 6.0
 
-        textExclusions += TextExclusion(text, font, textX, textY, margin)
+        textExclusions += TextExclusion(
+            text = text,
+            font = font,
+            x = textX,
+            y = textY,
+            margin = margin,
+            minX = textX - margin,
+            minY = textY - ascent - margin,
+            maxX = textX + metrics.width + margin,
+            maxY = textY + descent + margin,
+        )
 
         canvas.fillStyle = color.css
         canvas.fillText(text, textX, textY)
@@ -130,7 +150,12 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
         return LineLayer(layerCanvas, layerContext)
     }
 
-    private fun CanvasRenderingContext2D.cutOutTextExclusions() {
+    private fun CanvasRenderingContext2D.cutOutTextExclusions(
+        minX: Double,
+        minY: Double,
+        maxX: Double,
+        maxY: Double,
+    ) {
         if (textExclusions.isEmpty()) return
 
         save()
@@ -142,6 +167,8 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
         lineJoin = CanvasLineJoin.ROUND
 
         textExclusions.forEach {
+            if (it.maxX < minX || it.minX > maxX || it.maxY < minY || it.minY > maxY) return@forEach
+
             font = it.font
             lineWidth = it.margin
             strokeText(it.text, it.x, it.y)
@@ -165,7 +192,14 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
         }
     }
 
-    private data class LineLayer(val canvas: HTMLCanvasElement, val context: CanvasRenderingContext2D)
+    private data class LineLayer(val canvas: HTMLCanvasElement, val context: CanvasRenderingContext2D) {
+        fun clear() {
+            context.save()
+            context.setTransform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+            context.clearRect(0.0, 0.0, canvas.width.toDouble(), canvas.height.toDouble())
+            context.restore()
+        }
+    }
 }
 
 private val Color.css: String get() = "rgba(${red.toInt()}, ${green.toInt()}, ${blue.toInt()}, ${alpha.toInt() / 255.0})"
