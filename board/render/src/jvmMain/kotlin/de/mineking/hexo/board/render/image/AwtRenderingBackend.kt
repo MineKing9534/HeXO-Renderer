@@ -9,7 +9,6 @@ import java.awt.AlphaComposite
 import java.awt.BasicStroke
 import java.awt.Font
 import java.awt.Graphics2D
-import java.awt.Rectangle
 import java.awt.RenderingHints
 import java.awt.Shape
 import java.awt.font.TextLayout
@@ -17,6 +16,7 @@ import java.awt.geom.AffineTransform
 import java.awt.geom.Area
 import java.awt.geom.Line2D
 import java.awt.geom.Path2D
+import java.awt.geom.Rectangle2D
 import java.awt.image.BufferedImage
 
 fun Board.renderToImage(
@@ -51,14 +51,19 @@ fun Board.renderToImage(
 }
 
 class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
+    private data class TextExclusion(
+        val shape: Shape,
+        val margin: Shape,
+        val bounds: Rectangle2D,
+    )
+
     companion object {
         private val OPENSANS_BOLD_FONT = Font.createFont(Font.TRUETYPE_FONT, javaClass.getResourceAsStream("/fonts/open-sans.extrabold.ttf"))
         private val CONSOLAS_FONT = Font.createFont(Font.TRUETYPE_FONT, javaClass.getResourceAsStream("/fonts/consolas.regular.ttf"))
         const val TEXT_MARGIN_ALPHA = 0.2f
     }
 
-    private val clip = Area(Rectangle(Int.MIN_VALUE / 2, Int.MIN_VALUE / 2, Int.MAX_VALUE, Int.MAX_VALUE))
-    private val textMargins = Area()
+    private val textExclusions = mutableListOf<TextExclusion>()
 
     override fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke?) {
         val segment = Line2D.Double(from.x, from.y, to.x, to.y)
@@ -106,18 +111,25 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
         val shape = layout.getOutline(AffineTransform.getTranslateInstance(textX, textY))
         val margin = BasicStroke(fontSize / 6, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND).createStrokedShape(shape)
 
-        clip.subtract(Area(shape))
-        textMargins.add(Area(margin).apply {
-            subtract(Area(shape))
-        })
+        textExclusions += TextExclusion(shape, margin, margin.bounds2D)
 
         graphics.color = color.awt
         graphics.fill(shape)
     }
 
     private fun drawLinePart(shape: Area, color: Color) {
-        val visible = Area(shape).apply { intersect(clip) }
-        val margin = Area(visible).apply { intersect(textMargins) }
+        val visible = Area(shape)
+        val margins = Area()
+        val lineBounds = shape.bounds2D
+
+        textExclusions.forEach { exclusion ->
+            if (lineBounds.intersects(exclusion.bounds)) {
+                visible.subtract(Area(exclusion.shape))
+                margins.add(Area(exclusion.margin))
+            }
+        }
+
+        val margin = Area(visible).apply { intersect(margins) }
         visible.subtract(margin)
 
         graphics.color = color.awt
