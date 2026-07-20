@@ -230,7 +230,7 @@ class SvgRenderingBackend(private val topLeftCorner: Point) : RenderingBackend {
         }
     }
 
-    override fun drawString(point: Point, text: String, fontSize: Float, font: FontType, color: Color) {
+    override fun drawString(point: Point, text: String, fontSize: Float, font: FontType, color: Color) = configure {
         context(_: TagConsumer<*>, _: ElementContainer.Text)
         fun drawText(color: Color?, stroke: Stroke?) {
             text {

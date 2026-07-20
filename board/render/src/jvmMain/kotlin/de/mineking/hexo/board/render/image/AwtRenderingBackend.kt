@@ -18,6 +18,9 @@ import java.awt.geom.Line2D
 import java.awt.geom.Path2D
 import java.awt.geom.Rectangle2D
 import java.awt.image.BufferedImage
+import java.awt.Color as AwtColor
+
+const val WIDTH_FACTOR = 2f
 
 fun Board.renderToImage(
     layoutRadius: Double,
@@ -95,10 +98,9 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
         }
     }
 
-    private val COLOR_PREFIX_REGEX =
-        Regex("""^(#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8}))\s+(.+)$""")
+    private val pattern = """^(#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8}))\s+(.+)$""".toRegex()
 
-    private fun parseAwtColor(hex: String): java.awt.Color {
+    private fun parseColor(hex: String): Color {
         val h = hex.removePrefix("#")
 
         fun nibble(c: Char) = c.digitToInt(16)
@@ -136,7 +138,7 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
             else -> error("Invalid color: $hex")
         }
 
-        return java.awt.Color(r, g, b, a)
+        return Color.of(r.toUByte(), g.toUByte(), b.toUByte(), a.toUByte())
     }
 
     override fun drawString(
@@ -146,18 +148,19 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
         font: FontType,
         color: Color
     ) {
+        val maxWidth = fontSize * WIDTH_FACTOR
 
-        val match = COLOR_PREFIX_REGEX.matchEntire(text)
+        val match = pattern.matchEntire(text)
 
         val drawText: String
-        val drawColor: java.awt.Color
+        val drawColor: Color
 
         if (match != null) {
             drawText = match.groupValues[2]
-            drawColor = parseAwtColor(match.groupValues[1])
+            drawColor = parseColor(match.groupValues[1])
         } else {
             drawText = text
-            drawColor = color.awt
+            drawColor = color
         }
 
         val baseFont = when (font) {
@@ -168,8 +171,6 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
         // Measure at the requested size.
         var currentFont = baseFont.deriveFont(fontSize)
         var layout = TextLayout(drawText, currentFont, graphics.fontRenderContext)
-
-        val maxWidth = 90.0
 
         // Scale down if necessary.
         val effectiveFontSize =
@@ -206,7 +207,7 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
             margin.bounds2D
         )
 
-        graphics.color = drawColor
+        graphics.color = drawColor.awt
         graphics.fill(shape)
     }
 
@@ -258,4 +259,4 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
     }
 }
 
-private val Color.awt get() = java.awt.Color(rgba, true)
+private val Color.awt get() = AwtColor(rgba, true)

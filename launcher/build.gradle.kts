@@ -23,5 +23,5 @@ dependencies {
 }
 
 application {
-    mainClass = "de.mineking.hexo.launcher.MainKt"
+    mainClass.set("TestKt")
 }

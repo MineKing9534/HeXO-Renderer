@@ -71,7 +71,7 @@ class HDSRenderer(
                 text = labelText,
                 fontSize = hexSize.toFloat() * 0.7f,
                 font = FontType.SansSerifBold,
-                color = theme.run { cell.owner.color(default = emptyCellLabelColor) { it.darker() } },
+                color = theme.run { cell.owner.color(default = emptyCellLabelColor) { it.darker() } }
             )
         }
     }
