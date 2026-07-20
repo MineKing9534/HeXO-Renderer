@@ -127,7 +127,7 @@ private enum class ParserState {
 
         private fun Cursor.highlight(notation: String) {
             val match = pattern.matchEntire(notation)
-            requireHexo(match != null) { "Invalid highlight notation, use `[b,d,p,q,<,>]?<length>?[x,o]?`" }
+            requireHexo(match != null) { "Invalid highlight notation, use `([b,d,p,q,<,>]<length>?[x,o]?)` for lines or `([x,o]?)` for cells" }
 
             val color = when (match.groupValues[3]) {
                 "x" -> CellOwner.X
@@ -141,6 +141,7 @@ private enum class ParserState {
                 highlightLine(previousPosition, direction, length, color)
             } else {
                 configurePrevious {
+                    requireHexo(highlight != null) { "Cannot overwrite cell highlight" }
                     highlight = CellHighlight(color)
                 }
             }
