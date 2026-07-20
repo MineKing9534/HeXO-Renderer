@@ -95,25 +95,118 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
         }
     }
 
-    override fun drawString(point: Point, text: String, fontSize: Float, font: FontType, color: Color) {
-        graphics.font = when (font) {
+    private val COLOR_PREFIX_REGEX =
+        Regex("""^(#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8}))\s+(.+)$""")
+
+    private fun parseAwtColor(hex: String): java.awt.Color {
+        val h = hex.removePrefix("#")
+
+        fun nibble(c: Char) = c.digitToInt(16)
+        fun byte(s: String) = s.toInt(16)
+
+        val (r, g, b, a) = when (h.length) {
+            3 -> intArrayOf(
+                nibble(h[0]) * 17,
+                nibble(h[1]) * 17,
+                nibble(h[2]) * 17,
+                255
+            )
+
+            4 -> intArrayOf(
+                nibble(h[0]) * 17,
+                nibble(h[1]) * 17,
+                nibble(h[2]) * 17,
+                nibble(h[3]) * 17
+            )
+
+            6 -> intArrayOf(
+                byte(h.substring(0, 2)),
+                byte(h.substring(2, 4)),
+                byte(h.substring(4, 6)),
+                255
+            )
+
+            8 -> intArrayOf(
+                byte(h.substring(0, 2)),
+                byte(h.substring(2, 4)),
+                byte(h.substring(4, 6)),
+                byte(h.substring(6, 8))
+            )
+
+            else -> error("Invalid color: $hex")
+        }
+
+        return java.awt.Color(r, g, b, a)
+    }
+
+    override fun drawString(
+        point: Point,
+        text: String,
+        fontSize: Float,
+        font: FontType,
+        color: Color
+    ) {
+
+        val match = COLOR_PREFIX_REGEX.matchEntire(text)
+
+        val drawText: String
+        val drawColor: java.awt.Color
+
+        if (match != null) {
+            drawText = match.groupValues[2]
+            drawColor = parseAwtColor(match.groupValues[1])
+        } else {
+            drawText = text
+            drawColor = color.awt
+        }
+
+        val baseFont = when (font) {
             FontType.SansSerifBold -> OPENSANS_BOLD_FONT
             FontType.MonospaceRegular -> CONSOLAS_FONT
-        }.deriveFont(fontSize)
+        }
 
-        val layout = TextLayout(text, graphics.font, graphics.fontRenderContext)
+        // Measure at the requested size.
+        var currentFont = baseFont.deriveFont(fontSize)
+        var layout = TextLayout(drawText, currentFont, graphics.fontRenderContext)
 
-        // Aligning horizontally with fm and vertically with bounds gives the best results for some reason
-        val fm = graphics.fontMetrics
-        val textX = point.x - fm.stringWidth(text) / 2.0
-        val textY = point.y + layout.bounds.height / 2
+        val maxWidth = 90.0
 
-        val shape = layout.getOutline(AffineTransform.getTranslateInstance(textX, textY))
-        val margin = BasicStroke(fontSize / 6, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND).createStrokedShape(shape)
+        // Scale down if necessary.
+        val effectiveFontSize =
+            if (layout.advance <= maxWidth) {
+                fontSize
+            } else {
+                fontSize * (maxWidth / layout.advance).toFloat()
+            }
 
-        textExclusions += TextExclusion(shape, margin, margin.bounds2D)
+        // Recreate the layout using the final font.
+        currentFont = baseFont.deriveFont(effectiveFontSize)
+        graphics.font = currentFont
+        layout = TextLayout(drawText, currentFont, graphics.fontRenderContext)
 
-        graphics.color = color.awt
+        val bounds = layout.bounds
+
+        // Center the outline at the requested point.
+        val textX = point.x - bounds.centerX
+        val textY = point.y - bounds.centerY
+
+        val shape = layout.getOutline(
+            AffineTransform.getTranslateInstance(textX, textY)
+        )
+
+        val margin = BasicStroke(
+            effectiveFontSize / 6f,
+            BasicStroke.CAP_ROUND,
+            BasicStroke.JOIN_ROUND
+        ).createStrokedShape(shape)
+
+        textExclusions += TextExclusion(
+            shape,
+            margin,
+            margin.bounds2D
+        )
+
+        graphics.color = drawColor
         graphics.fill(shape)
     }
 
