@@ -1,6 +1,6 @@
 @file:Suppress("MatchingDeclarationName")
 
-package de.mineking.hexo.board.render
+package de.mineking.hexo.board.render.notation
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
@@ -9,6 +9,7 @@ import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.distanceTo
 import de.mineking.hexo.board.minus
 import de.mineking.hexo.board.plus
+import de.mineking.hexo.board.render.BoardRenderer
 import de.mineking.hexo.board.times
 import de.mineking.hexo.core.CellOwner
 

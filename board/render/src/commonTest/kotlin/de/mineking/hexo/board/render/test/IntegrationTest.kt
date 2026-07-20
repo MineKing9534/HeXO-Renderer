@@ -4,9 +4,9 @@ import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.board.parse.parseRectilinearNotation
 import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
-import de.mineking.hexo.board.render.RectilinearNotationType
-import de.mineking.hexo.board.render.renderRectilinearNotation
-import de.mineking.hexo.board.render.renderRectilinearStateBKETurnNotation
+import de.mineking.hexo.board.render.notation.RectilinearNotationType
+import de.mineking.hexo.board.render.notation.renderRectilinearNotation
+import de.mineking.hexo.board.render.notation.renderRectilinearStateBKETurnNotation
 import de.mineking.hexo.core.CellOwner
 import kotlin.test.Test
 import kotlin.test.assertEquals
