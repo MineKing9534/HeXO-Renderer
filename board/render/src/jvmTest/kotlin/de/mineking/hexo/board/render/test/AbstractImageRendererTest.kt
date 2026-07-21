@@ -20,7 +20,7 @@ import java.io.File
 import kotlin.test.assertTrue
 
 abstract class AbstractImageRendererTest(private val extension: String, private val renderer: BoardRenderer<Theme, ByteArray>) {
-    private fun test(name: String, board: Board, theme: DefaultTheme) = runTest {
+    protected fun test(name: String, board: Board, theme: DefaultTheme) = runTest {
         val actual = renderer.render(board, theme.theme)
         val expected = javaClass.getResourceAsStream("/$name.${theme.name.lowercase()}.$extension")?.readAllBytes()
 

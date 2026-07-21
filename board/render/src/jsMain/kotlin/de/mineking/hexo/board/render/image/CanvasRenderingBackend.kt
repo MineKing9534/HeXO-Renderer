@@ -99,7 +99,14 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
         }
     }
 
-    override fun drawString(point: Point, text: String, fontSize: Float, font: FontType, color: Color) {
+    override fun drawString(
+        point: Point,
+        text: String,
+        maxWidth: Double,
+        fontSize: Float,
+        font: FontType,
+        color: Color,
+    ) {
         val font = when (font) {
             FontType.SansSerifBold -> "800 ${fontSize}px system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
             FontType.MonospaceRegular -> "normal ${fontSize}px consolas, monospace, sans-serif"

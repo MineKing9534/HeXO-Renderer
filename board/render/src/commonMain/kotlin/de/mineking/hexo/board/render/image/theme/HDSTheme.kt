@@ -6,6 +6,7 @@ import de.mineking.hexo.board.end
 import de.mineking.hexo.board.render.image.Point
 import de.mineking.hexo.board.render.image.Polygon
 import de.mineking.hexo.board.render.image.RenderingContext
+import de.mineking.hexo.board.render.image.SQRT3
 import de.mineking.hexo.board.render.image.Stroke
 import de.mineking.hexo.core.CellOwner
 
@@ -69,6 +70,7 @@ class HDSRenderer(
             backend.drawString(
                 point = point,
                 text = labelText,
+                maxWidth = hexSize * SQRT3 - 4 * borderThickness,
                 fontSize = hexSize.toFloat() * 0.7f,
                 font = FontType.SansSerifBold,
                 color = theme.run { cell.owner.color(default = emptyCellLabelColor) { it.darker() } },

@@ -21,8 +21,6 @@ import java.awt.image.BufferedImage
 import kotlin.math.min
 import java.awt.Color as AwtColor
 
-const val WIDTH_FACTOR = 2f
-
 fun Board.renderToImage(
     layoutRadius: Double,
     padding: Int,
@@ -104,12 +102,11 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
     override fun drawString(
         point: Point,
         text: String,
+        maxWidth: Double,
         fontSize: Float,
         font: FontType,
         color: Color,
     ) {
-        val maxWidth = fontSize * WIDTH_FACTOR
-
         val match = pattern.matchEntire(text)
 
         val drawText: String
@@ -132,7 +129,7 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
         var currentFont = baseFont.deriveFont(fontSize)
         var layout = TextLayout(drawText, currentFont, graphics.fontRenderContext)
 
-        val effectiveFontSize = fontSize * min(1f, maxWidth / layout.advance)
+        val effectiveFontSize = fontSize * min(1.0, maxWidth / layout.bounds.width).toFloat()
 
         // Recreate the layout using the final font.
         currentFont = baseFont.deriveFont(effectiveFontSize)
@@ -141,7 +138,7 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
 
         // Aligning horizontally with fm and vertically with bounds gives the best results for some reason
         val fm = graphics.fontMetrics
-        val textX = point.x - fm.stringWidth(text) / 2.0
+        val textX = point.x - fm.stringWidth(drawText) / 2.0
         val textY = point.y + layout.bounds.height / 2
 
         val shape = layout.getOutline(AffineTransform.getTranslateInstance(textX, textY))
