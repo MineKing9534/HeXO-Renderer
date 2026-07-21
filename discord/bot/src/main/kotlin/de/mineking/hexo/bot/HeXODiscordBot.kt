@@ -15,6 +15,7 @@ import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.bot.commands.accountLinkCommand
 import de.mineking.hexo.bot.commands.gameCommand
 import de.mineking.hexo.bot.commands.leaderboardCommand
+import de.mineking.hexo.bot.commands.modalCommand
 import de.mineking.hexo.bot.commands.profileCommand
 import de.mineking.hexo.bot.commands.profileUserCommand
 import de.mineking.hexo.bot.commands.renderHexoMessageCommand
@@ -102,6 +103,7 @@ class HeXODiscordBot(
 
             +renderHexoMessageCommand()
             +renderHexoSlashCommand()
+            +modalCommand()
 
             +gameCommand(gameMenu)
             +leaderboardCommand(leaderboardMenu)

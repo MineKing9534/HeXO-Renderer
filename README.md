@@ -18,6 +18,7 @@ Add HeXO Renderer to your server or user account: [Invite HeXO Renderer](https:/
     * [Other](#other)
   * [Features](#features)
     * [Command `hexo`](#command-hexo)
+    * [Command `render`](#command-render)
     * [Message command](#message-command)
     * [Command `game`](#command-game)
   * [Contributing](#contributing)
@@ -128,13 +129,15 @@ You can optionally prefix sandbox position links with `#`, in which case the tur
 
 ## Features
 ### Command `hexo`
-Accepts HeXO notation as parameter and renders it as image. 
-If no parameter is provided, a modal is opened that allows you to enter more complex input that can contain both raw text and HeXO notation.
-See [Message command](#message-command) for more details.
-
+Accepts HeXO notation as parameter and renders it as image.
 Example usage:
 
 ![example slash command](assets/example_slash_command.png)
+
+### Command `render`
+Opens a modal that allows you to specify more complex HeXO notation. It allows you to mix both notation and normal text to create a composite message.
+Using the modal to send a complex message is equivalent to sending a message with the notation yourself and then using the `Render HeXO notation in message` context command.
+See [Message command](#message-command) for more details.
 
 ### Message command
 It is also possible to render notation in existing messages. To do so, right-click the message and select `Apps > HeXO Renderer > Render HeXO notation in message`:
