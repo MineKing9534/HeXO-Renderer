@@ -18,6 +18,7 @@ import java.awt.geom.Line2D
 import java.awt.geom.Path2D
 import java.awt.geom.Rectangle2D
 import java.awt.image.BufferedImage
+import kotlin.math.min
 import java.awt.Color as AwtColor
 
 const val WIDTH_FACTOR = 2f
@@ -131,28 +132,19 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
         var currentFont = baseFont.deriveFont(fontSize)
         var layout = TextLayout(drawText, currentFont, graphics.fontRenderContext)
 
-        // Scale down if necessary.
-        val effectiveFontSize =
-            if (layout.advance <= maxWidth) {
-                fontSize
-            } else {
-                fontSize * (maxWidth / layout.advance).toFloat()
-            }
+        val effectiveFontSize = fontSize * min(1f, maxWidth / layout.advance)
 
         // Recreate the layout using the final font.
         currentFont = baseFont.deriveFont(effectiveFontSize)
         graphics.font = currentFont
         layout = TextLayout(drawText, currentFont, graphics.fontRenderContext)
 
-        val bounds = layout.bounds
+        // Aligning horizontally with fm and vertically with bounds gives the best results for some reason
+        val fm = graphics.fontMetrics
+        val textX = point.x - fm.stringWidth(text) / 2.0
+        val textY = point.y + layout.bounds.height / 2
 
-        // Center the outline at the requested point.
-        val textX = point.x - bounds.centerX
-        val textY = point.y - bounds.centerY
-
-        val shape = layout.getOutline(
-            AffineTransform.getTranslateInstance(textX, textY),
-        )
+        val shape = layout.getOutline(AffineTransform.getTranslateInstance(textX, textY))
 
         val margin = BasicStroke(
             effectiveFontSize / 6f,
