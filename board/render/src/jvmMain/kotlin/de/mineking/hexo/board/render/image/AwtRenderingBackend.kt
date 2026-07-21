@@ -98,48 +98,7 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
         }
     }
 
-    private val pattern = """^(#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8}))\s+(.+)$""".toRegex()
-
-    private fun parseColor(hex: String): Color {
-        val h = hex.removePrefix("#")
-
-        fun nibble(c: Char) = c.digitToInt(16)
-        fun byte(s: String) = s.toInt(16)
-
-        val (r, g, b, a) = when (h.length) {
-            3 -> intArrayOf(
-                nibble(h[0]) * 17,
-                nibble(h[1]) * 17,
-                nibble(h[2]) * 17,
-                255,
-            )
-
-            4 -> intArrayOf(
-                nibble(h[0]) * 17,
-                nibble(h[1]) * 17,
-                nibble(h[2]) * 17,
-                nibble(h[3]) * 17,
-            )
-
-            6 -> intArrayOf(
-                byte(h.substring(0, 2)),
-                byte(h.substring(2, 4)),
-                byte(h.substring(4, 6)),
-                255,
-            )
-
-            8 -> intArrayOf(
-                byte(h.substring(0, 2)),
-                byte(h.substring(2, 4)),
-                byte(h.substring(4, 6)),
-                byte(h.substring(6, 8)),
-            )
-
-            else -> error("Invalid color: $hex")
-        }
-
-        return Color.of(r.toUByte(), g.toUByte(), b.toUByte(), a.toUByte())
-    }
+    private val pattern = """^(\s*#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8}))\s+(.+)$""".toRegex()
 
     override fun drawString(
         point: Point,
@@ -157,7 +116,7 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
 
         if (match != null) {
             drawText = match.groupValues[2]
-            drawColor = parseColor(match.groupValues[1])
+            drawColor = Color.parse(match.groupValues[1])
         } else {
             drawText = text
             drawColor = color
