@@ -14,6 +14,7 @@ import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.core.CellOwner
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import java.io.File
@@ -111,5 +112,11 @@ abstract class AbstractImageRendererTest(private val extension: String, private 
         val board = "AgQEBgYBBAICCAIGBQYFEAIKBgYCAAIMBAgIBAEOCgIGBAQEAQQKBAgCCAYBBgEMCgAMAQ".parseTytoNotation()
 
         test("game", board, theme)
+    }
+
+    @Test
+    fun `label color test`() {
+        val board = MutableBoard().apply { this[0, 0].label = "#00ff00 a" }
+        test("label_color", board, DefaultTheme.HDS)
     }
 }

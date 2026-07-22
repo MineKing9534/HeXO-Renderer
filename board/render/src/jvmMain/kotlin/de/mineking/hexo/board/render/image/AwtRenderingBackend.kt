@@ -97,8 +97,6 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
         }
     }
 
-    private val pattern = """^(\s*#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8}))\s+(.+)$""".toRegex()
-
     override fun drawString(
         point: Point,
         text: String,
@@ -107,19 +105,6 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
         font: FontType,
         color: Color,
     ) {
-        val match = pattern.matchEntire(text)
-
-        val drawText: String
-        val drawColor: Color
-
-        if (match != null) {
-            drawText = match.groupValues[2]
-            drawColor = Color.parse(match.groupValues[1])
-        } else {
-            drawText = text
-            drawColor = color
-        }
-
         val baseFont = when (font) {
             FontType.SansSerifBold -> OPENSANS_BOLD_FONT
             FontType.MonospaceRegular -> CONSOLAS_FONT
@@ -127,18 +112,18 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
 
         // Measure at the requested size.
         var currentFont = baseFont.deriveFont(fontSize)
-        var layout = TextLayout(drawText, currentFont, graphics.fontRenderContext)
+        var layout = TextLayout(text, currentFont, graphics.fontRenderContext)
 
         val effectiveFontSize = fontSize * min(1.0, maxWidth / layout.bounds.width).toFloat()
 
         // Recreate the layout using the final font.
         currentFont = baseFont.deriveFont(effectiveFontSize)
         graphics.font = currentFont
-        layout = TextLayout(drawText, currentFont, graphics.fontRenderContext)
+        layout = TextLayout(text, currentFont, graphics.fontRenderContext)
 
         // Aligning horizontally with fm and vertically with bounds gives the best results for some reason
         val fm = graphics.fontMetrics
-        val textX = point.x - fm.stringWidth(drawText) / 2.0
+        val textX = point.x - fm.stringWidth(text) / 2.0
         val textY = point.y + layout.bounds.height / 2
 
         val shape = layout.getOutline(AffineTransform.getTranslateInstance(textX, textY))
@@ -155,7 +140,7 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
             margin.bounds2D,
         )
 
-        graphics.color = drawColor.awt
+        graphics.color = color.awt
         graphics.fill(shape)
     }
 
