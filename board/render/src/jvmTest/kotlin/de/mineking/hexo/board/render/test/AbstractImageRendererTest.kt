@@ -114,6 +114,13 @@ abstract class AbstractImageRendererTest(private val extension: String, private 
         test("game", board, theme)
     }
 
+    @EnumSource
+    @ParameterizedTest
+    fun `long label test`(theme: DefaultTheme) {
+        val board = MutableBoard().apply { this[0, 0].label = "meow meow" }
+        test("long_label", board, theme)
+    }
+
     @Test
     fun `label color test`() {
         val board = MutableBoard().apply { this[0, 0].label = "#00ff00 a" }
