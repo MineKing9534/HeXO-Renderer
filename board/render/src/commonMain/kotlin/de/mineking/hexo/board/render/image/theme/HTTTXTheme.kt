@@ -6,6 +6,7 @@ import de.mineking.hexo.board.end
 import de.mineking.hexo.board.render.image.Point
 import de.mineking.hexo.board.render.image.Polygon
 import de.mineking.hexo.board.render.image.RenderingContext
+import de.mineking.hexo.board.render.image.SQRT3
 import de.mineking.hexo.board.render.image.Stroke
 import de.mineking.hexo.board.render.image.minus
 import de.mineking.hexo.board.render.image.plus
@@ -85,6 +86,7 @@ class HTTTXRenderer(
             backend.drawString(
                 point = point,
                 text = labelText,
+                maxWidth = hexSize * SQRT3 - 4 * borderThickness,
                 fontSize = hexSize.toFloat() * 0.85f,
                 font = FontType.MonospaceRegular,
                 color = labelColor,

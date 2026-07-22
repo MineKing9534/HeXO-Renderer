@@ -16,6 +16,7 @@ import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.LEFT
 import org.w3c.dom.MITER
 import org.w3c.dom.ROUND
+import kotlin.math.min
 
 fun HTMLCanvasElement.drawBoard(
     layout: BoardRenderLayout,
@@ -99,26 +100,37 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
         }
     }
 
-    override fun drawString(point: Point, text: String, fontSize: Float, font: FontType, color: Color) {
-        val font = when (font) {
-            FontType.SansSerifBold -> "800 ${fontSize}px system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
-            FontType.MonospaceRegular -> "normal ${fontSize}px consolas, monospace, sans-serif"
+    override fun drawString(
+        point: Point,
+        text: String,
+        maxWidth: Double,
+        fontSize: Float,
+        font: FontType,
+        color: Color,
+    ) {
+        fun fontAt(size: Float) = when (font) {
+            FontType.SansSerifBold -> "800 ${size}px system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
+            FontType.MonospaceRegular -> "normal ${size}px consolas, monospace, sans-serif"
         }
 
-        canvas.font = font
+        canvas.font = fontAt(fontSize)
         canvas.textAlign = CanvasTextAlign.LEFT
         canvas.textBaseline = CanvasTextBaseline.ALPHABETIC
 
+        val requestedMetrics = canvas.measureText(text)
+        val effectiveFontSize = fontSize * min(1.0, maxWidth / requestedMetrics.width).toFloat()
+
+        canvas.font = fontAt(effectiveFontSize)
         val metrics = canvas.measureText(text)
         val ascent = metrics.fontBoundingBoxAscent
         val descent = metrics.fontBoundingBoxDescent
         val textX = point.x - metrics.width / 2.0
         val textY = point.y + (ascent - descent) / 2.0
-        val margin = fontSize / 6.0
+        val margin = effectiveFontSize / 6.0
 
         textExclusions += TextExclusion(
             text = text,
-            font = font,
+            font = canvas.font,
             x = textX,
             y = textY,
             margin = margin,

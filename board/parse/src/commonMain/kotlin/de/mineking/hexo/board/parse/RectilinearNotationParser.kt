@@ -99,7 +99,6 @@ private enum class ParserState {
     Label {
         override fun handleChar(ch: Char, offset: Int, cursor: Cursor, buffer: StringBuilder): ParserState {
             if (ch == ']') {
-                requireHexo(buffer.length <= 3) { "Labels can be at most 3 characters long!" }
                 cursor.configurePrevious { label = buffer.toString() }
                 buffer.clear()
 

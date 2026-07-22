@@ -18,6 +18,8 @@ import java.awt.geom.Line2D
 import java.awt.geom.Path2D
 import java.awt.geom.Rectangle2D
 import java.awt.image.BufferedImage
+import kotlin.math.min
+import java.awt.Color as AwtColor
 
 fun Board.renderToImage(
     layoutRadius: Double,
@@ -95,13 +97,29 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
         }
     }
 
-    override fun drawString(point: Point, text: String, fontSize: Float, font: FontType, color: Color) {
-        graphics.font = when (font) {
+    override fun drawString(
+        point: Point,
+        text: String,
+        maxWidth: Double,
+        fontSize: Float,
+        font: FontType,
+        color: Color,
+    ) {
+        val baseFont = when (font) {
             FontType.SansSerifBold -> OPENSANS_BOLD_FONT
             FontType.MonospaceRegular -> CONSOLAS_FONT
-        }.deriveFont(fontSize)
+        }
 
-        val layout = TextLayout(text, graphics.font, graphics.fontRenderContext)
+        // Measure at the requested size.
+        var currentFont = baseFont.deriveFont(fontSize)
+        var layout = TextLayout(text, currentFont, graphics.fontRenderContext)
+
+        val effectiveFontSize = fontSize * min(1.0, maxWidth / layout.bounds.width).toFloat()
+
+        // Recreate the layout using the final font.
+        currentFont = baseFont.deriveFont(effectiveFontSize)
+        graphics.font = currentFont
+        layout = TextLayout(text, currentFont, graphics.fontRenderContext)
 
         // Aligning horizontally with fm and vertically with bounds gives the best results for some reason
         val fm = graphics.fontMetrics
@@ -109,9 +127,18 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
         val textY = point.y + layout.bounds.height / 2
 
         val shape = layout.getOutline(AffineTransform.getTranslateInstance(textX, textY))
-        val margin = BasicStroke(fontSize / 6, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND).createStrokedShape(shape)
 
-        textExclusions += TextExclusion(shape, margin, margin.bounds2D)
+        val margin = BasicStroke(
+            effectiveFontSize / 6f,
+            BasicStroke.CAP_ROUND,
+            BasicStroke.JOIN_ROUND,
+        ).createStrokedShape(shape)
+
+        textExclusions += TextExclusion(
+            shape,
+            margin,
+            margin.bounds2D,
+        )
 
         graphics.color = color.awt
         graphics.fill(shape)
@@ -165,4 +192,4 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
     }
 }
 
-private val Color.awt get() = java.awt.Color(rgba, true)
+private val Color.awt get() = AwtColor(rgba, true)

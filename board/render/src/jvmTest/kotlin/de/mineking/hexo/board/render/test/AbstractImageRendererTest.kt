@@ -14,18 +14,21 @@ import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.core.CellOwner
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import java.io.File
 import kotlin.test.assertTrue
 
 abstract class AbstractImageRendererTest(private val extension: String, private val renderer: BoardRenderer<Theme, ByteArray>) {
-    private fun test(name: String, board: Board, theme: DefaultTheme) = runTest {
+    protected fun test(name: String, board: Board, theme: DefaultTheme) = runTest {
         val actual = renderer.render(board, theme.theme)
-        val expected = javaClass.getResourceAsStream("/$name.${theme.name.lowercase()}.$extension")?.readAllBytes()
+        val themeName = theme.name.lowercase()
+        val snapshotPath = "$extension/$themeName/$name.$extension"
+        val expected = javaClass.getResourceAsStream("/$snapshotPath")?.readAllBytes()
 
         if (!actual.contentEquals(expected)) {
-            val file = File("expected/$name.${theme.name.lowercase()}.$extension")
+            val file = File("expected/$snapshotPath")
             file.parentFile.mkdirs()
 
             file.outputStream().use { it.write(actual) }
@@ -111,5 +114,18 @@ abstract class AbstractImageRendererTest(private val extension: String, private 
         val board = "AgQEBgYBBAICCAIGBQYFEAIKBgYCAAIMBAgIBAEOCgIGBAQEAQQKBAgCCAYBBgEMCgAMAQ".parseTytoNotation()
 
         test("game", board, theme)
+    }
+
+    @EnumSource
+    @ParameterizedTest
+    fun `long label test`(theme: DefaultTheme) {
+        val board = MutableBoard().apply { this[0, 0].label = "meow meow" }
+        test("long_label", board, theme)
+    }
+
+    @Test
+    fun `label color test`() {
+        val board = MutableBoard().apply { this[0, 0].label = "#00ff00 a" }
+        test("label_color", board, DefaultTheme.HDS)
     }
 }

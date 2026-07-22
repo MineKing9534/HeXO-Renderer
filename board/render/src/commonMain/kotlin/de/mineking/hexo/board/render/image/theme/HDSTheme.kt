@@ -6,6 +6,7 @@ import de.mineking.hexo.board.end
 import de.mineking.hexo.board.render.image.Point
 import de.mineking.hexo.board.render.image.Polygon
 import de.mineking.hexo.board.render.image.RenderingContext
+import de.mineking.hexo.board.render.image.SQRT3
 import de.mineking.hexo.board.render.image.Stroke
 import de.mineking.hexo.core.CellOwner
 
@@ -50,6 +51,7 @@ class HDSRenderer(
     private val theme: HDSTheme,
 ) : BaseTheme.Renderer(context) {
     private val borderThickness = context.run { theme.borderThickness.relativeWidth() }
+    private val labelPattern = """^(\s*#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8}))\s+(.+)$""".toRegex()
 
     override fun drawCell(point: Point, hex: Polygon, cell: Cell): Unit = context.run {
         backend.drawPolygon(
@@ -64,16 +66,32 @@ class HDSRenderer(
 
         drawCellHighlight(cell, hex)
 
-        val labelText = cell.labelText(defaultShowTurnLabels = false)
-        if (labelText != null) {
-            backend.drawString(
-                point = point,
-                text = labelText,
-                fontSize = hexSize.toFloat() * 0.7f,
-                font = FontType.SansSerifBold,
-                color = theme.run { cell.owner.color(default = emptyCellLabelColor) { it.darker() } },
-            )
+        drawLabel(point, cell)
+    }
+
+    private fun drawLabel(point: Point, cell: Cell) {
+        val label = cell.labelText(defaultShowTurnLabels = false) ?: return
+        val match = labelPattern.matchEntire(label)
+
+        val drawText: String
+        val drawColor: Color
+
+        if (match != null) {
+            drawText = match.groupValues[2]
+            drawColor = Color.parse(match.groupValues[1])
+        } else {
+            drawText = label
+            drawColor = theme.run { cell.owner.color(default = emptyCellLabelColor) { it.darker() } }
         }
+
+        context.backend.drawString(
+            point = point,
+            text = drawText,
+            maxWidth = context.hexSize * SQRT3 - 4 * borderThickness,
+            fontSize = context.hexSize.toFloat() * 0.7f,
+            font = FontType.SansSerifBold,
+            color = drawColor,
+        )
     }
 
     private fun drawCellHighlight(cell: Cell, hex: Polygon): Unit = context.run {

@@ -27,7 +27,7 @@ data class Stroke(val color: Color, val width: Float)
 interface RenderingBackend {
     fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke? = null)
     fun drawPolygon(shape: Polygon, color: Color, outline: Stroke? = null, borderRadius: Float = 0f)
-    fun drawString(point: Point, text: String, fontSize: Float, font: FontType, color: Color)
+    fun drawString(point: Point, text: String, maxWidth: Double, fontSize: Float, font: FontType, color: Color)
 }
 
 operator fun Point.plus(point: Point) = Point(x + point.x, y + point.y)

@@ -10,7 +10,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-private const val SQRT3 = 1.7320508075688772
+internal const val SQRT3 = 1.7320508075688772
 
 enum class BoardRenderBounds {
     Compact,

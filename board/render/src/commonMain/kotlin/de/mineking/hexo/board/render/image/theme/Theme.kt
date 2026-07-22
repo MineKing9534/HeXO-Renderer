@@ -28,6 +28,47 @@ value class Color private constructor(val rgba: Int) {
                 (green.toInt() shl (1 * 8)) +
                 (blue.toInt() shl (0 * 8)),
         )
+
+        fun parse(hex: String): Color {
+            val h = hex.removePrefix("#")
+
+            fun nibble(c: Char) = c.digitToInt(16)
+            fun byte(s: String) = s.toInt(16)
+
+            val (r, g, b, a) = when (h.length) {
+                3 -> intArrayOf(
+                    nibble(h[0]) * 17,
+                    nibble(h[1]) * 17,
+                    nibble(h[2]) * 17,
+                    255,
+                )
+
+                4 -> intArrayOf(
+                    nibble(h[0]) * 17,
+                    nibble(h[1]) * 17,
+                    nibble(h[2]) * 17,
+                    nibble(h[3]) * 17,
+                )
+
+                6 -> intArrayOf(
+                    byte(h.substring(0, 2)),
+                    byte(h.substring(2, 4)),
+                    byte(h.substring(4, 6)),
+                    255,
+                )
+
+                8 -> intArrayOf(
+                    byte(h.substring(0, 2)),
+                    byte(h.substring(2, 4)),
+                    byte(h.substring(4, 6)),
+                    byte(h.substring(6, 8)),
+                )
+
+                else -> throw IllegalArgumentException("Invalid color: $hex")
+            }
+
+            return of(r.toUByte(), g.toUByte(), b.toUByte(), a.toUByte())
+        }
     }
 
     override fun toString() = "#${(rgba and 0xffffff).toHexString(HexFormat {
