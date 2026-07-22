@@ -23,10 +23,12 @@ import kotlin.test.assertTrue
 abstract class AbstractImageRendererTest(private val extension: String, private val renderer: BoardRenderer<Theme, ByteArray>) {
     protected fun test(name: String, board: Board, theme: DefaultTheme) = runTest {
         val actual = renderer.render(board, theme.theme)
-        val expected = javaClass.getResourceAsStream("/$name.${theme.name.lowercase()}.$extension")?.readAllBytes()
+        val themeName = theme.name.lowercase()
+        val snapshotPath = "$extension/$themeName/$name.$extension"
+        val expected = javaClass.getResourceAsStream("/$snapshotPath")?.readAllBytes()
 
         if (!actual.contentEquals(expected)) {
-            val file = File("expected/$name.${theme.name.lowercase()}.$extension")
+            val file = File("expected/$snapshotPath")
             file.parentFile.mkdirs()
 
             file.outputStream().use { it.write(actual) }
