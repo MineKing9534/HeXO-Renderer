@@ -73,4 +73,5 @@ enum class DefaultTheme(val theme: BaseTheme) {
     HDS(HDSTheme.Default),
     HTTTX(HTTTXTheme.Default),
     Tyto(TytoTheme.Default),
+    Omok(OmokTheme.Default),
 }
